@@ -18,12 +18,21 @@ public:
     ~mSceneUtils();
 
     void render(std::vector<float> points_3d = std::vector<float>(0, 0));
+
+    void setExMat(glm::mat4 & cam_ex_mat);
+    void setInMat(glm::mat4 & cam_in_mat);
+
+    void getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat);
+
+    void moveCamera(int move_dir);
+    void rotateCamrea(const glm::mat4 & rotate_mat);
+
     void setSurround(bool do_surround, glm::vec3 surround_center = glm::vec3(0.0,0.0,0.0));
 private:
     std::vector<GLfloat> getGroundVertexs();
     std::vector<GLfloat> getGroundColor();
-    void transExMat(glm::mat4 &tmp_ex_t_mat);
     void surroundOnePoint(glm::mat4 & model_mat);
+
 
     int wnd_width;
     int wnd_height;
@@ -51,7 +60,9 @@ private:
     glm::mat4 rotate_mat;
     glm::mat4 cam_ex_t_mat;
     glm::mat4 cam_ex_r_mat;
-    glm::mat4 cur_cam_ex_mat;
+
+    glm::mat4 cur_cam_ex_r_mat;
+    glm::mat4 cur_cam_ex_t_mat;
 
     /***** center surround *****/
     glm::vec3 surround_center;

@@ -72,12 +72,14 @@ namespace mCamRotate {
         }
     }
 
-    void rotateExMat(int wnd_width, int wnd_height, glm::mat4 & view_r_mat) {
+    glm::mat4 getRotateMat(int wnd_width, int wnd_height, const glm::mat4 & view_r_mat) {
 
         if (init_pos != cur_pos) {
 
-            glm::vec3 dir_x(view_r_mat[0][0], view_r_mat[1][0], view_r_mat[2][0]);
+            glm::vec3 dir_z(view_r_mat[0][2], view_r_mat[1][2], view_r_mat[2][2]);
             glm::vec3 dir_y(0, 1, 0);
+
+            glm::vec3 dir_x = glm::normalize(glm::cross(dir_y, dir_z));
 
             float div_x = cur_pos.x - init_pos.x;
             float div_y =  cur_pos.y - init_pos.y;
@@ -90,7 +92,8 @@ namespace mCamRotate {
 
             init_pos = cur_pos;
 
-            view_r_mat = view_r_mat * result_mat_y * result_mat_x;
+            return result_mat_y * result_mat_x;
         }
+        return glm::mat4(1.f);
     }
 }

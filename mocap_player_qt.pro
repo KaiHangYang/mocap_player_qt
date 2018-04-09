@@ -9,7 +9,7 @@ QT       += opengl
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = opengl_demo
+TARGET = mocap_player_qt
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use

@@ -17,6 +17,6 @@ namespace mCamRotate {
 
     void mouse_button_callback(QMouseEvent * event);
     void mouse_move_callback(QMouseEvent * event);
-    void rotateExMat(int wnd_width, int wnd_height, glm::mat4 & view_mat);
+    glm::mat4 getRotateMat(int wnd_width, int wnd_height, const glm::mat4 & view_r_mat);
 }
 #endif

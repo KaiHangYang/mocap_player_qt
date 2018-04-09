@@ -36,7 +36,7 @@ void mGLWidget::initializeGL() {
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    this->timer_for_update->start(4);
+    this->timer_for_update->start(2);
 }
 
 void mGLWidget::resizeGL(int width, int height) {
@@ -52,6 +52,7 @@ void mGLWidget::mousePressEvent(QMouseEvent * event) {
 void mGLWidget::mouseMoveEvent(QMouseEvent *event) {
     mCamRotate::mouse_move_callback(event);
 }
+
 void mGLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
@@ -60,6 +61,10 @@ void mGLWidget::paintGL() {
 }
 
 void mGLWidget::draw() {
-    // here set the point
+    glm::mat4 cur_ex_r_mat, cur_ex_t_mat, cur_rotate_mat;
+    this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
+    cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat);
+    this->scene->rotateCamrea(cur_rotate_mat);
+
     this->scene->render();
 }

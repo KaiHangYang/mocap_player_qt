@@ -1,0 +1,10 @@
+Makefile
+*.swp
+.ycm_extra_conf.py
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+main
+*.a
+*.so
+*.user

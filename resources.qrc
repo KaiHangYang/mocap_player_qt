@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/shaders">
+        <file alias="depth.frag">shaders/depth.frag</file>
+        <file alias="depth.geo">shaders/depth.geo</file>
+        <file alias="depth.vert">shaders/depth.vert</file>
+        <file alias="scene.frag">shaders/multilight.frag</file>
+        <file alias="scene.vert">shaders/multilight.vert</file>
+        <file alias="model.frag">shaders/model_f.shader</file>
+        <file alias="model.vert">shaders/model_v.shader</file>
+    </qresource>
+    <qresource prefix="/images"/>
+    <qresource prefix="/models">
+        <file alias="cylinder-30">models/cylinder-30.ply</file>
+        <file alias="sphere-30">models/sphere-30.ply</file>
+    </qresource>
+</RCC>

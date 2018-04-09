@@ -28,28 +28,37 @@ SOURCES += \
     src/bvh_parser/bvh-parser.cc \
     src/bvh_parser/bvh.cc \
     src/gl_utils/mMeshReader.cpp \
+    src/gl_utils/mRotateUtils.cpp \
     src/gl_utils/mShader.cpp \
-    main.cpp \
-    mGLWidget.cpp \
-    mMainWindow.cpp \
-    src/gl_utils/mRotateUtils.cpp
+    src/ui_widgets/mGLWidget.cpp \
+    src/ui_widgets/mMainWindow.cpp \
+    src/scene_utils/mSceneUtils.cpp \
+    src/pose_utils/mPoseModel.cpp \
+    main.cpp
+
 
 HEADERS += \
     include/bvh-parser/bvh-parser.h \
     include/bvh-parser/bvh.h \
     include/bvh-parser/joint.h \
     include/bvh-parser/utils.h \
+    include/mGLWidget.h \
+    include/mMainWindow.h \
     include/mMeshReader.h \
+    include/mPoseModel.h \
+    include/mRenderParameters.h \
+    include/mRotateUtils.h \
+    include/mSceneUtils.h \
     include/mShader.h \
-    mGLWidget.h \
-    mMainWindow.h \
-    include/mRotateUtils.h
+    include/mPoseDefs.h
+
 
 INCLUDEPATH += ./include/
 LIBS += -lassimp
 
 FORMS += \
-        window.ui
+        window.ui \
+    window.ui
 
 DISTFILES += \
     shaders/cam_f.shader \
@@ -65,3 +74,6 @@ DISTFILES += \
     shaders/multilight.frag \
     shaders/depth.vert \
     shaders/multilight.vert
+
+RESOURCES += \
+    resources.qrc

@@ -9,12 +9,19 @@
 mGLWidget::mGLWidget(QWidget * parent, int wnd_width, int wnd_height) : QGLWidget(QGLFormat(QGL::SampleBuffers), parent) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
+    // set cam_in_mat cam_ex_mat and is_ar here
+
+    this->is_ar = false;
+    this->cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)this->wnd_width / this->wnd_height, 0.01f, 1000000.f));
+    this->cam_ex_mat = glm::transpose(glm::lookAt(glm::vec3(0, 10.f, 300.f), glm::vec3(0, 10.f, 0), glm::vec3(0, 1, 0)));
 
     this->timer_for_update = new QTimer(this);
     connect(timer_for_update, SIGNAL(timeout()), this, SLOT(update()));
 }
 
-mGLWidget::~mGLWidget() {}
+mGLWidget::~mGLWidget() {
+    this->scene->~mSceneUtils();
+}
 
 void mGLWidget::initializeGL() {
     // Before this function, the opengl context has already been prepared.
@@ -24,13 +31,10 @@ void mGLWidget::initializeGL() {
     this->core_func->initializeOpenGLFunctions();
     this->VAO->create();
 
-    this->mesh_reader = new mMeshReader(this->VAO, this->core_func);
-    this->mesh_reader->addMesh("/home/kaihang/Projects/QT/opengl_demo/meshes/sphere.ply");
-    this->shader = new mShader("/home/kaihang/Projects/QT/opengl_demo/shaders/model_v.shader", "/home/kaihang/Projects/QT/opengl_demo/shaders/model_f.shader");
+    this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, this->cam_in_mat, this->cam_ex_mat, this->is_ar);
 
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-//    glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);
     this->timer_for_update->start(4);
 }
@@ -42,11 +46,11 @@ void mGLWidget::resizeGL(int width, int height) {
 }
 
 void mGLWidget::mousePressEvent(QMouseEvent * event) {
-    mArcBall::mouse_button_callback(event);
+    mCamRotate::mouse_button_callback(event);
 }
 
 void mGLWidget::mouseMoveEvent(QMouseEvent *event) {
-    mArcBall::mouse_move_callback(event);
+    mCamRotate::mouse_move_callback(event);
 }
 void mGLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -56,17 +60,6 @@ void mGLWidget::paintGL() {
 }
 
 void mGLWidget::draw() {
-    this->shader->use();
-    glm::mat4 proj = glm::perspective(glm::radians(50.f), (float)this->wnd_width/this->wnd_height, 0.01f, 100.f);
-    glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 3), glm::vec3(0, 0, 0.1f), glm::vec3(0, 1, 0));
-    glm::mat4 model = mArcBall::getRotateMat(this->wnd_width, this->wnd_height, view);
-
-    this->shader->setVal("MVP", proj * view * model);
-    this->shader->setVal("modelMat", model);
-    this->shader->setVal("normMat", glm::transpose(glm::inverse(model)));
-    this->shader->setVal("lightPos", glm::vec3(10, 10, 10));
-    this->shader->setVal("viewPos", glm::vec3(0, 0, 10));
-    this->shader->setVal("fragColor", glm::vec3(1.f, 1.f, 1.f));
-
-    this->mesh_reader->render(0);
+    // here set the point
+    this->scene->render();
 }

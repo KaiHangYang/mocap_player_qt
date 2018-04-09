@@ -1,9 +1,7 @@
 #ifndef MGLWIDGET_H
 #define MGLWIDGET_H
 
-
-#include "mMeshReader.h"
-#include "mShader.h"
+#include "mSceneUtils.h"
 
 #include <QGLWidget>
 #include <QtOpenGL>
@@ -26,12 +24,15 @@ protected:
 private:
     void draw();
 
-    QOpenGLVertexArrayObject * VAO;
+    glm::mat4 cam_in_mat;
+    glm::mat4 cam_ex_mat;
+    bool is_ar;
+
     int wnd_width;
     int wnd_height;
 
-    mShader * shader;
-    mMeshReader * mesh_reader;
+    mSceneUtils * scene;
+    QOpenGLVertexArrayObject * VAO;
     QOpenGLFunctions_3_3_Core * core_func;
     QTimer * timer_for_update;
 };

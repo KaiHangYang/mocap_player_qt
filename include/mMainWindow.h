@@ -7,6 +7,12 @@
 #include <QWidget>
 #include <QProgressBar>
 #include <QGroupBox>
+#include <QPushButton>
+#include <QLabel>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QListView>
+#include <QScrollArea>
 
 namespace Ui {
 class mMainWindow;
@@ -27,11 +33,30 @@ private:
     int wnd_width;
     int wnd_height;
 
-    QGroupBox * tool_box;
     QProgressBar * progress_bar;
     QWidget * grid_widget;
     QGridLayout * grid_layout;
-    // widgets
+    /***** Tool box widget *****/
+    QGroupBox * tool_box;
+    QGroupBox * file_box;
+    QGroupBox * video_box;
+
+    QGridLayout * tool_box_layout;
+    QGridLayout * file_box_layout;
+    QGridLayout * video_box_layout;
+
+    QPushButton * tool_file_add_btn;
+    QPushButton * tool_file_remove_btn;
+    QPushButton * tool_file_removeall_btn;
+    QListView * tool_file_listview;
+
+    QPushButton * tool_video_start_btn;
+    QPushButton * tool_video_stop_btn;
+    QPushButton * tool_video_reset_btn;
+    /**************************/
+
+
+    // OpenGL widgets
     mGLWidget * gl_widget;
 };
 

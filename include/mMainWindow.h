@@ -13,6 +13,7 @@
 #include <QVBoxLayout>
 #include <QListView>
 #include <QScrollArea>
+#include <QStringListModel>
 
 namespace Ui {
 class mMainWindow;
@@ -26,6 +27,11 @@ public:
     ~mMainWindow();
 public slots:
     void openFile();
+
+    void fileAddSlot();
+    void fileRemoveSlot();
+    void fileRemoveAllSlot();
+    void fileActivatedSlot(QModelIndex index);
 signals:
     void signalOpenFile(QString & file_path);
 private:
@@ -33,9 +39,15 @@ private:
     int wnd_width;
     int wnd_height;
 
+    /****** Just for store *****/
+    QStringListModel * file_list_model;
+    int cur_file_index;
+
+    /******** Main widget ******/
     QProgressBar * progress_bar;
     QWidget * grid_widget;
     QGridLayout * grid_layout;
+
     /***** Tool box widget *****/
     QGroupBox * tool_box;
     QGroupBox * file_box;
@@ -54,7 +66,6 @@ private:
     QPushButton * tool_video_stop_btn;
     QPushButton * tool_video_reset_btn;
     /**************************/
-
 
     // OpenGL widgets
     mGLWidget * gl_widget;

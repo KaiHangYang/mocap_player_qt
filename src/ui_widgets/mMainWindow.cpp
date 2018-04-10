@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QGLFormat>
 #include <QFileDialog>
+#include <QAbstractItemView>
 
 
 mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString title) : QMainWindow(parent), ui(new Ui::mMainWindow) {
@@ -11,6 +12,9 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->ui->setupUi(this);
     this->setWindowTitle(title);
     this->resize(this->wnd_width, this->wnd_height);
+
+    this->cur_file_index = -1;
+
     // Set the grid widget to contain the widgets
     this->grid_widget = new QWidget(this);
     this->grid_layout = new QGridLayout();
@@ -43,6 +47,10 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->tool_file_remove_btn = new QPushButton("Remove", this->file_box);
     this->tool_file_removeall_btn = new QPushButton("Remove All", this->file_box);
     this->tool_file_listview = new QListView(this->file_box);
+    this->file_list_model = new QStringListModel(this->tool_file_listview);
+    this->tool_file_listview->setModel(this->file_list_model);
+    this->tool_file_listview->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    this->tool_file_listview->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     this->file_box_layout->addWidget(this->tool_file_add_btn, 0, 0, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_remove_btn, 0, 1, 1, 1);
@@ -72,17 +80,62 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
 
     connect(this->ui->openAct, SIGNAL(triggered()), this, SLOT(openFile()));
     connect(this, SIGNAL(signalOpenFile(QString&)), this->gl_widget, SLOT(changePoseFile(QString&)));
+
+    connect(this->tool_file_add_btn, SIGNAL(clicked()), this, SLOT(fileAddSlot()));
+    connect(this->tool_file_remove_btn, SIGNAL(clicked()), this, SLOT(fileRemoveSlot()));
+    connect(this->tool_file_removeall_btn, SIGNAL(clicked()), this, SLOT(fileRemoveAllSlot()));
+    connect(this->tool_file_listview, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(fileActivatedSlot(QModelIndex)));
 }
 
 mMainWindow::~mMainWindow() {
     delete ui;
 }
 
-
+/************* Implementation of the slots *****************/
 void mMainWindow::openFile() {
 //    QString file_name = QFileDialog::getOpenFileName(this, "Open File", ".", "BVH Files(*.bvh);C3D Files(*.c3d)");
     QString file_name = QFileDialog::getOpenFileName(this, "Open File", ".", "*");
     if (!file_name.isEmpty()) {
         emit signalOpenFile(file_name);
     }
+}
+
+void mMainWindow::fileAddSlot() {
+    QStringList file_names = QFileDialog::getOpenFileNames(this, "Add Files", "./", "*");
+    if (file_names.size() > 0) {
+        for (int i = 0; i < file_names.size(); ++i) {
+            QStringList cur_list = this->file_list_model->stringList();
+            bool is_exist = false;
+            // check if the file exists
+            for (int j = 0; j < cur_list.size(); ++j) {
+                if (cur_list.at(j) == file_names.at(i)) {
+                    is_exist = true;
+                    break;
+                }
+            }
+            if (is_exist) {
+                continue;
+            }
+            int cur_row = 0;
+            this->file_list_model->insertRow(cur_row);
+            QModelIndex index = this->file_list_model->index(cur_row);
+
+            this->file_list_model->setData(index, file_names.at(i));
+            this->tool_file_listview->setCurrentIndex(index);
+        }
+    }
+}
+void mMainWindow::fileRemoveSlot() {
+    QModelIndexList index_list = this->tool_file_listview->selectionModel()->selectedIndexes();
+
+    while (!index_list.isEmpty()) {
+        this->file_list_model->removeRow(index_list[0].row());
+        index_list = this->tool_file_listview->selectionModel()->selectedIndexes();
+    }
+}
+void mMainWindow::fileRemoveAllSlot() {
+    this->file_list_model->removeRows(0, this->file_list_model->rowCount());
+}
+void mMainWindow::fileActivatedSlot(QModelIndex index) {
+    qDebug() << index.data().toString();
 }

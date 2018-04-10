@@ -13,7 +13,7 @@
 class mGLWidget : public QGLWidget {
     Q_OBJECT
 public:
-    explicit mGLWidget(QGLFormat &gl_format, QWidget * parent=0, int wnd_width=960, int wnd_height=720);
+    explicit mGLWidget(QWidget * parent=0, QGLFormat gl_format=QGLFormat(), int wnd_width=960, int wnd_height=720);
     ~mGLWidget();
 
 public slots:

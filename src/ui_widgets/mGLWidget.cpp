@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "mRotateUtils.h"
 
-mGLWidget::mGLWidget(QGLFormat & gl_format, QWidget * parent, int wnd_width, int wnd_height) : QGLWidget(gl_format, parent) {
+mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int wnd_height) : QGLWidget(gl_format, parent) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
     // set cam_in_mat cam_ex_mat and is_ar here
@@ -20,7 +20,6 @@ mGLWidget::mGLWidget(QGLFormat & gl_format, QWidget * parent, int wnd_width, int
     this->timer_for_update = new QTimer(this);
     connect(timer_for_update, SIGNAL(timeout()), this, SLOT(update()));
 }
-
 mGLWidget::~mGLWidget() {
     this->scene->~mSceneUtils();
 }

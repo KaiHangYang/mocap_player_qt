@@ -20,8 +20,8 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->core_func = core_func;
 
     // The parameter maybe changed as reality make sure the ground_col and ground_row is even
-    this->ground_col = 200;
-    this->ground_row = 200;
+    this->ground_col = 100;
+    this->ground_row = 100;
 
     this->do_use_surround = false;
     this->surround_center = glm::vec3(0.f, 0.f, 0.f);
@@ -251,6 +251,12 @@ void mSceneUtils::getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat
     cam_ex_r_mat = this->cur_cam_ex_r_mat;
     cam_ex_t_mat = this->cur_cam_ex_t_mat;
 }
+glm::mat4 mSceneUtils::getCurExMat() {
+    return this->cur_cam_ex_r_mat * this->cur_cam_ex_t_mat;
+}
+glm::mat4 mSceneUtils::getRawExMat() {
+    return this->cam_ex_mat;
+}
 /********************* Going to set the rotate around one person ********************/
 void mSceneUtils::surroundOnePoint(glm::mat4 & model_mat) {
     //std::cout << this->surround_center[0] << this->surround_center[1] << this->surround_center[2] << std::endl;
@@ -272,7 +278,7 @@ void mSceneUtils::render(std::vector<float> points_3d) {
     this->cur_cam_ex_r_mat[1][0] = dir_x.y;
     this->cur_cam_ex_r_mat[2][0] = dir_x.z;
 
-    glm::mat4 cur_cam_ex_mat = this->cur_cam_ex_r_mat * this->cur_cam_ex_t_mat;
+    glm::mat4 cur_cam_ex_mat = this->getCurExMat();
 
     this->VAO->bind();
     this->core_func->glViewport(0, 0, mShadowWndWidth, mShadowWndHeight);
@@ -367,7 +373,7 @@ void mSceneUtils::render(std::vector<float> points_3d) {
     this->core_func->glDisableVertexAttribArray(1);
 
     if (points_3d.size() == 3*this->pose_model->num_of_joints) {
-        this->pose_model->draw(points_3d, this->cam_ex_mat_inverse, cur_cam_ex_mat, 0, 1);
+        this->pose_model->draw(points_3d, this->cam_ex_mat_inverse, cur_cam_ex_mat, 0);
     }
 }
 

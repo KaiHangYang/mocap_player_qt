@@ -14,6 +14,8 @@ mGLWidget::mGLWidget(QGLFormat & gl_format, QWidget * parent, int wnd_width, int
     this->is_ar = false;
     this->cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)this->wnd_width / this->wnd_height, 0.01f, 1000000.f));
     this->cam_ex_mat = glm::transpose(glm::lookAt(glm::vec3(0, 10.f, 300.f), glm::vec3(0, 10.f, 0), glm::vec3(0, 1, 0)));
+    this->mocap_data = new mMoCapData;
+
     this->setFocusPolicy(Qt::StrongFocus);
     this->timer_for_update = new QTimer(this);
     connect(timer_for_update, SIGNAL(timeout()), this, SLOT(update()));
@@ -21,6 +23,11 @@ mGLWidget::mGLWidget(QGLFormat & gl_format, QWidget * parent, int wnd_width, int
 
 mGLWidget::~mGLWidget() {
     this->scene->~mSceneUtils();
+}
+
+// Slot function
+void mGLWidget::changePoseFile(QString & file_name) {
+    this->mocap_reader.parse(file_name, 0, this->mocap_data);
 }
 
 void mGLWidget::initializeGL() {
@@ -42,15 +49,17 @@ void mGLWidget::initializeGL() {
 void mGLWidget::resizeGL(int width, int height) {
     this->wnd_width = width;
     this->wnd_height = height;
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, this->wnd_width, this->wnd_height);
 }
 
 void mGLWidget::mousePressEvent(QMouseEvent * event) {
     mCamRotate::mouse_button_callback(event);
+
 }
 
 void mGLWidget::mouseMoveEvent(QMouseEvent *event) {
     mCamRotate::mouse_move_callback(event);
+
 }
 void mGLWidget::keyPressEvent(QKeyEvent *event) {
     switch (event->key()) {
@@ -77,7 +86,6 @@ void mGLWidget::wheelEvent(QWheelEvent *event) {
     else if (event->angleDelta().y() < 0) {
         this->scene->moveCamera(3);
     }
-
 }
 void mGLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -90,5 +98,9 @@ void mGLWidget::draw() {
     this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
     cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat);
     this->scene->rotateCamrea(cur_rotate_mat);
-    this->scene->render();
+
+    std::vector<float> joints;
+    this->mocap_data->getOneFrame(joints, this->scene->getRawExMat());
+
+    this->scene->render(joints);
 }

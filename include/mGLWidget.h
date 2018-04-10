@@ -2,6 +2,7 @@
 #define MGLWIDGET_H
 
 #include "mSceneUtils.h"
+#include "mMoCapReader.h"
 
 #include <QGLWidget>
 #include <QtOpenGL>
@@ -14,6 +15,9 @@ class mGLWidget : public QGLWidget {
 public:
     explicit mGLWidget(QGLFormat &gl_format, QWidget * parent=0, int wnd_width=960, int wnd_height=720);
     ~mGLWidget();
+
+public slots:
+    void changePoseFile(QString & file_name);
 protected:
     void initializeGL();
     void paintGL();
@@ -34,9 +38,12 @@ private:
     int wnd_height;
 
     mSceneUtils * scene;
+    mMoCapData * mocap_data;
+    mMoCapReader mocap_reader;
     QOpenGLVertexArrayObject * VAO;
     QOpenGLFunctions_3_3_Core * core_func;
     QTimer * timer_for_update;
+
 };
 
 #endif // MGLWIDGET_H

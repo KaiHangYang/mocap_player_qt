@@ -14,7 +14,10 @@ class mMainWindow : public QMainWindow {
 public:
     explicit mMainWindow(QWidget *parent = 0, int wnd_width=960, int wnd_height=720, QString title="OpenGL Test");
     ~mMainWindow();
-
+public slots:
+    void openFile();
+signals:
+    void signalOpenFile(QString & file_path);
 private:
     Ui::mMainWindow *ui;
     int wnd_width;

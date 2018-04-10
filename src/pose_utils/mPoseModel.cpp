@@ -55,7 +55,7 @@ mPoseModel::~mPoseModel() {
     this->mesh_reader->~mMeshReader();
 }
 
-void mPoseModel::renderPose(std::vector<float> &vertexs, glm::mat4 view_mat, int render_type, int shadow_sampler_id) {
+void mPoseModel::renderPose(std::vector<float> &vertexs, glm::mat4 view_mat, int render_type) {
     this->VAO->bind();
     unsigned int vertexNum = vertexs.size() / 3;
     unsigned int lineNum = this->bone_indices.size() / 2;
@@ -137,7 +137,7 @@ void mPoseModel::renderPose(std::vector<float> &vertexs, glm::mat4 view_mat, int
     }
 }
 
-void mPoseModel::draw(std::vector<float> points, glm::mat4 raw_cam_ex_mat_inv, glm::mat4 & cam_ex_mat, int render_type, int shadow_sampler_id) {
+void mPoseModel::draw(std::vector<float> points, glm::mat4 raw_cam_ex_mat_inv, glm::mat4 & cam_ex_mat, int render_type) {
     int p_num = points.size() / 3;
 
     float * p_ptr = &points[0];
@@ -153,5 +153,5 @@ void mPoseModel::draw(std::vector<float> points, glm::mat4 raw_cam_ex_mat_inv, g
         *(p_ptr++) = p_cur[1];
         *(p_ptr++) = p_cur[2];
     }
-    this->renderPose(points, cam_ex_mat, render_type, shadow_sampler_id);
+    this->renderPose(points, cam_ex_mat, render_type);
 }

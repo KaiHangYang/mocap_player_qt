@@ -23,6 +23,8 @@ public:
     void setInMat(glm::mat4 & cam_in_mat);
 
     void getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat);
+    glm::mat4 getCurExMat();
+    glm::mat4 getRawExMat();
 
     void moveCamera(int move_dir);
     void rotateCamrea(const glm::mat4 & rotate_mat);

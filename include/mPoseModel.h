@@ -16,13 +16,13 @@ public:
     mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, int pose_type=0);
     ~mPoseModel();
 
-    void draw(std::vector<float> points, glm::mat4 raw_cam_ex_mat_inverse, glm::mat4 & cam_ex_mat, int render_type=0, int shadow_sampler_id = 0);
+    void draw(std::vector<float> points, glm::mat4 raw_cam_ex_mat_inverse, glm::mat4 & cam_ex_mat, int render_type=0);
 
     /***************Pose parameters********************/
     std::vector<unsigned int> bone_indices;
     int num_of_joints;
 private:
-    void renderPose(std::vector<float> &vertexs, glm::mat4 view_mat, int render_type = 0, int shadow_sampler_id = 0);
+    void renderPose(std::vector<float> &vertexs, glm::mat4 view_mat, int render_type = 0);
 
     mMeshReader *mesh_reader;
 

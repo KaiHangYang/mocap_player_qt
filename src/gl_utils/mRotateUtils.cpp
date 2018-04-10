@@ -91,8 +91,9 @@ namespace mCamRotate {
             glm::mat4 result_mat_x = glm::rotate(glm::mat4(1.f), y_angle, dir_x);
 
             init_pos = cur_pos;
-
-            return result_mat_y * result_mat_x;
+            // Notice: the cam_ex_r_mat must multiply result_mat_x first!!!!! or something wrong will happen
+            // Currently I don't know why, I will figure it out later
+            return result_mat_x * result_mat_y;
         }
         return glm::mat4(1.f);
     }

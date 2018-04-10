@@ -34,7 +34,8 @@ SOURCES += \
     src/ui_widgets/mMainWindow.cpp \
     src/scene_utils/mSceneUtils.cpp \
     src/pose_utils/mPoseModel.cpp \
-    main.cpp
+    main.cpp \
+    src/mocap_reader/mMoCapReader.cpp
 
 
 HEADERS += \
@@ -50,11 +51,15 @@ HEADERS += \
     include/mRotateUtils.h \
     include/mSceneUtils.h \
     include/mShader.h \
-    include/mPoseDefs.h
+    include/mPoseDefs.h \
+    include/mMoCapReader.h
 
 
-INCLUDEPATH += ./include/
-LIBS += -lassimp
+INCLUDEPATH += ./include/ \
+            /usr/local/Cellar/glm/0.9.8.5/include \
+            /usr/local/Cellar/assimp/3.2/include \
+            /usr/local/Cellar/opencv/3.0.0/include
+LIBS += -L/usr/local/Cellar/assimp/3.2/lib/ -lassimp
 
 FORMS += \
         window.ui \

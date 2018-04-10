@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "mRotateUtils.h"
 
-mGLWidget::mGLWidget(QWidget * parent, int wnd_width, int wnd_height) : QGLWidget(QGLFormat(QGL::SampleBuffers), parent) {
+mGLWidget::mGLWidget(QGLFormat & gl_format, QWidget * parent, int wnd_width, int wnd_height) : QGLWidget(gl_format, parent) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
     // set cam_in_mat cam_ex_mat and is_ar here
@@ -14,7 +14,7 @@ mGLWidget::mGLWidget(QWidget * parent, int wnd_width, int wnd_height) : QGLWidge
     this->is_ar = false;
     this->cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)this->wnd_width / this->wnd_height, 0.01f, 1000000.f));
     this->cam_ex_mat = glm::transpose(glm::lookAt(glm::vec3(0, 10.f, 300.f), glm::vec3(0, 10.f, 0), glm::vec3(0, 1, 0)));
-
+    this->setFocusPolicy(Qt::StrongFocus);
     this->timer_for_update = new QTimer(this);
     connect(timer_for_update, SIGNAL(timeout()), this, SLOT(update()));
 }
@@ -32,7 +32,7 @@ void mGLWidget::initializeGL() {
     this->VAO->create();
 
     this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, this->cam_in_mat, this->cam_ex_mat, this->is_ar);
-
+    glViewport(0, 0, this->wnd_width, this->wnd_height);
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -52,12 +52,37 @@ void mGLWidget::mousePressEvent(QMouseEvent * event) {
 void mGLWidget::mouseMoveEvent(QMouseEvent *event) {
     mCamRotate::mouse_move_callback(event);
 }
+void mGLWidget::keyPressEvent(QKeyEvent *event) {
+    switch (event->key()) {
+        case Qt::Key_W:
+            // go up
+            this->scene->moveCamera(2);
+            break;
+        case Qt::Key_S:
+            // go down
+            this->scene->moveCamera(-2);
+            break;
+        case Qt::Key_A:
+            this->scene->moveCamera(1);
+            break;
+        case Qt::Key_D:
+            this->scene->moveCamera(-1);
+            break;
+    }
+}
+void mGLWidget::wheelEvent(QWheelEvent *event) {
+    if (event->angleDelta().y() > 0) {
+        this->scene->moveCamera(-3);
+    }
+    else if (event->angleDelta().y() < 0) {
+        this->scene->moveCamera(3);
+    }
 
+}
 void mGLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     this->draw();
-    this->swapBuffers();
 }
 
 void mGLWidget::draw() {
@@ -65,6 +90,5 @@ void mGLWidget::draw() {
     this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
     cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat);
     this->scene->rotateCamrea(cur_rotate_mat);
-
     this->scene->render();
 }

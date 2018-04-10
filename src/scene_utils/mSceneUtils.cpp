@@ -223,10 +223,10 @@ void mSceneUtils::moveCamera(int move_dir) {
         glm::vec3 dir_y(this->cur_cam_ex_r_mat[0][1], this->cur_cam_ex_r_mat[1][1], this->cur_cam_ex_r_mat[2][1]);
         glm::vec3 dir_z(-this->cur_cam_ex_r_mat[0][2], -this->cur_cam_ex_r_mat[1][2], -this->cur_cam_ex_r_mat[2][2]);
 
-        if (move_dir == 1) {
+        if (move_dir == -1) {
             this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, -move_step * dir_x * this->move_step_scale);
         }
-        else if (move_dir == -1) {
+        else if (move_dir == 1) {
             this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, move_step * dir_x * this->move_step_scale);
         }
         else if (move_dir == 2) {

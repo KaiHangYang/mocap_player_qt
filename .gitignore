@@ -8,3 +8,5 @@ main
 *.a
 *.so
 *.user
+*.DS_Store
+

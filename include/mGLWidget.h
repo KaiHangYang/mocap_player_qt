@@ -12,7 +12,7 @@
 class mGLWidget : public QGLWidget {
     Q_OBJECT
 public:
-    explicit mGLWidget(QWidget * parent=0, int wnd_width=960, int wnd_height=720);
+    explicit mGLWidget(QGLFormat &gl_format, QWidget * parent=0, int wnd_width=960, int wnd_height=720);
     ~mGLWidget();
 protected:
     void initializeGL();
@@ -21,6 +21,8 @@ protected:
 
     void mousePressEvent(QMouseEvent * event);
     void mouseMoveEvent(QMouseEvent * event);
+    void keyPressEvent(QKeyEvent *event);
+    void wheelEvent(QWheelEvent *event);
 private:
     void draw();
 

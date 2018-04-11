@@ -5,7 +5,6 @@
 #include "mGLWidget.h"
 #include <QGridLayout>
 #include <QWidget>
-#include <QProgressBar>
 #include <QGroupBox>
 #include <QPushButton>
 #include <QLabel>
@@ -14,6 +13,8 @@
 #include <QListView>
 #include <QScrollArea>
 #include <QStringListModel>
+
+#include "mProgressBarWidget.h"
 
 namespace Ui {
 class mMainWindow;
@@ -26,12 +27,16 @@ public:
     explicit mMainWindow(QWidget *parent = 0, int wnd_width=960, int wnd_height=720, QString title="OpenGL Test");
     ~mMainWindow();
 public slots:
-    void openFile();
-
     void fileAddSlot();
     void fileRemoveSlot();
     void fileRemoveAllSlot();
     void fileActivatedSlot(QModelIndex index);
+    void videoToggleSlot();
+    void videoResetSlot();
+    void progressBarDisplaySlot(int cur_num, int total, bool is_reset);
+    void progressBarSetSlot(float cur_ratio);
+
+    void poseTemporaryStateSlot(bool is_pause);
 signals:
     void signalOpenFile(QString & file_path);
 private:
@@ -44,7 +49,7 @@ private:
     int cur_file_index;
 
     /******** Main widget ******/
-    QProgressBar * progress_bar;
+    mProgressBarWidget * progress_bar;
     QWidget * grid_widget;
     QGridLayout * grid_layout;
 
@@ -62,8 +67,7 @@ private:
     QPushButton * tool_file_removeall_btn;
     QListView * tool_file_listview;
 
-    QPushButton * tool_video_start_btn;
-    QPushButton * tool_video_stop_btn;
+    QPushButton * tool_video_toggle_btn;
     QPushButton * tool_video_reset_btn;
     /**************************/
 

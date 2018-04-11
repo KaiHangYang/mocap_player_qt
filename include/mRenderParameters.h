@@ -15,7 +15,7 @@
 /******************************************************************/
 
 /************************Shader parameters*************************/
-static glm::vec3 mLightPos(0, 100, 100);
+static glm::vec3 mLightPos(0, 300, 300);
 static glm::vec3 mLightPos_AR(0, 3000, 3000);
 
 static glm::vec3 mAmbient(0.3f, 0.3f, 0.3f);

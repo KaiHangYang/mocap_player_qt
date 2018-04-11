@@ -31,7 +31,7 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->gl_widget->setFixedHeight(wnd_height);
 
     // Set the progress bar widget
-    this->progress_bar = new QProgressBar(this->grid_widget);
+    this->progress_bar = new mProgressBarWidget(this->grid_widget);
     this->progress_bar->setFixedHeight(this->progress_bar->size().height());
     this->progress_bar->setFixedWidth(wnd_width);
 
@@ -40,7 +40,7 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->tool_box = new QGroupBox();
     this->tool_box->setLayout(this->tool_box_layout);
     //      Box for file
-    this->file_box = new QGroupBox("File choose:", this->tool_box);
+    this->file_box = new QGroupBox("Files Control:", this->tool_box);
     this->file_box_layout = new QGridLayout;
     this->file_box->setLayout(this->file_box_layout);
     this->tool_file_add_btn = new QPushButton("Add", this->file_box);
@@ -57,15 +57,13 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->file_box_layout->addWidget(this->tool_file_removeall_btn, 0, 2, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_listview, 1, 0, 4, 3);
     //      Box for video control
-    this->video_box = new QGroupBox("Pose control:", this->tool_box);
+    this->video_box = new QGroupBox("Poses control:", this->tool_box);
     this->video_box_layout = new QGridLayout;
     this->video_box->setLayout(this->video_box_layout);
-    this->tool_video_start_btn = new QPushButton("Start", this->video_box);
-    this->tool_video_stop_btn = new QPushButton("Stop", this->video_box);
+    this->tool_video_toggle_btn = new QPushButton("Start", this->video_box);
     this->tool_video_reset_btn = new QPushButton("Reset", this->video_box);
-    this->video_box_layout->addWidget(this->tool_video_start_btn, 0, 0, 1, 1);
-    this->video_box_layout->addWidget(this->tool_video_stop_btn, 0, 1, 1, 1);
-    this->video_box_layout->addWidget(this->tool_video_reset_btn, 0, 2, 1, 1);
+    this->video_box_layout->addWidget(this->tool_video_toggle_btn, 0, 0, 1, 1);
+    this->video_box_layout->addWidget(this->tool_video_reset_btn, 0, 1, 1, 1);
 
     this->tool_box_layout->addWidget(this->file_box, 0, 0, 1, 1);
     this->tool_box_layout->addWidget(this->video_box, 1, 0, 1, 1);
@@ -78,27 +76,29 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->setCentralWidget(this->grid_widget);
     this->grid_widget->adjustSize();
 
-    connect(this->ui->openAct, SIGNAL(triggered()), this, SLOT(openFile()));
+    connect(this->ui->openAct, SIGNAL(triggered()), this, SLOT(fileAddSlot()));
     connect(this, SIGNAL(signalOpenFile(QString&)), this->gl_widget, SLOT(changePoseFile(QString&)));
+    connect(this->ui->exitAct, SIGNAL(triggered()), this, SLOT(close()));
 
+    // Tool box event
     connect(this->tool_file_add_btn, SIGNAL(clicked()), this, SLOT(fileAddSlot()));
     connect(this->tool_file_remove_btn, SIGNAL(clicked()), this, SLOT(fileRemoveSlot()));
     connect(this->tool_file_removeall_btn, SIGNAL(clicked()), this, SLOT(fileRemoveAllSlot()));
     connect(this->tool_file_listview, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(fileActivatedSlot(QModelIndex)));
+    // Pose box event
+    connect(this->tool_video_toggle_btn, SIGNAL(clicked()), this, SLOT(videoToggleSlot()));
+    connect(this->tool_video_reset_btn, SIGNAL(clicked()), this, SLOT(videoResetSlot()));
+    connect(this->gl_widget, SIGNAL(doubleClickPoseToggleSignal()), this, SLOT(videoToggleSlot()));
+    // progress bar event
+    connect(this->gl_widget, SIGNAL(progressDisplaySignal(int,int,bool)), this, SLOT(progressBarDisplaySlot(int,int,bool)));
+    connect(this->progress_bar, SIGNAL(setProgressSignal(float)), this, SLOT(progressBarSetSlot(float)));
+    connect(this->progress_bar, SIGNAL(setTemporaryStateSignal(bool)), this, SLOT(poseTemporaryStateSlot(bool)));
 }
 
 mMainWindow::~mMainWindow() {
     delete ui;
 }
-
-/************* Implementation of the slots *****************/
-void mMainWindow::openFile() {
-//    QString file_name = QFileDialog::getOpenFileName(this, "Open File", ".", "BVH Files(*.bvh);C3D Files(*.c3d)");
-    QString file_name = QFileDialog::getOpenFileName(this, "Open File", ".", "*");
-    if (!file_name.isEmpty()) {
-        emit signalOpenFile(file_name);
-    }
-}
+/********************** Implementation of Slots **********************/
 
 void mMainWindow::fileAddSlot() {
     QStringList file_names = QFileDialog::getOpenFileNames(this, "Add Files", "./", "*");
@@ -137,5 +137,44 @@ void mMainWindow::fileRemoveAllSlot() {
     this->file_list_model->removeRows(0, this->file_list_model->rowCount());
 }
 void mMainWindow::fileActivatedSlot(QModelIndex index) {
-    qDebug() << index.data().toString();
+    QString file_path = index.data().toString();
+    this->tool_video_toggle_btn->setText("Start");
+    emit signalOpenFile(file_path);
+}
+
+void mMainWindow::videoToggleSlot() {
+    if (this->gl_widget->getPoseState() == 0) {
+        this->tool_video_toggle_btn->setText("Pause");
+        this->gl_widget->togglePose();
+    }
+    else if (this->gl_widget->getPoseState() == 1) {
+        this->tool_video_toggle_btn->setText("Start");
+        this->gl_widget->togglePose();
+    }
+}
+void mMainWindow::videoResetSlot() {
+    if (this->gl_widget->getIsHasPose()) {
+        this->tool_video_toggle_btn->setText("Start");
+        this->gl_widget->resetPose();
+    }
+}
+void mMainWindow::progressBarDisplaySlot(int cur_num, int total, bool is_reset) {
+    if (is_reset) {
+        this->progress_bar->setMaxNum(total);
+    }
+    this->progress_bar->setCurNum(cur_num);
+}
+
+void mMainWindow::progressBarSetSlot(float cur_ratio) {
+    // here set the framepose
+    this->gl_widget->setPose(cur_ratio);
+}
+
+void mMainWindow::poseTemporaryStateSlot(bool is_pause) {
+    if (is_pause) {
+        this->gl_widget->tempPausePose();
+    }
+    else {
+        this->gl_widget->tempStartPose();
+    }
 }

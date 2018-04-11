@@ -7,8 +7,8 @@ namespace mPoseDef {
     static const int num_of_joints = 15;
     static const int num_of_bones = 14;
     static const float model_size = 30 * 2;
-//    static const std::string model_base_dir("/home/kaihang/Projects/QT/mocap_player_qt/models/");
-    static const std::string model_base_dir("/Users/kaihang/Desktop/Code/Cpp/Qt/mocap_player_qt/models/");
+    static const std::string model_base_dir("/home/kaihang/Projects/QT/mocap_player_qt/models/");
+//    static const std::string model_base_dir("/Users/kaihang/Desktop/Code/Cpp/Qt/mocap_player_qt/models/");
     
     static const std::vector<unsigned int> bone_indices({
             0, 1,

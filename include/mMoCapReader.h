@@ -21,6 +21,7 @@ public:
     bool getOneFrame(std::vector<glm::vec3> & joints, int index=-1);
     bool getOneFrame(std::vector<float> & joints, glm::mat4 cam_ex_mat, int index=-1);
     void resetCounter();
+    void setFramePos(int frame_num);
 
     int getTotalFrame();
     int getCurFrame();

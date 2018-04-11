@@ -35,7 +35,8 @@ SOURCES += \
     src/scene_utils/mSceneUtils.cpp \
     src/pose_utils/mPoseModel.cpp \
     main.cpp \
-    src/mocap_reader/mMoCapReader.cpp
+    src/mocap_reader/mMoCapReader.cpp \
+    src/ui_widgets/mProgressBarWidget.cpp
 
 
 HEADERS += \
@@ -52,7 +53,8 @@ HEADERS += \
     include/mSceneUtils.h \
     include/mShader.h \
     include/mPoseDefs.h \
-    include/mMoCapReader.h
+    include/mMoCapReader.h \
+    include/mProgressBarWidget.h
 
 
 INCLUDEPATH += ./include/ \

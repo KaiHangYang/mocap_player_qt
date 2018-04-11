@@ -49,7 +49,7 @@ namespace bvh {
 // Main parse function
 //##############################################################################
 int Bvh_parser::parse(const std::string& path, Bvh* bvh) {
-  std::cout <<  "Parsing file : " << path << std::endl;;
+//  std::cout <<  "Parsing file : " << path << std::endl;
 
   path_ = path;
   bvh_ = bvh;
@@ -81,7 +81,7 @@ int Bvh_parser::parse(const std::string& path, Bvh* bvh) {
     return -1;
   }
 
-  std::cout << "INFO:Successfully parsed file" << std::endl;
+//  std::cout << "INFO:Successfully parsed file" << std::endl;
   return 0;
 }
 
@@ -89,7 +89,7 @@ int Bvh_parser::parse(const std::string& path, Bvh* bvh) {
 // Function parsing hierarchy
 //##############################################################################
 int Bvh_parser::parse_hierarchy(std::ifstream& file) {
-    std::cout << "Parsing hierarchy" << std::endl;
+//    std::cout << "Parsing hierarchy" << std::endl;
 
   std::string token;
   int ret;
@@ -107,8 +107,8 @@ int Bvh_parser::parse_hierarchy(std::ifstream& file) {
       if (ret)
         return ret;
 
-      std::cout << "INFO: There is " << bvh_->num_channels() << " data channels in the"
-                << " file" << std::endl;
+//      std::cout << "INFO: There is " << bvh_->num_channels() << " data channels in the"
+//                << " file" << std::endl;
 
       bvh_->set_root_joint(rootJoint);
     } else {
@@ -144,7 +144,7 @@ int Bvh_parser::parse_hierarchy(std::ifstream& file) {
 int Bvh_parser::parse_joint(std::ifstream& file,
     std::shared_ptr <Joint> parent, std::shared_ptr <Joint>& parsed) {
 
-    std::cout << "TRACE: Parsing joint" << std::endl;;
+//    std::cout << "TRACE: Parsing joint" << std::endl;
 
   std::shared_ptr<Joint> joint = std::make_shared<Joint>();
   joint->set_parent(parent);
@@ -152,7 +152,7 @@ int Bvh_parser::parse_joint(std::ifstream& file,
   std::string name;
   file >> name;
 
-  std::cout << "TRACE: Joint name : " << name << std::endl;
+//  std::cout << "TRACE: Joint name : " << name << std::endl;
 
   joint->set_name(name);
 
@@ -178,8 +178,8 @@ int Bvh_parser::parse_joint(std::ifstream& file,
 
     joint->set_offset(offset);
 
-    std::cout << "TRACE: Offset x: " << offset.x << ", y: " << offset.y << ", z: "
-               << offset.z << std::endl;
+//    std::cout << "TRACE: Offset x: " << offset.x << ", y: " << offset.y << ", z: "
+//               << offset.z << std::endl;
 
   } else {
       std::cout << "ERROR: Bad structure of .bvh file. Expected " << kOffset << ", but "
@@ -196,7 +196,7 @@ int Bvh_parser::parse_joint(std::ifstream& file,
   if (token == kChannels) {
     ret = parse_channel_order(file, joint);
 
-    std::cout << "TRACE: Joint has " << joint->num_channels() << " data channels" << std::endl;
+//    std::cout << "TRACE: Joint has " << joint->num_channels() << " data channels" << std::endl;
 
     if (ret)
       return ret;
@@ -257,9 +257,9 @@ int Bvh_parser::parse_joint(std::ifstream& file,
 
         tmp_joint->set_offset(offset);
 
-        std::cout << "TRACE: Joint name : EndSite" << std::endl;
-        std::cout << "TRACE: Offset x: " << offset.x << ", y: " << offset.y << ", z: "
-                   << offset.z << std::endl;
+//        std::cout << "TRACE: Joint name : EndSite" << std::endl;
+//        std::cout << "TRACE: Offset x: " << offset.x << ", y: " << offset.y << ", z: "
+//                   << offset.z << std::endl;
 
         file >> token;  // Consuming "}"
 
@@ -293,7 +293,7 @@ int Bvh_parser::parse_joint(std::ifstream& file,
 //##############################################################################
 int Bvh_parser::parse_motion(std::ifstream& file) {
 
-    std::cout << "INFO:" << "Parsing motion";
+//    std::cout << "INFO:" << "Parsing motion";
 
   std::string token;
   file >> token;
@@ -303,7 +303,7 @@ int Bvh_parser::parse_motion(std::ifstream& file) {
   if (token == kFrames) {
     file >> frames_num;
     bvh_->set_num_frames(frames_num);
-    std::cout << "INFO: Num of frames : " << frames_num << std::endl;
+//    std::cout << "INFO: Num of frames : " << frames_num << std::endl;
   } else {
       std::cout << "ERROR: Bad structure of .bvh file. Expected " << kFrames
                << ", but found \"" << token << "\"" << std::endl;
@@ -319,7 +319,7 @@ int Bvh_parser::parse_motion(std::ifstream& file) {
     file >> token;  // Consuming 'Time:'
     file >> frame_time;
     bvh_->set_frame_time(frame_time);
-    std::cout << "INFO: Frame time : " << frame_time << std::endl;
+//    std::cout << "INFO: Frame time : " << frame_time << std::endl;
 
     float number;
     for (int i = 0; i < frames_num; i++) {
@@ -348,11 +348,11 @@ int Bvh_parser::parse_motion(std::ifstream& file) {
 int Bvh_parser::parse_channel_order(std::ifstream& file,
     std::shared_ptr <Joint> joint) {
 
-    std::cout << "TRACE: Parse channel order" << std::endl;
+//    std::cout << "TRACE: Parse channel order" << std::endl;
 
   int num;
   file >> num;
-  std::cout << "TRACE: Number of channels : " << num << std::endl;
+//  std::cout << "TRACE: Number of channels : " << num << std::endl;
 
   std::vector <Joint::Channel> channels;
   std::string token;

@@ -11,6 +11,11 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->wnd_height = wnd_height;
     // set cam_in_mat cam_ex_mat and is_ar here
 
+    this->pose_state = -1;
+    this->temp_pose_state = 1;
+    this->is_has_pose = false;
+    this->cur_pose_joints = std::vector<float>();
+
     this->is_ar = false;
     this->cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)this->wnd_width / this->wnd_height, 0.01f, 1000000.f));
     this->cam_ex_mat = glm::transpose(glm::lookAt(glm::vec3(0, 10.f, 300.f), glm::vec3(0, 10.f, 0), glm::vec3(0, 1, 0)));
@@ -22,11 +27,6 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
 }
 mGLWidget::~mGLWidget() {
     this->scene->~mSceneUtils();
-}
-
-// Slot function
-void mGLWidget::changePoseFile(QString & file_name) {
-    this->mocap_reader.parse(file_name, 0, this->mocap_data);
 }
 
 void mGLWidget::initializeGL() {
@@ -42,7 +42,7 @@ void mGLWidget::initializeGL() {
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    this->timer_for_update->start(2);
+    this->timer_for_update->start(20);
 }
 
 void mGLWidget::resizeGL(int width, int height) {
@@ -53,12 +53,14 @@ void mGLWidget::resizeGL(int width, int height) {
 
 void mGLWidget::mousePressEvent(QMouseEvent * event) {
     mCamRotate::mouse_button_callback(event);
-
 }
 
 void mGLWidget::mouseMoveEvent(QMouseEvent *event) {
     mCamRotate::mouse_move_callback(event);
 
+}
+void mGLWidget::mouseDoubleClickEvent(QMouseEvent *event) {
+    emit doubleClickPoseToggleSignal();
 }
 void mGLWidget::keyPressEvent(QKeyEvent *event) {
     switch (event->key()) {
@@ -98,8 +100,74 @@ void mGLWidget::draw() {
     cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat);
     this->scene->rotateCamrea(cur_rotate_mat);
 
-    std::vector<float> joints;
-    this->mocap_data->getOneFrame(joints, this->scene->getRawExMat());
+    if (this->pose_state == 1 && this->temp_pose_state == 1) {
+        this->sendProgress(false);
+        this->mocap_data->getOneFrame(cur_pose_joints, this->scene->getRawExMat());
+    }
 
-    this->scene->render(joints);
+    this->scene->render(cur_pose_joints);
+}
+
+int mGLWidget::getPoseState() {
+    return this->pose_state;
+}
+bool mGLWidget::getIsHasPose() {
+    return this->is_has_pose;
+}
+void mGLWidget::sendProgress(bool is_reset) {
+    if (this->is_has_pose) {
+        emit progressDisplaySignal(this->mocap_data->getCurFrame(), this->mocap_data->getTotalFrame(), is_reset);
+    }
+}
+/*************** Implementation of slots *****************/
+void mGLWidget::changePoseFile(QString & file_name) {
+    if (this->mocap_reader.parse(file_name, 0, this->mocap_data)) {
+        // Get the first frame pose
+        this->is_has_pose = true;
+        this->pose_state = 0;
+        this->sendProgress(true);
+        this->mocap_data->getOneFrame(cur_pose_joints, this->scene->getRawExMat());
+    }
+    else {
+        this->is_has_pose = false;
+        this->pose_state = -1;
+    }
+}
+
+void mGLWidget::togglePose() {
+    if (this->is_has_pose) {
+        if (this->pose_state == 1) {
+            this->pose_state = 0;
+        }
+        else if (this->pose_state == 0){
+            this->pose_state = 1;
+        }
+    }
+}
+void mGLWidget::resetPose() {
+    if (this->is_has_pose) {
+        this->pose_state = 0;
+        this->mocap_data->resetCounter();
+        this->sendProgress(false);
+        // Reset to the first frame pose
+        this->mocap_data->getOneFrame(this->cur_pose_joints, this->scene->getRawExMat());
+    }
+}
+
+void mGLWidget::setPose(float ratio) {
+    int cur_frame_num = this->mocap_data->getTotalFrame() * ratio;
+    this->mocap_data->setFramePos(cur_frame_num);
+    this->sendProgress(false);
+    this->mocap_data->getOneFrame(this->cur_pose_joints, this->scene->getRawExMat());
+}
+
+void mGLWidget::tempPausePose() {
+    if (this->is_has_pose) {
+        this->temp_pose_state = 0; // temp stop
+    }
+}
+void mGLWidget::tempStartPose() {
+    if (this->is_has_pose) {
+        this->temp_pose_state = 1; // temp start
+    }
 }

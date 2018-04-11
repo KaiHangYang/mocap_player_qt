@@ -50,11 +50,17 @@ void mMoCapData::resetCounter() {
     this->cur_frame_num = 0;
 }
 
+void mMoCapData::setFramePos(int frame_num) {
+    frame_num -= 1;
+    frame_num = (frame_num < 0)?0:((frame_num >= this->total_frame_num)?frame_num-1:frame_num);
+    this->cur_frame_num = frame_num;
+}
+
 int mMoCapData::getTotalFrame() {
     return this->total_frame_num;
 }
 int mMoCapData::getCurFrame() {
-    return this->cur_frame_num;
+    return this->cur_frame_num + 1;
 }
 void mMoCapData::clear() {
     this->cur_frame_num = 0;

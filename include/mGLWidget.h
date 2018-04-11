@@ -18,6 +18,8 @@ public:
     ~mGLWidget();
     int getPoseState();
     bool getIsHasPose();
+    glm::mat4 getCurExMat();
+    void setCurExMat(glm::mat4 cur_ex_mat);
 public slots:
     void changePoseFile(QString & file_name);
     void togglePose();

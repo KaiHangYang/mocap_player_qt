@@ -119,6 +119,12 @@ void mGLWidget::sendProgress(bool is_reset) {
         emit progressDisplaySignal(this->mocap_data->getCurFrame(), this->mocap_data->getTotalFrame(), is_reset);
     }
 }
+glm::mat4 mGLWidget::getCurExMat() {
+    return this->scene->getCurExMat();
+}
+void mGLWidget::setCurExMat(glm::mat4 cur_ex_mat) {
+    this->scene->setCurExMat(cur_ex_mat);
+}
 /*************** Implementation of slots *****************/
 void mGLWidget::changePoseFile(QString & file_name) {
     if (this->mocap_reader.parse(file_name, 0, this->mocap_data)) {

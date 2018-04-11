@@ -95,6 +95,11 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     /*******************************************************************************/
     this->VAO->release();
 }
+void mSceneUtils::setCurExMat(glm::mat4 cur_ex_mat) {
+    this->cur_cam_ex_r_mat = glm::mat4(glm::mat3(cur_ex_mat));
+    this->cur_cam_ex_t_mat = glm::inverse(this->cur_cam_ex_r_mat) * cur_ex_mat;
+    this->cur_cam_ex_t_mat[0][1] = 0;this->cur_cam_ex_t_mat[0][2] = 0;this->cur_cam_ex_t_mat[1][0] = 0;this->cur_cam_ex_t_mat[1][2] = 0;this->cur_cam_ex_t_mat[2][0]= 0;this->cur_cam_ex_t_mat[2][1] = 0;
+}
 void mSceneUtils::setExMat(glm::mat4 & cam_ex_mat) {
 
     this->cam_ex_mat = glm::transpose(cam_ex_mat);

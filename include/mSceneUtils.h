@@ -22,6 +22,8 @@ public:
     void setExMat(glm::mat4 & cam_ex_mat);
     void setInMat(glm::mat4 & cam_in_mat);
 
+    void setCurExMat(glm::mat4 cur_ex_mat);
+
     void getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat);
     glm::mat4 getCurExMat();
     glm::mat4 getRawExMat();

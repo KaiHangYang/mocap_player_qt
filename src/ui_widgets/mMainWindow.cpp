@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QAbstractItemView>
 #include <QFileInfo>
+#include <QFile>
 
 
 mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString title) : QMainWindow(parent), ui(new Ui::mMainWindow) {
@@ -12,6 +13,7 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->wnd_height = wnd_height;
     this->file_dialog_extension = "BVH Files(*.bvh)";
     this->file_dialog_initial_dir = ".";
+    this->camera_data_file_header = "#M_CAMERA_DATA";
     this->ui->setupUi(this);
     this->setWindowTitle(title);
     this->resize(this->wnd_width, this->wnd_height);
@@ -304,8 +306,58 @@ void mMainWindow::cameraEditNameSlot(QModelIndex cur_index, QModelIndex bottomri
     }
 }
 void mMainWindow::cameraLoadFromFileSlot() {
-    qDebug() << "Load from file";
+    QString read_file_name = QFileDialog::getOpenFileName(this, "Load Cameras Data", this->file_dialog_initial_dir, "*");
+    if (!read_file_name.isEmpty()) {
+        QFile cam_mat_file(read_file_name);
+        if (cam_mat_file.open(QIODevice::ReadOnly)) {
+            QTextStream file_stream(&cam_mat_file);
+            QString file_string;
+            glm::mat4 data_mat;
+            float * data = &data_mat[0][0];
+            file_stream >> file_string;
+            if (file_string == this->camera_data_file_header) {
+                while (!file_stream.atEnd()) {
+                    file_stream >> data[0] >> data[1] >> data[2] >> data[3] >>
+                                   data[4] >> data[5] >> data[6] >> data[7] >>
+                                   data[8] >> data[9] >> data[10] >> data[11] >>
+                                   data[12] >> data[13] >> data[14] >> data[15];
+                    file_string = file_stream.readLine();
+                    file_string.remove(0, 1);
+                    // Insert into the network
+
+                    this->camera_list_model->insertRow(0);
+                    QModelIndex index = this->camera_list_model->index(0);
+                    this->camera_list_model->setData(index, file_string);
+
+                    this->camera_mat_arr.insert(this->camera_mat_arr.begin(), std::pair<QString, glm::mat4>(file_string, data_mat));
+                    this->tool_camera_listview->setCurrentIndex(index);
+                    this->cur_camera_num ++;
+                }
+
+            }
+            else {
+                qDebug() << "Not a valid camera data file";
+            }
+        }
+    }
+
 }
 void mMainWindow::cameraSaveToFileSlot() {
-    qDebug() << "Save to file";
+    QString save_file_name = QFileDialog::getSaveFileName(this, "Save Cameras Data", this->file_dialog_initial_dir, "*");
+    if (!save_file_name.isEmpty()) {
+        QFile cam_mat_file(save_file_name);
+        if (cam_mat_file.open(QIODevice::ReadWrite)) {
+            QTextStream file_stream(&cam_mat_file);
+            // write the file sign
+            file_stream << this->camera_data_file_header << "\n";
+            for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
+                glm::mat4 cam_ex_mat = this->camera_mat_arr[i].second;
+                file_stream << cam_ex_mat[0][0] << " " << cam_ex_mat[0][1] << " " << cam_ex_mat[0][2] << " " << cam_ex_mat[0][3] << " " << \
+                               cam_ex_mat[1][0] << " " << cam_ex_mat[1][1] << " " << cam_ex_mat[1][2] << " " << cam_ex_mat[1][3] << " " << \
+                               cam_ex_mat[2][0] << " " << cam_ex_mat[2][1] << " " << cam_ex_mat[2][2] << " " << cam_ex_mat[2][3] << " " << \
+                               cam_ex_mat[3][0] << " " << cam_ex_mat[3][1] << " " << cam_ex_mat[3][2] << " " << cam_ex_mat[3][3] << " " << this->camera_mat_arr[i].first << "\n";
+            }
+            cam_mat_file.close();
+        }
+    }
 }

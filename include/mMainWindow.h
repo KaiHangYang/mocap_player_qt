@@ -60,6 +60,7 @@ private:
 
     QString file_dialog_extension;
     QString file_dialog_initial_dir;
+    QString camera_data_file_header;
     QStringListModel * file_list_model;
     QStringListModel * camera_list_model;
     /******** Main widget ******/

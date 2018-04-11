@@ -158,6 +158,8 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     connect(this->tool_camera_removeall_btn, SIGNAL(clicked()), this, SLOT(cameraRemoveAllSlot()));
     connect(this->tool_camera_activate_btn, SIGNAL(clicked()), this, SLOT(cameraActivateSlot()));
     connect(this->camera_list_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(cameraEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
+    connect(this->tool_camera_loadfromfile_btn, SIGNAL(clicked()), this, SLOT(cameraLoadFromFileSlot()));
+    connect(this->tool_camera_savetofile_btn, SIGNAL(clicked()), this, SLOT(cameraSaveToFileSlot()));
 
     // fix the main window
     this->adjustSize();
@@ -302,8 +304,8 @@ void mMainWindow::cameraEditNameSlot(QModelIndex cur_index, QModelIndex bottomri
     }
 }
 void mMainWindow::cameraLoadFromFileSlot() {
-
+    qDebug() << "Load from file";
 }
 void mMainWindow::cameraSaveToFileSlot() {
-
+    qDebug() << "Save to file";
 }

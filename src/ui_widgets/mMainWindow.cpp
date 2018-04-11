@@ -4,11 +4,14 @@
 #include <QGLFormat>
 #include <QFileDialog>
 #include <QAbstractItemView>
+#include <QFileInfo>
 
 
 mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString title) : QMainWindow(parent), ui(new Ui::mMainWindow) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
+    this->file_dialog_extension = "BVH Files(*.bvh)";
+    this->file_dialog_initial_dir = "./";
     this->ui->setupUi(this);
     this->setWindowTitle(title);
     this->resize(this->wnd_width, this->wnd_height);
@@ -65,17 +68,22 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->video_box_layout->addWidget(this->tool_video_toggle_btn, 0, 0, 1, 1);
     this->video_box_layout->addWidget(this->tool_video_reset_btn, 0, 1, 1, 1);
 
+    //      Box for camera control
+    this->camera_box = new QGroupBox("Camera control:", this->tool_box);
+
     this->tool_box_layout->addWidget(this->file_box, 0, 0, 1, 1);
     this->tool_box_layout->addWidget(this->video_box, 1, 0, 1, 1);
+    this->tool_box_layout->addWidget(this->camera_box, 2, 0, 1, 1);
 
     this->grid_layout->addWidget(this->gl_widget, 0, 0, 4, 6);
     this->grid_layout->addWidget(this->progress_bar, 4, 0, 1, 6);
-    this->grid_layout->addWidget(this->tool_box, 0, 6, 2, 2);
+    this->grid_layout->addWidget(this->tool_box, 0, 6, 3, 2);
 
     this->grid_widget->setLayout(this->grid_layout);
     this->setCentralWidget(this->grid_widget);
     this->grid_widget->adjustSize();
 
+    // Set the events
     connect(this->ui->openAct, SIGNAL(triggered()), this, SLOT(fileAddSlot()));
     connect(this, SIGNAL(signalOpenFile(QString&)), this->gl_widget, SLOT(changePoseFile(QString&)));
     connect(this->ui->exitAct, SIGNAL(triggered()), this, SLOT(close()));
@@ -93,6 +101,10 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     connect(this->gl_widget, SIGNAL(progressDisplaySignal(int,int,bool)), this, SLOT(progressBarDisplaySlot(int,int,bool)));
     connect(this->progress_bar, SIGNAL(setProgressSignal(float)), this, SLOT(progressBarSetSlot(float)));
     connect(this->progress_bar, SIGNAL(setTemporaryStateSignal(bool)), this, SLOT(poseTemporaryStateSlot(bool)));
+
+    // fix the main window
+    this->adjustSize();
+    this->setFixedSize(this->size());
 }
 
 mMainWindow::~mMainWindow() {
@@ -101,8 +113,13 @@ mMainWindow::~mMainWindow() {
 /********************** Implementation of Slots **********************/
 
 void mMainWindow::fileAddSlot() {
-    QStringList file_names = QFileDialog::getOpenFileNames(this, "Add Files", "./", "*");
+    QStringList file_names = QFileDialog::getOpenFileNames(this, "Add Files", this->file_dialog_initial_dir, this->file_dialog_extension);
     if (file_names.size() > 0) {
+
+        // Store the last directories
+        QFileInfo cur_dir_info(file_names.at(0));
+        this->file_dialog_initial_dir = cur_dir_info.absoluteDir().absolutePath();
+
         for (int i = 0; i < file_names.size(); ++i) {
             QStringList cur_list = this->file_list_model->stringList();
             bool is_exist = false;

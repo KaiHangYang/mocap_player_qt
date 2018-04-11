@@ -47,6 +47,8 @@ private:
     /****** Just for store *****/
     QStringListModel * file_list_model;
     int cur_file_index;
+    QString file_dialog_extension;
+    QString file_dialog_initial_dir;
 
     /******** Main widget ******/
     mProgressBarWidget * progress_bar;
@@ -57,10 +59,12 @@ private:
     QGroupBox * tool_box;
     QGroupBox * file_box;
     QGroupBox * video_box;
+    QGroupBox * camera_box;
 
     QGridLayout * tool_box_layout;
     QGridLayout * file_box_layout;
     QGridLayout * video_box_layout;
+    QGridLayout * camera_box_layout;
 
     QPushButton * tool_file_add_btn;
     QPushButton * tool_file_remove_btn;

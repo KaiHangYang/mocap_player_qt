@@ -1,19 +1,30 @@
 #include "mPoseAdjuster.h"
 #include <QString>
 #include <QList>
+#include <QRandomGenerator>
+#include <QTime>
 
-void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, bool with_jitter) {
+void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, bool with_jitters, float jitter_size) {
     std::vector<glm::vec3> bones_vec_arr(this->pose_bones_indices.size());
+    std::vector<float> cur_bones_length = this->pose_bones_length;
+    // TODO add random and set the jitter to be a state
+
+    float random_jitter = 0.0;
 
     for (int i = 0; i < this->pose_bones_indices.size(); ++i) {
         glm::i32vec2 cur_bone = this->pose_bones_indices[i];
         bones_vec_arr[i] = glm::normalize(joints[cur_bone.y] - joints[cur_bone.x]);
     }
+    if (with_jitters) {
+        for (int i = 0; cur_bones_length.size(); ++i) {
+            cur_bones_length[i] *= (1 - jitter_size * random_jitter);
+        }
+    }
     // the first and fixed point is the root point
     for (int i = 0; i < this->pose_bones_cal_rank.size(); ++i) {
         int cur_bone_index = this->pose_bones_cal_rank[i];
-        glm::i32vec2 cur_bone = this->pose_bones_indices[cur_bone_index];
-        joints[cur_bone.y] = joints[cur_bone.x] + this->pose_bones_length[cur_bone_index] * bones_vec_arr[cur_bone_index];
+        glm::i32vec2 cur_bone = this->pose_bones_indices[cur_bone_ndex];
+        joints[cur_bone.y] = joints[cur_bone.x] + cur_bones_length[this->pose_bones_length_index[cur_bone_index]] * bones_vec_arr[cur_bone_index];
     }
 }
 

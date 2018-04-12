@@ -30,7 +30,8 @@ namespace mPoseDef {
     static const std::vector<unsigned int> bones_cal_rank({
         7, 8, 11, 9, 10, 12, 13, 0, 1, 4, 2, 3, 5, 6
     });
-    static const std::vector<float> bones_length({6.90715, 6.71018, 10.9442, 8.52009, 6.71018, 10.9442, 8.5201, 18.0373, 3.64953, 15.7058, 15.4187, 3.64953, 15.7058, 15.4187});
+    static const std::vector<float> bones_length({6.90715, 6.71018, 10.9442, 8.52009, 18.0373, 3.64953, 15.7058, 15.4187});
+    static const std::vector<unsigned int> bones_length_index({0, 1, 2, 3, 1, 2, 3, 4, 5, 6, 7, 5, 6, 7});
 }
 
 #endif

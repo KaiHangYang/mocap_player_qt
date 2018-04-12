@@ -24,7 +24,7 @@ static float skeleton_style[] = {
 
 mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, int pose_type) {
 
-    this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length,mPoseDef::bones_indices,mPoseDef::bones_cal_rank);
+    this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length, mPoseDef::bones_length_index, mPoseDef::bones_indices,mPoseDef::bones_cal_rank);
 
     this->pose_shader = pose_shader;
     this->depth_shader = depth_shader;

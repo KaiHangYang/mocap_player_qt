@@ -17,7 +17,7 @@ public:
     mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, bool is_ar=false, int pose_type=0);
     ~mSceneUtils();
 
-    void render(std::vector<float> points_3d = std::vector<float>(0, 0));
+    void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0));
 
     void setExMat(glm::mat4 & cam_ex_mat);
     void setInMat(glm::mat4 & cam_in_mat);

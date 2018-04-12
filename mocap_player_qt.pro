@@ -37,7 +37,8 @@ SOURCES += \
     main.cpp \
     src/mocap_reader/mMoCapReader.cpp \
     src/ui_widgets/mProgressBarWidget.cpp \
-    src/ui_widgets/mLineEditWidget.cpp
+    src/ui_widgets/mLineEditWidget.cpp \
+    src/pose_utils/mPoseAdjuster.cpp
 
 
 HEADERS += \
@@ -56,7 +57,8 @@ HEADERS += \
     include/mPoseDefs.h \
     include/mMoCapReader.h \
     include/mProgressBarWidget.h \
-    include/mLineEditWidget.h
+    include/mLineEditWidget.h \
+    include/mPoseAdjuster.h
 
 
 INCLUDEPATH += ./include/ \

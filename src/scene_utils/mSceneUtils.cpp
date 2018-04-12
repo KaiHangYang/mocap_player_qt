@@ -302,10 +302,10 @@ void mSceneUtils::setSurround(bool do_surround, glm::vec3 surround_center) {
     this->do_use_surround = do_surround;
 }
 
-void mSceneUtils::render(std::vector<float> points_3d) {
+void mSceneUtils::render(std::vector<glm::vec3> points_3d) {
     // Currently the points is set to be in the camera coordinate !!!!!!
-    if (points_3d.size() == 3*this->pose_model->num_of_joints) {
-        this->person_center_pos = glm::vec3(this->cam_ex_mat_inverse * glm::vec4(points_3d[points_3d.size() - 3], points_3d[points_3d.size() - 2], points_3d[points_3d.size() - 1], 1.0));
+    if (points_3d.size() == this->pose_model->num_of_joints) {
+        this->person_center_pos = glm::vec3(this->cam_ex_mat_inverse * glm::vec4(points_3d[points_3d.size()-1], 1.0));
     }
     // correct the x direction
     glm::vec3 dir_z(this->cur_cam_ex_r_mat[0][2], this->cur_cam_ex_r_mat[1][2], this->cur_cam_ex_r_mat[2][2]);
@@ -355,7 +355,7 @@ void mSceneUtils::render(std::vector<float> points_3d) {
     this->core_func->glDisableVertexAttribArray(0);
     this->core_func->glDisableVertexAttribArray(1);
 
-    if (points_3d.size() == 3*this->pose_model->num_of_joints) {
+    if (points_3d.size() == this->pose_model->num_of_joints) {
         this->pose_model->draw(points_3d, this->cam_ex_mat_inverse, cur_cam_ex_mat, 1);
     }
 
@@ -410,7 +410,7 @@ void mSceneUtils::render(std::vector<float> points_3d) {
     this->core_func->glDisableVertexAttribArray(0);
     this->core_func->glDisableVertexAttribArray(1);
 
-    if (points_3d.size() == 3*this->pose_model->num_of_joints) {
+    if (points_3d.size() == this->pose_model->num_of_joints) {
         this->pose_model->draw(points_3d, this->cam_ex_mat_inverse, cur_cam_ex_mat, 0);
     }
 }

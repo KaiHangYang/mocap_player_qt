@@ -2,6 +2,7 @@
 #define M_POSE_DEFS
 #include <vector>
 #include <string>
+#include <glm/glm.hpp>
 
 namespace mPoseDef {
     static const int num_of_joints = 15;
@@ -10,31 +11,26 @@ namespace mPoseDef {
     static const std::string model_base_dir("/home/kaihang/Projects/QT/mocap_player_qt/models/");
 //    static const std::string model_base_dir("/Users/kaihang/Desktop/Code/Cpp/Qt/mocap_player_qt/models/");
     
-    static const std::vector<unsigned int> bone_indices({
-            0, 1,
-            1, 2,
-            2, 3,
-            3, 4,
-            1, 5,
-            5, 6,
-            6, 7,
-            1, 14,
-            14, 8,
-            8, 9,
-            9, 10,
-            14, 11,
-            11, 12,
-            12, 13,
+    static const std::vector<glm::u32vec2> bones_indices({
+            glm::u32vec2(1, 0), // 0
+            glm::u32vec2(1, 2), // 1
+            glm::u32vec2(2, 3), // 2
+            glm::u32vec2(3, 4), // 3
+            glm::u32vec2(1, 5), // 4
+            glm::u32vec2(5, 6), // 5
+            glm::u32vec2(6, 7), // 6
+            glm::u32vec2(14, 1),// 7
+            glm::u32vec2(14, 8),// 8
+            glm::u32vec2(8, 9), // 9
+            glm::u32vec2(9, 10),// 10
+            glm::u32vec2(14, 11),//11
+            glm::u32vec2(11, 12),//12
+            glm::u32vec2(12, 13)//13
     });
-
-    static const std::vector<unsigned int> bone_means({
-            1, 4,
-            2, 5,
-            3, 6,
-            8, 11,
-            9, 12,
-            10, 13
-            });
+    static const std::vector<unsigned int> bones_cal_rank({
+        7, 8, 11, 9, 10, 12, 13, 0, 1, 4, 2, 3, 5, 6
+    });
+    static const std::vector<float> bones_length({6.90715, 6.71018, 10.9442, 8.52009, 6.71018, 10.9442, 8.5201, 18.0373, 3.64953, 15.7058, 15.4187, 3.64953, 15.7058, 15.4187});
 }
 
 #endif

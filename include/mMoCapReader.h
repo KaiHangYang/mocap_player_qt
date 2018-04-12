@@ -19,7 +19,7 @@ public:
     mMoCapData(std::vector<std::vector<glm::vec3>> data, int total_frame_num, int num_of_joints) : data(data), cur_frame_num(0), total_frame_num(total_frame_num), num_of_joints(num_of_joints) {}
     ~mMoCapData(){}
     bool getOneFrame(std::vector<glm::vec3> & joints, int index=-1);
-    bool getOneFrame(std::vector<float> & joints, glm::mat4 cam_ex_mat, int index=-1);
+    bool getOneFrame(std::vector<glm::vec3> & joints, glm::mat4 cam_ex_mat, int index=-1);
     void resetCounter();
     void setFramePos(int frame_num);
 

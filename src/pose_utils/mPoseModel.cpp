@@ -24,6 +24,8 @@ static float skeleton_style[] = {
 
 mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, int pose_type) {
 
+    this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length,mPoseDef::bones_indices,mPoseDef::bones_cal_rank);
+
     this->pose_shader = pose_shader;
     this->depth_shader = depth_shader;
 
@@ -35,7 +37,7 @@ mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core
 
     if (pose_type == 0) {
         this->num_of_joints = mPoseDef::num_of_joints;
-        this->bone_indices = mPoseDef::bone_indices;
+        this->bone_indices = mPoseDef::bones_indices;
     }
     else {
         std::cout << "(mPoseModel.cpp) pose_type is not valid!" << std::endl;
@@ -53,12 +55,14 @@ mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core
 
 mPoseModel::~mPoseModel() {
     this->mesh_reader->~mMeshReader();
+    this->pose_adjuster->~mPoseAdjuster();
 }
 
-void mPoseModel::renderPose(std::vector<float> &vertexs, glm::mat4 view_mat, int render_type) {
+void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat, int render_type) {
+
     this->VAO->bind();
-    unsigned int vertexNum = vertexs.size() / 3;
-    unsigned int lineNum = this->bone_indices.size() / 2;
+    unsigned int vertexNum = vertexs.size();
+    unsigned int lineNum = this->bone_indices.size();
 
     std::vector<bool> vertexFlags(vertexNum, false);
     glm::mat4 view_r_mat = glm::mat4(glm::mat3(view_mat));
@@ -84,20 +88,20 @@ void mPoseModel::renderPose(std::vector<float> &vertexs, glm::mat4 view_mat, int
     shader->setVal("projection", this->proj_mat);
     shader->setVal("view", view_mat);
 
-    unsigned int * indices_ptr = &this->bone_indices[0];
+    glm::u32vec2 * indices_ptr = &this->bone_indices[0];
     glm::mat4 trans;
     glm::mat4 curmodel;
 
     for (unsigned int i = 0; i < lineNum; ++i) {
-        unsigned int line[2] = { *(indices_ptr++), *(indices_ptr++) };
-    
+        unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
+        indices_ptr ++;
         // Draw the points first
         for (unsigned int j = 0; j < 2; ++j) {
             if (!vertexFlags[line[j]]) {
                 vertexFlags[line[j]] = true;
 
                 curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(0.8, 0.8, 0.8));
-                curmodel = glm::translate(glm::mat4(1.0f), glm::vec3(vertexs[3 * line[j]], vertexs[3 * line[j] + 1], vertexs[3 * line[j] + 2])) * curmodel;
+                curmodel = glm::translate(glm::mat4(1.0f), vertexs[line[j]]) * curmodel;
 
                 shader->setVal("model", curmodel);
                 if (render_type == 0) {
@@ -107,13 +111,13 @@ void mPoseModel::renderPose(std::vector<float> &vertexs, glm::mat4 view_mat, int
             }
         }
 
-        float lineCen[3] = {(vertexs[3 * line[0]] + vertexs[3 * line[1]]) / 2.0f, (vertexs[3 * line[0] + 1] + vertexs[3 * line[1] +1]) / 2.0f, (vertexs[3 * line[0] + 2] + vertexs[3 * line[1] + 2]) / 2.0f };
-        float length = sqrt(pow((vertexs[3 * line[0]] - vertexs[3 * line[1]]), 2) + pow((vertexs[3 * line[0] + 1] - vertexs[3 * line[1] + 1]), 2) + pow((vertexs[3 * line[0] + 2] - vertexs[3 * line[1] + 2]), 2));
+        glm::vec3 lineCen = (vertexs[line[0]] + vertexs[line[1]]) / 2.f;
+        float length = glm::length(vertexs[line[0]] - vertexs[line[1]]);
 
         glm::vec3 vFrom(0, 1, 0);
-        glm::vec3 vTo = glm::normalize(glm::vec3((vertexs[3 * line[0]] - vertexs[3 * line[1]]), (vertexs[3 * line[0] + 1] - vertexs[3 * line[1] + 1]), (vertexs[3 * line[0] + 2] - vertexs[3 * line[1] + 2])));
+        glm::vec3 vTo = glm::normalize(vertexs[line[0]] - vertexs[line[1]]);
 
-        trans = glm::translate(glm::mat4(1.0), glm::vec3(lineCen[0], lineCen[1], lineCen[2]));
+        trans = glm::translate(glm::mat4(1.0), lineCen);
         float angle = (float)glm::acos(glm::dot(vFrom, vTo));
 
         if (angle <= 0.0000001) {
@@ -137,21 +141,22 @@ void mPoseModel::renderPose(std::vector<float> &vertexs, glm::mat4 view_mat, int
     }
 }
 
-void mPoseModel::draw(std::vector<float> points, glm::mat4 raw_cam_ex_mat_inv, glm::mat4 & cam_ex_mat, int render_type) {
-    int p_num = points.size() / 3;
+void mPoseModel::draw(std::vector<glm::vec3> points, glm::mat4 raw_cam_ex_mat_inv, glm::mat4 & cam_ex_mat, int render_type) {
+    this->pose_adjuster->adjustAccordingToBoneLength(points);
+    int p_num = points.size();
 
-    float * p_ptr = &points[0];
+    glm::vec3 * p_ptr = &points[0];
     glm::vec4 p_cur;
 
     for (int i = 0; i < p_num; ++i) {
-        memcpy(&p_cur[0], p_ptr, sizeof(float) * 3);
-        p_cur[3] = 1.0;
+        p_cur = glm::vec4(*p_ptr, 1.0);
 
         p_cur = raw_cam_ex_mat_inv * p_cur;
-        //p_cur = this->rotate_mat * p_cur;
-        *(p_ptr++) = p_cur[0];
-        *(p_ptr++) = p_cur[1];
-        *(p_ptr++) = p_cur[2];
+
+        p_ptr->x = p_cur[0];
+        p_ptr->y = p_cur[1];
+        p_ptr->z = p_cur[2];
+        p_ptr++;
     }
     this->renderPose(points, cam_ex_mat, render_type);
 }

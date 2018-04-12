@@ -14,7 +14,7 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->pose_state = -1;
     this->temp_pose_state = 1;
     this->is_has_pose = false;
-    this->cur_pose_joints = std::vector<float>();
+    this->cur_pose_joints = std::vector<glm::vec3>();
 
     this->is_ar = false;
     this->cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)this->wnd_width / this->wnd_height, 0.01f, 1000000.f));

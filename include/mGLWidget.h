@@ -63,7 +63,7 @@ private:
     int pose_state; // -1 no pose; 0 pause; 1 start; 2 reset; (after reset the state is 1)
     int temp_pose_state;
     bool is_has_pose;
-    std::vector<float> cur_pose_joints;
+    std::vector<glm::vec3> cur_pose_joints;
     /************************************************/
 
     /**************** Progress control **************/

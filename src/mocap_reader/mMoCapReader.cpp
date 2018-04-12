@@ -29,15 +29,14 @@ bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, int index) {
 
     return true;
 }
-bool mMoCapData::getOneFrame(std::vector<float> & joints, glm::mat4 cam_ex_mat, int index) {
+bool mMoCapData::getOneFrame(std::vector<glm::vec3> & joints, glm::mat4 cam_ex_mat, int index) {
     std::vector<glm::vec3> cur_joints;
 
     if (this->getOneFrame(cur_joints, index)) {
         joints.clear();
         for (int i = 0; i < cur_joints.size(); ++i) {
             glm::vec4 cur_pos = cam_ex_mat * glm::vec4(cur_joints[i],1.0);
-
-            joints.push_back(cur_pos.x);joints.push_back(cur_pos.y);joints.push_back(cur_pos.z);
+            joints.push_back(glm::vec3(cur_pos));
         }
         return true;
     }

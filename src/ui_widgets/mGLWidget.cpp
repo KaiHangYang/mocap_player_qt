@@ -125,6 +125,12 @@ glm::mat4 mGLWidget::getCurExMat() {
 void mGLWidget::setCurExMat(glm::mat4 cur_ex_mat) {
     this->scene->setCurExMat(cur_ex_mat);
 }
+void mGLWidget::setFollowPerson(bool is_follow) {
+    this->scene->setFollowPerson(is_follow);
+}
+void mGLWidget::captureFrame(cv::Mat & frame) {
+    this->scene->captureFrame(frame);
+}
 /*************** Implementation of slots *****************/
 void mGLWidget::changePoseFile(QString & file_name) {
     if (this->mocap_reader.parse(file_name, 0, this->mocap_data)) {

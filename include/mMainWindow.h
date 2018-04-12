@@ -14,8 +14,12 @@
 #include <QLabel>
 #include <QTextEdit>
 #include <vector>
+#include <QTabWidget>
+#include <QIcon>
+#include <QComboBox>
 
 #include "mProgressBarWidget.h"
+#include "mLineEditWidget.h"
 
 namespace Ui {
 class mMainWindow;
@@ -45,10 +49,22 @@ public slots:
     void cameraLoadFromFileSlot();
     void cameraSaveToFileSlot();
     void cameraActivateSlot();
+    void cameraFollowSlot();
     void cameraEditNameSlot(QModelIndex topleft, QModelIndex bottomright, QVector<int> roles);
+    void captureDirSlot();
+    void captureOneFrame();
 signals:
     void signalOpenFile(QString & file_path);
 private:
+    /************** Functions for build the GUI *************/
+    void buildGLView();
+    void buildProgressBar();
+    void buildToolBoxs();
+    void buildToolBoxTab1();
+    void buildToolBoxTab2();
+    void bindEvents();
+    /********************************************************/
+
     Ui::mMainWindow *ui;
     int wnd_width;
     int wnd_height;
@@ -56,6 +72,7 @@ private:
     /****** Just for store *****/
     int cur_camera_name_num;
     int cur_camera_num;
+    int cur_capture_frame_sum;
     std::vector<std::pair<QString, glm::mat4>> camera_mat_arr;
 
     QString file_dialog_extension;
@@ -63,18 +80,25 @@ private:
     QString camera_data_file_header;
     QStringListModel * file_list_model;
     QStringListModel * camera_list_model;
+    QIcon icon_play;
+    QIcon icon_pause;
+    QIcon icon_redo;
     /******** Main widget ******/
     mProgressBarWidget * progress_bar;
     QWidget * grid_widget;
     QGridLayout * grid_layout;
 
     /***** Tool box widget *****/
-    QGroupBox * tool_box;
+    QTabWidget * tool_box_tabs;
+
+    QWidget * tool_box;
+    QWidget * tool_box_2;
     QGroupBox * file_box;
-    QGroupBox * video_box;
+    QWidget * video_box;
     QGroupBox * camera_box;
 
     QGridLayout * tool_box_layout;
+    QGridLayout * tool_box_2_layout;
     QGridLayout * file_box_layout;
     QGridLayout * video_box_layout;
     QGridLayout * camera_box_layout;
@@ -95,6 +119,7 @@ private:
     QPushButton * tool_camera_activate_btn;
     QPushButton * tool_camera_remove_btn;
     QPushButton * tool_camera_removeall_btn;
+    QPushButton * tool_camera_follow_btn;
     // camera add dialog
     QDialog * tool_camera_dialog;
     QGridLayout * camera_dialog_layout;
@@ -104,6 +129,19 @@ private:
     QLabel * tool_camera_dialog_mat_lbl;
     QTextEdit * tool_camera_dialog_mat_show;
     QPushButton * tool_camera_dialog_add_btn;
+
+    // capture box
+    QGroupBox * capture_box;
+    QGridLayout * capture_box_layout;
+
+    QLabel * tool_capture_dir_label;
+    mLineEditWidget * tool_capture_dir_input;
+    QLabel * tool_capture_step_label;
+    QLineEdit * tool_capture_step_input;
+    QPushButton * tool_capture_capture_one;
+    QPushButton * tool_capture_capture_interval;
+    QLabel * tool_capture_img_extension_label;
+    QComboBox * tool_capture_img_extension_combox;
     /**************************/
 
     // OpenGL widgets

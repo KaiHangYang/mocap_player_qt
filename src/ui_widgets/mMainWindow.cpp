@@ -7,6 +7,10 @@
 #include <QFileInfo>
 #include <QFile>
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgcodecs/imgcodecs.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 
 mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString title) : QMainWindow(parent), ui(new Ui::mMainWindow) {
     this->wnd_width = wnd_width;
@@ -14,37 +18,89 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->file_dialog_extension = "BVH Files(*.bvh)";
     this->file_dialog_initial_dir = ".";
     this->camera_data_file_header = "#M_CAMERA_DATA";
+
     this->ui->setupUi(this);
     this->setWindowTitle(title);
-    this->resize(this->wnd_width, this->wnd_height);
+//    this->resize(this->wnd_width, this->wnd_height);
 
     this->cur_camera_num = 0;
     this->cur_camera_name_num = 0;
+    this->cur_capture_frame_sum = 0;
 
     // Set the grid widget to contain the widgets
     this->grid_widget = new QWidget(this);
     this->grid_layout = new QGridLayout();
     this->grid_layout->setContentsMargins(QMargins(0, 0, 0, 0));
     this->grid_layout->setSpacing(0);
+    this->grid_widget->setLayout(this->grid_layout);
+
+    this->buildGLView();
+    this->buildProgressBar();
+    this->buildToolBoxs();
+
+    this->grid_layout->addWidget(this->video_box, 4, 0, 1, 1);
+    this->grid_layout->addWidget(this->progress_bar, 4, 1, 1, 8);
+    this->grid_layout->addWidget(this->tool_box_tabs, 0, 9, 5, 3);
+    this->grid_layout->addWidget(this->gl_widget, 0, 0, 4, 9);
+//    this->tool_box_tabs->hide();
+
+    this->setCentralWidget(this->grid_widget);
+    this->grid_widget->adjustSize();
+
+    this->bindEvents();
+    // fix the main window
+    this->adjustSize();
+    this->setFixedSize(this->size());
+}
+mMainWindow::~mMainWindow() {
+    delete ui;
+}
+void mMainWindow::buildGLView() {
     // Set the OpenGL widget
     QGLFormat gl_format;
     gl_format.setVersion(3, 3);
     gl_format.setProfile(QGLFormat::CoreProfile); // use opengl core330
     gl_format.setSamples(4); // use anti-alias
-    this->gl_widget = new mGLWidget(this->grid_widget, gl_format, wnd_width, wnd_height);
-    this->gl_widget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    this->gl_widget->setFixedWidth(wnd_width);
-    this->gl_widget->setFixedHeight(wnd_height);
-
+    this->gl_widget = new mGLWidget(this->grid_widget, gl_format, this->wnd_width, this->wnd_height);
+    this->gl_widget->setFixedWidth(this->wnd_width);
+    this->gl_widget->setFixedHeight(this->wnd_height);
+    this->gl_widget->adjustSize();
+}
+void mMainWindow::buildProgressBar() {
     // Set the progress bar widget
     this->progress_bar = new mProgressBarWidget(this->grid_widget);
     this->progress_bar->setFixedHeight(this->progress_bar->size().height());
-    this->progress_bar->setFixedWidth(wnd_width);
+//    this->progress_bar->setFixedWidth(wnd_width);
+    //      Box for video control
 
+    this->icon_play = QIcon(QPixmap(":/images/icon-play"));
+    this->icon_pause = QIcon(QPixmap(":/images/icon-pause"));
+    this->icon_redo = QIcon(QPixmap(":/images/icon-redo"));
+
+    this->video_box = new QWidget(this->grid_widget);
+    this->video_box_layout = new QGridLayout;
+    this->video_box->setLayout(this->video_box_layout);
+    this->tool_video_toggle_btn = new QPushButton(this->video_box);
+    this->tool_video_toggle_btn->setIcon(this->icon_play);
+    this->tool_video_reset_btn = new QPushButton(this->video_box);
+    this->tool_video_reset_btn->setIcon(this->icon_redo);
+
+    this->video_box_layout->addWidget(this->tool_video_toggle_btn, 0, 0, 1, 1);
+    this->video_box_layout->addWidget(this->tool_video_reset_btn, 0, 1, 1, 1);
+}
+void mMainWindow::buildToolBoxs() {
     // Set the control box layout
+    this->tool_box_tabs = new QTabWidget(this);
+    this->buildToolBoxTab1();
+    this->tool_box_tabs->addTab(this->tool_box, "Files Control");
+    this->buildToolBoxTab2();
+    this->tool_box_tabs->addTab(this->tool_box_2, "Cameras Control");
+}
+void mMainWindow::buildToolBoxTab1() {
     this->tool_box_layout = new QGridLayout;
-    this->tool_box = new QGroupBox();
+    this->tool_box = new QWidget(this->tool_box_tabs);
     this->tool_box->setLayout(this->tool_box_layout);
+
     //      Box for file
     this->file_box = new QGroupBox("Files Control:", this->tool_box);
     this->file_box_layout = new QGridLayout;
@@ -62,17 +118,20 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->file_box_layout->addWidget(this->tool_file_remove_btn, 0, 1, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_removeall_btn, 0, 2, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_listview, 1, 0, 4, 3);
-    //      Box for video control
-    this->video_box = new QGroupBox("Poses control:", this->tool_box);
-    this->video_box_layout = new QGridLayout;
-    this->video_box->setLayout(this->video_box_layout);
-    this->tool_video_toggle_btn = new QPushButton("Start", this->video_box);
-    this->tool_video_reset_btn = new QPushButton("Reset", this->video_box);
-    this->video_box_layout->addWidget(this->tool_video_toggle_btn, 0, 0, 1, 1);
-    this->video_box_layout->addWidget(this->tool_video_reset_btn, 0, 1, 1, 1);
+
+    this->tool_box_layout->addWidget(this->file_box, 0, 0, 1, 1);
+
+    // Disable some button
+    this->tool_file_removeall_btn->setDisabled(true);
+}
+void mMainWindow::buildToolBoxTab2() {
+    // Add tool_box 2
+    this->tool_box_2_layout = new QGridLayout;
+    this->tool_box_2 = new QWidget(this->tool_box_tabs);
+    this->tool_box_2->setLayout(this->tool_box_2_layout);
 
     //      Box for camera control
-    this->camera_box = new QGroupBox("Camera control:", this->tool_box);
+    this->camera_box = new QGroupBox("Camera control:", this->tool_box_2);
     this->camera_box_layout = new QGridLayout;
     this->camera_box->setLayout(this->camera_box_layout);
 
@@ -81,60 +140,78 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->tool_camera_listview->setModel(this->camera_list_model);
     this->tool_camera_listview->setSelectionMode(QAbstractItemView::ExtendedSelection);
     this->tool_camera_activate_btn = new QPushButton("Activate Camera", this->camera_box);
-    this->tool_camera_add_btn = new QPushButton("Add", this->camera_box);
+//    this->tool_camera_add_btn = new QPushButton("Add", this->camera_box);
     this->tool_camera_addcurr_btn = new QPushButton("Add Current", this->camera_box);
+    this->tool_camera_follow_btn = new QPushButton("Follow", this->camera_box);
     this->tool_camera_remove_btn = new QPushButton("Remove", this->camera_box);
     this->tool_camera_removeall_btn = new QPushButton("Remove All", this->camera_box);
     this->tool_camera_loadfromfile_btn = new QPushButton("Load", this->camera_box);
     this->tool_camera_savetofile_btn = new QPushButton("Save", this->camera_box);
-    this->tool_camera_dialog = new QDialog(this);
-    this->tool_camera_dialog->setWindowTitle("Add new camera");
-    this->camera_dialog_layout = new QGridLayout;
-    this->tool_camera_dialog->setLayout(this->camera_dialog_layout);
-    this->tool_camera_dialog_name_lbl = new QLabel("Name:", this->tool_camera_dialog);
-    this->tool_camera_dialog_name_ipt = new QLineEdit(this->tool_camera_dialog);
-    this->tool_camera_dialog_name_ipt->setClearButtonEnabled(true);
-    this->tool_camera_dialog_mat_lbl = new QLabel("Matrix:", this->tool_camera_dialog);
-    this->tool_camera_dialog_mat_ipt = new QLineEdit(this->tool_camera_dialog);
-    this->tool_camera_dialog_mat_ipt->setClearButtonEnabled(true);
-    this->tool_camera_dialog_mat_show = new QTextEdit(this->tool_camera_dialog);
-    this->tool_camera_dialog_add_btn = new QPushButton("Add", this->tool_camera_dialog);
-    this->tool_camera_dialog_mat_show->setReadOnly(true);
+    //    this->tool_camera_dialog = new QDialog(this);
+    //    this->tool_camera_dialog->setWindowTitle("Add new camera");
+    //    this->camera_dialog_layout = new QGridLayout;
+    //    this->tool_camera_dialog->setLayout(this->camera_dialog_layout);
+    //    this->tool_camera_dialog_name_lbl = new QLabel("Name:", this->tool_camera_dialog);
+    //    this->tool_camera_dialog_name_ipt = new QLineEdit(this->tool_camera_dialog);
+    //    this->tool_camera_dialog_name_ipt->setClearButtonEnabled(true);
+    //    this->tool_camera_dialog_mat_lbl = new QLabel("Matrix:", this->tool_camera_dialog);
+    //    this->tool_camera_dialog_mat_ipt = new QLineEdit(this->tool_camera_dialog);
+    //    this->tool_camera_dialog_mat_ipt->setClearButtonEnabled(true);
+    //    this->tool_camera_dialog_mat_show = new QTextEdit(this->tool_camera_dialog);
+    //    this->tool_camera_dialog_add_btn = new QPushButton("Add", this->tool_camera_dialog);
+    //    this->tool_camera_dialog_mat_show->setReadOnly(true);
 
-    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_mat_show, 0, 0, 3, 3);
-    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_name_lbl, 3, 0, 1, 1);
-    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_name_ipt, 3, 1, 1, 2);
-    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_mat_lbl, 4, 0, 1, 1);
-    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_mat_ipt, 4, 1, 1, 2);
-    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_add_btn, 5, 2, 1, 1);
-    this->tool_camera_dialog->hide(); // the hide must be called after the dialog is created
-
-
-    this->camera_box_layout->addWidget(this->tool_camera_add_btn, 0, 0, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_remove_btn, 0, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_removeall_btn, 0, 2, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_addcurr_btn, 1, 0, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_activate_btn, 1, 1, 1, 2);
+    //    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_mat_show, 0, 0, 3, 3);
+    //    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_name_lbl, 3, 0, 1, 1);
+    //    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_name_ipt, 3, 1, 1, 2);
+    //    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_mat_lbl, 4, 0, 1, 1);
+    //    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_mat_ipt, 4, 1, 1, 2);
+    //    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_add_btn, 5, 2, 1, 1);
+    //    this->tool_camera_dialog->hide(); // the hide must be called after the dialog is created
+    //    this->camera_box_layout->addWidget(this->tool_camera_add_btn, 0, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_addcurr_btn, 0, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_activate_btn, 0, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_follow_btn, 0, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_remove_btn, 1, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_removeall_btn, 1, 1, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_listview, 2, 0, 4, 3);
     this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 6, 1, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 6, 2, 1, 1);
 
-    this->tool_box_layout->addWidget(this->file_box, 0, 0, 1, 1);
-    this->tool_box_layout->addWidget(this->video_box, 1, 0, 1, 1);
-    this->tool_box_layout->addWidget(this->camera_box, 2, 0, 1, 1);
+    //      Box for capture control
+    this->capture_box = new QGroupBox("Capture Control:", this->tool_box_2);
+    this->capture_box_layout = new QGridLayout;
+    this->capture_box->setLayout(this->capture_box_layout);
+    this->tool_capture_dir_label = new QLabel("Save Dir:", this->capture_box);
+    this->tool_capture_dir_input = new mLineEditWidget(this->capture_box);
+    this->tool_capture_dir_input->setReadOnly(true);
 
-    this->grid_layout->addWidget(this->gl_widget, 0, 0, 4, 6);
-    this->grid_layout->addWidget(this->progress_bar, 4, 0, 1, 6);
-    this->grid_layout->addWidget(this->tool_box, 0, 6, 3, 2);
+    this->tool_capture_step_label = new QLabel("Step:", this->capture_box);
+    this->tool_capture_step_input = new QLineEdit(this->capture_box);
+    this->tool_capture_step_input->setValidator(new QIntValidator(0, 60, this->tool_capture_step_input));
+    this->tool_capture_step_input->setPlaceholderText("0~60");
+    this->tool_capture_capture_one = new QPushButton("Capture One", this->capture_box);
+    this->tool_capture_capture_interval = new QPushButton("Capture All", this->capture_box);
+    this->tool_capture_img_extension_label = new QLabel("Img Format: ", this->capture_box);
+    this->tool_capture_img_extension_combox = new QComboBox(this->capture_box);
+    this->tool_capture_img_extension_combox->addItem("jpg");
+    this->tool_capture_img_extension_combox->addItem("png");
 
-    this->grid_widget->setLayout(this->grid_layout);
-    this->setCentralWidget(this->grid_widget);
-    this->grid_widget->adjustSize();
+    this->capture_box_layout->addWidget(this->tool_capture_dir_label, 0, 0, 1, 1);
+    this->capture_box_layout->addWidget(this->tool_capture_dir_input, 0, 1, 1, 3);
+    this->capture_box_layout->addWidget(this->tool_capture_img_extension_label, 1, 0, 1, 1);
+    this->capture_box_layout->addWidget(this->tool_capture_img_extension_combox, 1, 1, 1, 1);
+    this->capture_box_layout->addWidget(this->tool_capture_step_label, 1, 2, 1, 1);
+    this->capture_box_layout->addWidget(this->tool_capture_step_input, 1, 3, 1, 1);
+    this->capture_box_layout->addWidget(this->tool_capture_capture_one, 2, 0, 1, 2);
+    this->capture_box_layout->addWidget(this->tool_capture_capture_interval, 2, 2, 1, 2);
 
-    // Disable some button
-    this->tool_file_removeall_btn->setDisabled(true);
+    this->tool_box_2_layout->addWidget(this->camera_box, 0, 0, 1, 1);
+    this->tool_box_2_layout->addWidget(this->capture_box, 1, 0, 1, 1);
+
     this->tool_camera_removeall_btn->setDisabled(true);
-
+}
+void mMainWindow::bindEvents() {
     // Set the events
     connect(this->ui->openAct, SIGNAL(triggered()), this, SLOT(fileAddSlot()));
     connect(this, SIGNAL(signalOpenFile(QString&)), this->gl_widget, SLOT(changePoseFile(QString&)));
@@ -155,22 +232,20 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     connect(this->progress_bar, SIGNAL(setTemporaryStateSignal(bool)), this, SLOT(poseTemporaryStateSlot(bool)));
     // camera box
     connect(this->tool_camera_addcurr_btn, SIGNAL(clicked()), this, SLOT(cameraAddCurrSlot()));
-    connect(this->tool_camera_add_btn, SIGNAL(clicked()), this, SLOT(cameraAddSlot()));
+    //    connect(this->tool_camera_add_btn, SIGNAL(clicked()), this, SLOT(cameraAddSlot()));
     connect(this->tool_camera_remove_btn, SIGNAL(clicked()), this, SLOT(cameraRemoveSlot()));
     connect(this->tool_camera_removeall_btn, SIGNAL(clicked()), this, SLOT(cameraRemoveAllSlot()));
     connect(this->tool_camera_activate_btn, SIGNAL(clicked()), this, SLOT(cameraActivateSlot()));
+    connect(this->tool_camera_follow_btn, SIGNAL(clicked()), this, SLOT(cameraFollowSlot()));
     connect(this->camera_list_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(cameraEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
     connect(this->tool_camera_loadfromfile_btn, SIGNAL(clicked()), this, SLOT(cameraLoadFromFileSlot()));
     connect(this->tool_camera_savetofile_btn, SIGNAL(clicked()), this, SLOT(cameraSaveToFileSlot()));
 
-    // fix the main window
-    this->adjustSize();
-    this->setFixedSize(this->size());
+    connect(this->tool_capture_dir_input, SIGNAL(lineEditOpenDirSignal()), this, SLOT(captureDirSlot()));
+    connect(this->tool_capture_capture_one, SIGNAL(clicked()), this, SLOT(captureOneFrame()));
 }
 
-mMainWindow::~mMainWindow() {
-    delete ui;
-}
+
 /********************** Implementation of Slots **********************/
 
 void mMainWindow::fileAddSlot() {
@@ -216,23 +291,24 @@ void mMainWindow::fileRemoveAllSlot() {
 }
 void mMainWindow::fileActivatedSlot(QModelIndex index) {
     QString file_path = index.data().toString();
-    this->tool_video_toggle_btn->setText("Start");
+    // Change the button text
+    this->tool_video_toggle_btn->setIcon(this->icon_play);
     emit signalOpenFile(file_path);
 }
 
 void mMainWindow::videoToggleSlot() {
     if (this->gl_widget->getPoseState() == 0) {
-        this->tool_video_toggle_btn->setText("Pause");
+        this->tool_video_toggle_btn->setIcon(this->icon_pause);
         this->gl_widget->togglePose();
     }
     else if (this->gl_widget->getPoseState() == 1) {
-        this->tool_video_toggle_btn->setText("Start");
+        this->tool_video_toggle_btn->setIcon(this->icon_play);
         this->gl_widget->togglePose();
     }
 }
 void mMainWindow::videoResetSlot() {
     if (this->gl_widget->getIsHasPose()) {
-        this->tool_video_toggle_btn->setText("Start");
+        this->tool_video_toggle_btn->setIcon(this->icon_play);
         this->gl_widget->resetPose();
     }
 }
@@ -289,9 +365,26 @@ void mMainWindow::cameraRemoveAllSlot() {
 void mMainWindow::cameraActivateSlot() {
     QModelIndexList index_list = this->tool_camera_listview->selectionModel()->selectedIndexes();
     if (!index_list.isEmpty()) {
+        // first disable the camera follow
+        this->tool_camera_follow_btn->setText("Follow");
+        this->gl_widget->setFollowPerson(false);
+
         int cur_row = index_list[0].row();
         qDebug() << index_list[0].data().toString() << " " << this->camera_mat_arr[cur_row].first;
         this->gl_widget->setCurExMat(this->camera_mat_arr[cur_row].second);
+    }
+}
+void mMainWindow::cameraFollowSlot() {
+    bool is_follow = this->tool_camera_follow_btn->text() == "Follow";
+    if (is_follow) {
+        this->tool_camera_follow_btn->setText("Unfollow");
+        // Set the camera follow here
+        this->gl_widget->setFollowPerson(is_follow);
+    }
+    else {
+        this->tool_camera_follow_btn->setText("Follow");
+        // Set the camera unfollow here
+        this->gl_widget->setFollowPerson(is_follow);
     }
 }
 void mMainWindow::cameraEditNameSlot(QModelIndex cur_index, QModelIndex bottomright, QVector<int> roles) {
@@ -340,7 +433,6 @@ void mMainWindow::cameraLoadFromFileSlot() {
             }
         }
     }
-
 }
 void mMainWindow::cameraSaveToFileSlot() {
     QString save_file_name = QFileDialog::getSaveFileName(this, "Save Cameras Data", this->file_dialog_initial_dir, "*");
@@ -359,5 +451,28 @@ void mMainWindow::cameraSaveToFileSlot() {
             }
             cam_mat_file.close();
         }
+    }
+}
+
+void mMainWindow::captureDirSlot() {
+    QString dir_name = QFileDialog::getExistingDirectory(this, "Select a directory to save the captured images.", ".");
+    if (!dir_name.isEmpty()) {
+        this->tool_capture_dir_input->setText(dir_name);
+    }
+}
+
+void mMainWindow::captureOneFrame() {
+    QString dir_name = this->tool_capture_dir_input->text();
+    QFileInfo dir_info(dir_name);
+    if (!dir_name.isEmpty() && dir_info.isDir()) {
+        cv::Mat frame;
+        this->gl_widget->captureFrame(frame);
+        QString img_name = dir_name + "/" + QString::number(this->cur_capture_frame_sum) + "." + this->tool_capture_img_extension_combox->currentText();
+
+        cv::imwrite(img_name.toStdString(), frame);
+        this->cur_capture_frame_sum += 1;
+    }
+    else {
+        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
     }
 }

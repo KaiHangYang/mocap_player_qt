@@ -8,7 +8,11 @@
         <file alias="model.frag">shaders/model_f.shader</file>
         <file alias="model.vert">shaders/model_v.shader</file>
     </qresource>
-    <qresource prefix="/images"/>
+    <qresource prefix="/images">
+        <file alias="icon-pause">images/pause.png</file>
+        <file alias="icon-play">images/play.png</file>
+        <file alias="icon-redo">images/redo.png</file>
+    </qresource>
     <qresource prefix="/models">
         <file alias="cylinder-30">models/cylinder-30.ply</file>
         <file alias="sphere-30">models/sphere-30.ply</file>

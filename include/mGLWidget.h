@@ -20,6 +20,8 @@ public:
     bool getIsHasPose();
     glm::mat4 getCurExMat();
     void setCurExMat(glm::mat4 cur_ex_mat);
+    void setFollowPerson(bool is_follow);
+    void captureFrame(cv::Mat & frame);
 public slots:
     void changePoseFile(QString & file_name);
     void togglePose();

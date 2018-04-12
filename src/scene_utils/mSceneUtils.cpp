@@ -1,10 +1,14 @@
 #include "mSceneUtils.h"
 
-#include <opencv2/highgui/highgui.hpp>
+
 #include <iostream>
 #include <glm/gtx/component_wise.hpp>
 #include <QDebug>
 #include "mRenderParameters.h"
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgcodecs/imgcodecs.hpp>
 
 static float move_step = 80.0;
 
@@ -95,6 +99,11 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     /*******************************************************************************/
     this->VAO->release();
 }
+mSceneUtils::~mSceneUtils() {
+    this->pose_model->~mPoseModel();
+    this->scene_shader->~mShader();
+    this->depth_shader->~mShader();
+}
 void mSceneUtils::setCurExMat(glm::mat4 cur_ex_mat) {
     this->cur_cam_ex_r_mat = glm::mat4(glm::mat3(cur_ex_mat));
     this->cur_cam_ex_t_mat = glm::inverse(this->cur_cam_ex_r_mat) * cur_ex_mat;
@@ -126,11 +135,7 @@ void mSceneUtils::setInMat(glm::mat4 & cam_in_mat) {
         this->cam_proj_mat = glm::transpose(this->cam_in_mat);
     }
 }
-mSceneUtils::~mSceneUtils() {
-    this->pose_model->~mPoseModel();
-    this->scene_shader->~mShader();
-    this->depth_shader->~mShader();
-}
+
 
 std::vector<GLfloat> mSceneUtils::getGroundColor() {
     std::vector<GLfloat> result_gd(this->ground_col * this->ground_row * 18, 0);
@@ -246,7 +251,10 @@ void mSceneUtils::moveCamera(int move_dir) {
         else if (move_dir == 3) {
             this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, move_step * dir_z * this->move_step_scale * 3.f);
         }
-        move_dir = 0;
+    }
+    if (this->is_follow_person) {
+        // the cam_ex_t_mat is -(camera pos)
+        this->cur_follow_dert = glm::vec2(-this->cur_cam_ex_t_mat[3][0] - this->person_center_pos[0], -this->cur_cam_ex_t_mat[3][2] - this->person_center_pos[2]);
     }
 }
 void mSceneUtils::rotateCamrea(const glm::mat4 &rotate_mat) {
@@ -257,10 +265,31 @@ void mSceneUtils::getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat
     cam_ex_t_mat = this->cur_cam_ex_t_mat;
 }
 glm::mat4 mSceneUtils::getCurExMat() {
+    if (this->is_follow_person) {
+        // the cam_ex_t_mat is -(camera pos)
+        // only update the cur_follow_dert
+        this->cur_cam_ex_t_mat[3][0] = -(this->cur_follow_dert[0] + this->person_center_pos[0]);
+        this->cur_cam_ex_t_mat[3][2] = -(this->cur_follow_dert[1] + this->person_center_pos[2]);
+    }
     return this->cur_cam_ex_r_mat * this->cur_cam_ex_t_mat;
 }
 glm::mat4 mSceneUtils::getRawExMat() {
     return this->cam_ex_mat;
+}
+
+void mSceneUtils::setFollowPerson(bool is_follow) {
+    this->is_follow_person = is_follow;
+    if (is_follow) {
+        this->moveCamera(0);
+    }
+}
+void mSceneUtils::captureFrame(cv::Mat & cur_frame) {
+    this->core_func->glReadBuffer(GL_FRONT);
+    if (cur_frame.size().height != this->wnd_height || cur_frame.size().width != this->wnd_width) {
+        cur_frame = cv::Mat(this->wnd_height, this->wnd_width, CV_8UC3);
+    }
+    this->core_func->glReadPixels(0, 0, this->wnd_width, this->wnd_height, GL_BGR, GL_UNSIGNED_BYTE, cur_frame.ptr<unsigned char>());
+    cv::flip(cur_frame, cur_frame, 0);
 }
 /********************* Going to set the rotate around one person ********************/
 void mSceneUtils::surroundOnePoint(glm::mat4 & model_mat) {
@@ -274,6 +303,10 @@ void mSceneUtils::setSurround(bool do_surround, glm::vec3 surround_center) {
 }
 
 void mSceneUtils::render(std::vector<float> points_3d) {
+    // Currently the points is set to be in the camera coordinate !!!!!!
+    if (points_3d.size() == 3*this->pose_model->num_of_joints) {
+        this->person_center_pos = glm::vec3(this->cam_ex_mat_inverse * glm::vec4(points_3d[points_3d.size() - 3], points_3d[points_3d.size() - 2], points_3d[points_3d.size() - 1], 1.0));
+    }
     // correct the x direction
     glm::vec3 dir_z(this->cur_cam_ex_r_mat[0][2], this->cur_cam_ex_r_mat[1][2], this->cur_cam_ex_r_mat[2][2]);
     // The default head position

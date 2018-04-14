@@ -18,12 +18,14 @@ public:
     ~mPoseModel();
 
     void draw(std::vector<glm::vec3> points, glm::mat4 raw_cam_ex_mat_inverse, glm::mat4 & cam_ex_mat, int render_type=0);
+    void setJitterPose(bool is_use_jitter, float jitter_size = 0.1);
 
     /***************Pose parameters********************/
     std::vector<glm::u32vec2> bone_indices;
     int num_of_joints;
 private:
     mPoseAdjuster * pose_adjuster;
+    bool is_use_jitter;
     void renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat, int render_type = 0);
 
     mMeshReader * mesh_reader;

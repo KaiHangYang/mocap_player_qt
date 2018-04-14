@@ -32,6 +32,7 @@ public:
     void rotateCamrea(const glm::mat4 & rotate_mat);
 
     void setFollowPerson(bool is_follow);
+    void setFocusOnCenter(bool is_focus_on_center);
     void captureFrame(cv::Mat & cur_frame);
 
     void setSurround(bool do_surround, glm::vec3 surround_center = glm::vec3(0.0,0.0,0.0));
@@ -48,6 +49,7 @@ private:
     float ground_size;
     float move_step_scale;
     bool is_follow_person;
+    bool is_focus_on_center;
 
     QOpenGLVertexArrayObject * VAO;
 

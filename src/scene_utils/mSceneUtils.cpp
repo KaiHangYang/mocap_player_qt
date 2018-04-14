@@ -22,6 +22,8 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->is_ar = is_ar;
     this->VAO = vao;
     this->core_func = core_func;
+    this->is_follow_person = false;
+    this->is_focus_on_center = true;
 
     // The parameter maybe changed as reality make sure the ground_col and ground_row is even
     this->ground_col = 100;
@@ -261,17 +263,28 @@ void mSceneUtils::rotateCamrea(const glm::mat4 &rotate_mat) {
     this->cur_cam_ex_r_mat = this->cur_cam_ex_r_mat * rotate_mat;
 }
 void mSceneUtils::getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat) {
-    cam_ex_r_mat = this->cur_cam_ex_r_mat;
-    cam_ex_t_mat = this->cur_cam_ex_t_mat;
-}
-glm::mat4 mSceneUtils::getCurExMat() {
     if (this->is_follow_person) {
         // the cam_ex_t_mat is -(camera pos)
         // only update the cur_follow_dert
         this->cur_cam_ex_t_mat[3][0] = -(this->cur_follow_dert[0] + this->person_center_pos[0]);
         this->cur_cam_ex_t_mat[3][2] = -(this->cur_follow_dert[1] + this->person_center_pos[2]);
     }
-    return this->cur_cam_ex_r_mat * this->cur_cam_ex_t_mat;
+    if (this->is_focus_on_center) {
+        glm::vec3 camera_pos(-this->cur_cam_ex_t_mat[3][0], -this->cur_cam_ex_t_mat[3][1], -this->cur_cam_ex_t_mat[3][2]);
+        glm::vec3 z_axis = glm::normalize(camera_pos - this->person_center_pos);
+        glm::vec3 x_axis = glm::normalize(glm::cross(glm::vec3(0, 1, 0), z_axis));
+        glm::vec3 y_axis = glm::normalize(glm::cross(z_axis, x_axis));
+        this->cur_cam_ex_r_mat[0][0] = x_axis.x;this->cur_cam_ex_r_mat[0][1] = y_axis.x;this->cur_cam_ex_r_mat[0][2] = z_axis.x;
+        this->cur_cam_ex_r_mat[1][0] = x_axis.y;this->cur_cam_ex_r_mat[1][1] = y_axis.y;this->cur_cam_ex_r_mat[1][2] = z_axis.y;
+        this->cur_cam_ex_r_mat[2][0] = x_axis.z;this->cur_cam_ex_r_mat[2][1] = y_axis.z;this->cur_cam_ex_r_mat[2][2] = z_axis.z;
+    }
+    cam_ex_r_mat = this->cur_cam_ex_r_mat;
+    cam_ex_t_mat = this->cur_cam_ex_t_mat;
+}
+glm::mat4 mSceneUtils::getCurExMat() {
+    glm::mat4 cur_r_mat, cur_t_mat;
+    this->getCurExMat(cur_r_mat, cur_t_mat);
+    return cur_r_mat * cur_t_mat;
 }
 glm::mat4 mSceneUtils::getRawExMat() {
     return this->cam_ex_mat;
@@ -282,6 +295,9 @@ void mSceneUtils::setFollowPerson(bool is_follow) {
     if (is_follow) {
         this->moveCamera(0);
     }
+}
+void mSceneUtils::setFocusOnCenter(bool is_focus_on_center) {
+    this->is_focus_on_center = is_focus_on_center;
 }
 void mSceneUtils::captureFrame(cv::Mat & cur_frame) {
     this->core_func->glReadBuffer(GL_FRONT);

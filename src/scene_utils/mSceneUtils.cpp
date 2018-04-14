@@ -25,6 +25,7 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->core_func = core_func;
     this->is_follow_person = false;
     this->is_focus_on_center = false;
+    this->is_with_floor = true;
     this->person_center_pos = glm::vec3(0.f);
     this->cur_follow_dert = glm::vec3(0.f);
 
@@ -329,6 +330,9 @@ void mSceneUtils::captureFrame(cv::Mat & cur_frame) {
     this->core_func->glReadPixels(0, 0, this->wnd_width, this->wnd_height, GL_BGR, GL_UNSIGNED_BYTE, cur_frame.ptr<unsigned char>());
     cv::flip(cur_frame, cur_frame, 0);
 }
+void mSceneUtils::setFloor(bool is_with_floor) {
+    this->is_with_floor = is_with_floor;
+}
 /********************* Going to set the rotate around one person ********************/
 void mSceneUtils::surroundOnePoint(glm::mat4 & model_mat) {
     //std::cout << this->surround_center[0] << this->surround_center[1] << this->surround_center[2] << std::endl;
@@ -356,8 +360,6 @@ void mSceneUtils::render(std::vector<glm::vec3> points_3d) {
 
     glm::mat4 cur_cam_ex_mat = this->getCurExMat();
 
-
-
     for (int light_num = 0; light_num < mLightSum; ++light_num) {
         this->VAO->bind();
         this->core_func->glViewport(0, 0, mShadowWndWidth, mShadowWndHeight);
@@ -382,18 +384,20 @@ void mSceneUtils::render(std::vector<glm::vec3> points_3d) {
         }
         this->depth_shader->setVal("model", glm::mat4(1.f));
 
-        this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_vbo);
-        this->core_func->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-        this->core_func->glEnableVertexAttribArray(0);
+        if (this->is_with_floor) {
+            this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_vbo);
+            this->core_func->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+            this->core_func->glEnableVertexAttribArray(0);
 
-        this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_cbo);
-        this->core_func->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-        this->core_func->glEnableVertexAttribArray(1);
+            this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_cbo);
+            this->core_func->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+            this->core_func->glEnableVertexAttribArray(1);
 
-        this->core_func->glDrawArrays(GL_TRIANGLES, 0, this->array_size);
+            this->core_func->glDrawArrays(GL_TRIANGLES, 0, this->array_size);
 
-        this->core_func->glDisableVertexAttribArray(0);
-        this->core_func->glDisableVertexAttribArray(1);
+            this->core_func->glDisableVertexAttribArray(0);
+            this->core_func->glDisableVertexAttribArray(1);
+        }
 
         if (points_3d.size() == this->pose_model->num_of_joints) {
             this->pose_model->draw(points_3d, this->cam_ex_mat_inverse, cur_cam_ex_mat, 1);
@@ -441,18 +445,20 @@ void mSceneUtils::render(std::vector<glm::vec3> points_3d) {
         this->core_func->glBindTexture(GL_TEXTURE_CUBE_MAP, this->shadow_fbo[light_num]);
     }
 
-    this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_vbo);
-    this->core_func->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    this->core_func->glEnableVertexAttribArray(0);
+    if (this->is_with_floor) {
+        this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_vbo);
+        this->core_func->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+        this->core_func->glEnableVertexAttribArray(0);
 
-    this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_cbo);
-    this->core_func->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    this->core_func->glEnableVertexAttribArray(1);
+        this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_cbo);
+        this->core_func->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+        this->core_func->glEnableVertexAttribArray(1);
 
-    this->core_func->glDrawArrays(GL_TRIANGLES, 0, this->array_size);
+        this->core_func->glDrawArrays(GL_TRIANGLES, 0, this->array_size);
 
-    this->core_func->glDisableVertexAttribArray(0);
-    this->core_func->glDisableVertexAttribArray(1);
+        this->core_func->glDisableVertexAttribArray(0);
+        this->core_func->glDisableVertexAttribArray(1);
+    }
 
     if (points_3d.size() == this->pose_model->num_of_joints) {
         this->pose_model->draw(points_3d, this->cam_ex_mat_inverse, cur_cam_ex_mat, 0);

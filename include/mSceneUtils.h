@@ -32,6 +32,7 @@ public:
 
     void moveCamera(int move_dir);
     void rotateCamrea(const glm::mat4 & rotate_mat);
+    void setFloor(bool is_with_floor=true);
 
     void setFollowPerson(bool is_follow);
     void setFocusOnCenter(bool is_focus_on_center);
@@ -52,6 +53,7 @@ private:
     float move_step_scale;
     bool is_follow_person;
     bool is_focus_on_center;
+    bool is_with_floor;
 
     QOpenGLVertexArrayObject * VAO;
 

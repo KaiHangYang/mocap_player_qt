@@ -38,7 +38,6 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->buildGLView();
     this->buildProgressBar();
     this->buildToolBoxs();
-
     this->grid_layout->addWidget(this->video_box, 4, 0, 1, 1);
     this->grid_layout->addWidget(this->progress_bar, 4, 1, 1, 8);
     this->grid_layout->addWidget(this->tool_box_tabs, 0, 9, 5, 3);
@@ -148,7 +147,7 @@ void mMainWindow::buildToolBoxTab2() {
     }
 
     this->tool_camera_listview->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    this->tool_camera_activate_btn = new QPushButton("Activate Camera", this->camera_box);
+    this->tool_camera_activate_btn = new QPushButton("Use Camera", this->camera_box);
 //    this->tool_camera_add_btn = new QPushButton("Add", this->camera_box);
     this->tool_camera_addcurr_btn = new QPushButton("Add Current", this->camera_box);
     this->tool_camera_follow_btn = new QPushButton("Follow", this->camera_box);
@@ -188,14 +187,15 @@ void mMainWindow::buildToolBoxTab2() {
     //    this->camera_dialog_layout->addWidget(this->tool_camera_dialog_add_btn, 5, 2, 1, 1);
     //    this->tool_camera_dialog->hide(); // the hide must be called after the dialog is created
     //    this->camera_box_layout->addWidget(this->tool_camera_add_btn, 0, 0, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_addcurr_btn, 0, 0, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_activate_btn, 0, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_remove_btn, 0, 2, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_follow_btn, 1, 0, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_focuson_btn, 1, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_type_label, 0, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_type_combo, 0, 1, 1, 2);
+
+    this->camera_box_layout->addWidget(this->tool_camera_addcurr_btn, 1, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_activate_btn, 1, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_remove_btn, 1, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_follow_btn, 2, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_focuson_btn, 2, 1, 1, 1);
 //    this->camera_box_layout->addWidget(this->tool_camera_removeall_btn, 1, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_type_label, 2, 0, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_type_combo, 2, 1, 1, 2);
     this->camera_box_layout->addWidget(this->tool_camera_listview, 3, 0, 4, 3);
     this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 7, 1, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 7, 2, 1, 1);
@@ -505,13 +505,16 @@ void mMainWindow::cameraEditNameSlot(QModelIndex cur_index, QModelIndex bottomri
 }
 void mMainWindow::cameraTypeChangeSlot(int index) {
     this->cur_camera_type = index;
-
     if (this->cur_camera_type == 0) {
+        this->tool_camera_follow_btn->show();
+        this->tool_camera_focuson_btn->show();
         this->tool_camera_listview->setModel(this->camera_list_model);
     }
     else if (this->cur_camera_type == 1) {
         if (this->gl_widget->getIsHasPose()) {
             this->cameraSetAllFollow(true);
+            this->tool_camera_follow_btn->hide();
+            this->tool_camera_focuson_btn->hide();
             this->tool_camera_listview->setModel(this->camera_list_follow_model);
         }
         else {

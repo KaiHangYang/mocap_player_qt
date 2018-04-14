@@ -3,23 +3,41 @@
 #include "mPoseDefs.h"
 #include "mRenderParameters.h"
 
+//static float skeleton_style[] = {
+//    0, 1.3, // head
+//    1, 0.6, // left shoulder
+//    0, 1.5, // left upper arm
+//    0, 1.3, // left lower arm
+//    1, 0.6, // right shoulder
+//    0, 1.5, // right upper arm
+//    0, 1.3, // right lower arm
+//    1, 0.6, // spine
+//    1, 0.6, // left hip
+//    0, 2.0, // left ham,
+//    0, 1.6, // left calf,
+//    1, 0.6, // right hip
+//    0, 2.0, // right ham,
+//    0, 1.6, // right calf,
+//    0, 1.3, // left feet,
+//    0, 1.3, // right feet
+//};
 static float skeleton_style[] = {
-    0, 1.3, // head
-    1, 0.6, // left shoulder
-    0, 1.5, // left upper arm
-    0, 1.3, // left lower arm
-    1, 0.6, // right shoulder
-    0, 1.5, // right upper arm
-    0, 1.3, // right lower arm
-    1, 0.6, // spine
-    1, 0.6, // left hip
-    0, 2.0, // left ham,
-    0, 1.6, // left calf,
-    1, 0.6, // right hip
-    0, 2.0, // right ham,
-    0, 1.6, // right calf,
-    0, 1.3, // left feet,
-    0, 1.3, // right feet
+    1, 1.0, // head
+    1, 1.0, // left shoulder
+    1, 1.0, // head
+    1, 1.0, // left shoulder
+    1, 1.0, // head
+    1, 1.0, // left shoulder
+    1, 1.0, // head
+    1, 1.0, // left shoulder
+    1, 1.0, // head
+    1, 1.0, // left shoulder
+    1, 1.0, // head
+    1, 1.0, // left shoulder
+    1, 1.0, // head
+    1, 1.0, // left shoulder
+    1, 1.0, // head
+    1, 1.0, // left shoulder
 };
 
 mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, int pose_type) {
@@ -101,7 +119,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
             if (!vertexFlags[line[j]]) {
                 vertexFlags[line[j]] = true;
 
-                curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(0.8, 0.8, 0.8));
+                curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.1, 1.1, 1.1));
                 curmodel = glm::translate(glm::mat4(1.0f), vertexs[line[j]]) * curmodel;
 
                 shader->setVal("model", curmodel);

@@ -132,7 +132,8 @@ private:
 
     QLabel * tool_camera_type_label;
     QComboBox * tool_camera_type_combo;
-    QPushButton * tool_camera_add_split_horizon;
+    QPushButton * tool_camera_split_horizon;
+    QPushButton * tool_camera_set_parallel;
 
     // camera add dialog
     QDialog * tool_camera_dialog;

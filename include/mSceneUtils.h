@@ -27,6 +27,8 @@ public:
     void getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat);
     glm::mat4 getCurExMat();
     glm::mat4 getRawExMat();
+    glm::vec3 getCurFollowVec();
+    void setCurFollowVec(glm::vec3 cur_follow_vec);
 
     void moveCamera(int move_dir);
     void rotateCamrea(const glm::mat4 & rotate_mat);
@@ -57,8 +59,8 @@ private:
     GLuint ground_cbo;
     GLuint ground_tbo;
 
-    GLuint shadow_fbo;
-    GLuint shadow_tbo;
+    std::vector<GLuint> shadow_fbo;
+    std::vector<GLuint> shadow_tbo;
 
     QOpenGLFunctions_3_3_Core * core_func;
 

@@ -51,9 +51,11 @@ public slots:
     void cameraActivateSlot();
     void cameraFollowSlot();
     void cameraFocusSlot();
+    void cameraSetAllFollow(bool is_follow);
     void cameraEditNameSlot(QModelIndex topleft, QModelIndex bottomright, QVector<int> roles);
     void captureDirSlot();
     void captureOneFrame();
+    void cameraTypeChangeSlot(int index);
 signals:
     void signalOpenFile(QString & file_path);
 private:
@@ -71,16 +73,21 @@ private:
     int wnd_height;
 
     /****** Just for store *****/
-    int cur_camera_name_num;
-    int cur_camera_num;
+    int cur_camera_type; // 0 is the global type, 1 is the follow type
+    int cur_camera_name_num[2];
+    int cur_camera_num[2];
     int cur_capture_frame_sum;
     std::vector<std::pair<QString, glm::mat4>> camera_mat_arr;
+    std::vector<std::pair<QString, glm::vec3>> camera_vec_arr;
 
     QString file_dialog_extension;
     QString file_dialog_initial_dir;
-    QString camera_data_file_header;
+    std::vector<QString> camera_data_file_header;
     QStringListModel * file_list_model;
+
     QStringListModel * camera_list_model;
+    QStringListModel * camera_list_follow_model;
+
     QIcon icon_play;
     QIcon icon_pause;
     QIcon icon_redo;
@@ -122,6 +129,11 @@ private:
     QPushButton * tool_camera_removeall_btn;
     QPushButton * tool_camera_follow_btn;
     QPushButton * tool_camera_focuson_btn;
+
+    QLabel * tool_camera_type_label;
+    QComboBox * tool_camera_type_combo;
+    QPushButton * tool_camera_add_split_horizon;
+
     // camera add dialog
     QDialog * tool_camera_dialog;
     QGridLayout * camera_dialog_layout;

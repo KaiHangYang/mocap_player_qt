@@ -20,6 +20,8 @@ public:
     bool getIsHasPose();
     glm::mat4 getCurExMat();
     void setCurExMat(glm::mat4 cur_ex_mat);
+    glm::vec3 getCurFollowVec();
+    void setCurFollowVec(glm::vec3 cur_follow_vec);
     void setFollowPerson(bool is_follow);
     void setFocusOnPerson(bool is_focus);
     void captureFrame(cv::Mat & frame);

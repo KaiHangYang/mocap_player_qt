@@ -3,7 +3,6 @@
 #include <QDebug>
 
 int main(int argc, char *argv[]) {
-    // I am Just Test
     QApplication a(argc, argv);
     mMainWindow w;
     w.show();

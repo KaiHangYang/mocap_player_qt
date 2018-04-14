@@ -125,6 +125,15 @@ glm::mat4 mGLWidget::getCurExMat() {
 void mGLWidget::setCurExMat(glm::mat4 cur_ex_mat) {
     this->scene->setCurExMat(cur_ex_mat);
 }
+
+void mGLWidget::setCurFollowVec(glm::vec3 cur_follow_vec) {
+    this->scene->setCurFollowVec(cur_follow_vec);
+}
+
+glm::vec3 mGLWidget::getCurFollowVec() {
+    return this->scene->getCurFollowVec();
+}
+
 void mGLWidget::setFollowPerson(bool is_follow) {
     this->scene->setFollowPerson(is_follow);
 }

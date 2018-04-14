@@ -17,14 +17,15 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->wnd_height = wnd_height;
     this->file_dialog_extension = "BVH Files(*.bvh)";
     this->file_dialog_initial_dir = ".";
-    this->camera_data_file_header = "#M_CAMERA_DATA";
+    this->camera_data_file_header = std::vector<QString>({"#M_CAMERA_DATA", "#M_CAMERA_FOLLOW_DATA"});
 
     this->ui->setupUi(this);
     this->setWindowTitle(title);
 //    this->resize(this->wnd_width, this->wnd_height);
 
-    this->cur_camera_num = 0;
-    this->cur_camera_name_num = 0;
+    this->cur_camera_type = 0;
+    this->cur_camera_num[0] = 0;this->cur_camera_num[1] = 0;
+    this->cur_camera_name_num[0] = 0;this->cur_camera_name_num[1] = 0;
     this->cur_capture_frame_sum = 0;
 
     // Set the grid widget to contain the widgets
@@ -137,7 +138,15 @@ void mMainWindow::buildToolBoxTab2() {
 
     this->tool_camera_listview = new QListView(this->camera_box); // to show the camera pos name
     this->camera_list_model = new QStringListModel(this->tool_camera_listview);
-    this->tool_camera_listview->setModel(this->camera_list_model);
+    this->camera_list_follow_model = new QStringListModel(this->tool_camera_listview);
+
+    if (this->cur_camera_type == 0) {
+        this->tool_camera_listview->setModel(this->camera_list_model);
+    }
+    else if (this->cur_camera_type == 1) {
+        this->tool_camera_listview->setModel(this->camera_list_follow_model);
+    }
+
     this->tool_camera_listview->setSelectionMode(QAbstractItemView::ExtendedSelection);
     this->tool_camera_activate_btn = new QPushButton("Activate Camera", this->camera_box);
 //    this->tool_camera_add_btn = new QPushButton("Add", this->camera_box);
@@ -146,6 +155,15 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_camera_focuson_btn = new QPushButton("Focus", this->camera_box);
     this->tool_camera_remove_btn = new QPushButton("Remove", this->camera_box);
     this->tool_camera_removeall_btn = new QPushButton("Remove All", this->camera_box);
+    this->tool_camera_type_label = new QLabel("Camera Type: ", this->camera_box);
+    this->tool_camera_type_combo = new QComboBox(this->camera_box);
+
+    this->tool_camera_type_combo->addItem("Global");
+    this->tool_camera_type_combo->addItem("Follow");
+    if (this->cur_camera_type == 1) {
+        this->tool_camera_type_combo->setCurrentIndex(1);
+    }
+
     this->tool_camera_loadfromfile_btn = new QPushButton("Load", this->camera_box);
     this->tool_camera_savetofile_btn = new QPushButton("Save", this->camera_box);
     //    this->tool_camera_dialog = new QDialog(this);
@@ -176,9 +194,11 @@ void mMainWindow::buildToolBoxTab2() {
     this->camera_box_layout->addWidget(this->tool_camera_follow_btn, 1, 0, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_focuson_btn, 1, 1, 1, 1);
 //    this->camera_box_layout->addWidget(this->tool_camera_removeall_btn, 1, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_listview, 2, 0, 4, 3);
-    this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 6, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 6, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_type_label, 2, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_type_combo, 2, 1, 1, 2);
+    this->camera_box_layout->addWidget(this->tool_camera_listview, 3, 0, 4, 3);
+    this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 7, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 7, 2, 1, 1);
 
     //      Box for capture control
     this->capture_box = new QGroupBox("Capture Control:", this->tool_box_2);
@@ -242,11 +262,13 @@ void mMainWindow::bindEvents() {
     connect(this->tool_camera_follow_btn, SIGNAL(clicked()), this, SLOT(cameraFollowSlot()));
     connect(this->tool_camera_focuson_btn, SIGNAL(clicked()), this, SLOT(cameraFocusSlot()));
     connect(this->camera_list_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(cameraEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
+    connect(this->camera_list_follow_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(cameraEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
     connect(this->tool_camera_loadfromfile_btn, SIGNAL(clicked()), this, SLOT(cameraLoadFromFileSlot()));
     connect(this->tool_camera_savetofile_btn, SIGNAL(clicked()), this, SLOT(cameraSaveToFileSlot()));
 
     connect(this->tool_capture_dir_input, SIGNAL(lineEditOpenDirSignal()), this, SLOT(captureDirSlot()));
     connect(this->tool_capture_capture_one, SIGNAL(clicked()), this, SLOT(captureOneFrame()));
+    connect(this->tool_camera_type_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraTypeChangeSlot(int)));
 }
 
 
@@ -339,15 +361,34 @@ void mMainWindow::poseTemporaryStateSlot(bool is_pause) {
 // Slot for camera control
 void mMainWindow::cameraAddCurrSlot() {
     int cur_row = 0;
-    this->camera_list_model->insertRow(cur_row);
-    QModelIndex index = this->camera_list_model->index(cur_row);
+    if (this->cur_camera_type == 0) {
+        this->camera_list_model->insertRow(cur_row);
+        QModelIndex index = this->camera_list_model->index(cur_row);
 
-    this->camera_list_model->setData(index, "camera " + QString::number(this->cur_camera_name_num++));
+        this->camera_list_model->setData(index, "camera " + QString::number(this->cur_camera_name_num[this->cur_camera_type]++));
 
-    this->camera_mat_arr.insert(this->camera_mat_arr.begin(), std::pair<QString, glm::mat4>(index.data().toString(), this->gl_widget->getCurExMat()));
+        this->camera_mat_arr.insert(this->camera_mat_arr.begin(), std::pair<QString, glm::mat4>(index.data().toString(), this->gl_widget->getCurExMat()));
 
-    this->tool_camera_listview->setCurrentIndex(index);
-    this->cur_camera_num ++;
+        this->tool_camera_listview->setCurrentIndex(index);
+        this->cur_camera_num[this->cur_camera_type] ++;
+    }
+    else if (this->cur_camera_type == 1) {
+        if (this->gl_widget->getIsHasPose()) {
+            int cur_row = 0;
+            this->camera_list_follow_model->insertRow(cur_row);
+            QModelIndex index = this->camera_list_follow_model->index(cur_row);
+
+            this->camera_list_follow_model->setData(index, "camera " + QString::number(this->cur_camera_name_num[this->cur_camera_type]++));
+
+            this->camera_vec_arr.insert(this->camera_vec_arr.begin(), std::pair<QString, glm::vec3>(index.data().toString(), this->gl_widget->getCurFollowVec()));
+
+            this->tool_camera_listview->setCurrentIndex(index);
+            this->cur_camera_num[this->cur_camera_type]++;
+        }
+        else {
+            QMessageBox::critical(this, "Camera Error", "\"Follow\"(Camera Type) needs a pose in the scene!");
+        }
+    }
 }
 void mMainWindow::cameraAddSlot() {
     this->tool_camera_dialog->show();
@@ -357,58 +398,129 @@ void mMainWindow::cameraRemoveSlot() {
 
     while (!index_list.isEmpty()) {
         int cur_row = index_list[0].row();
-        this->camera_mat_arr.erase(this->camera_mat_arr.begin() + cur_row, this->camera_mat_arr.begin() + cur_row + 1);
-        this->camera_list_model->removeRow(cur_row);
+        if (this->cur_camera_type == 0) {
+            this->camera_mat_arr.erase(this->camera_mat_arr.begin() + cur_row, this->camera_mat_arr.begin() + cur_row + 1);
+            this->camera_list_model->removeRow(cur_row);
+        }
+        else if (this->cur_camera_type == 1) {
+            this->camera_vec_arr.erase(this->camera_vec_arr.begin() + cur_row, this->camera_vec_arr.begin() + cur_row + 1);
+            this->camera_list_follow_model->removeRow(cur_row);
+        }
         index_list = this->tool_camera_listview->selectionModel()->selectedIndexes();
     }
 }
 void mMainWindow::cameraRemoveAllSlot() {
-    this->camera_mat_arr.clear();
-    this->camera_list_model->removeRows(0, this->camera_list_model->rowCount());
+    if (this->cur_camera_type == 0) {
+        this->camera_mat_arr.clear();
+        this->camera_list_model->removeRows(0, this->camera_list_model->rowCount());
+    }
+    else if (this->cur_camera_type == 1) {
+        this->camera_vec_arr.clear();
+        this->camera_list_follow_model->removeRows(0, this->camera_list_follow_model->rowCount());
+    }
 }
 void mMainWindow::cameraActivateSlot() {
     QModelIndexList index_list = this->tool_camera_listview->selectionModel()->selectedIndexes();
     if (!index_list.isEmpty()) {
         // first disable the camera follow
-        this->tool_camera_follow_btn->setText("Follow");
-        this->gl_widget->setFollowPerson(false);
-
         int cur_row = index_list[0].row();
-        qDebug() << index_list[0].data().toString() << " " << this->camera_mat_arr[cur_row].first;
-        this->gl_widget->setCurExMat(this->camera_mat_arr[cur_row].second);
-    }
-}
-void mMainWindow::cameraFollowSlot() {
-    bool is_follow = this->tool_camera_follow_btn->text() == "Follow";
-    if (is_follow) {
-        this->tool_camera_follow_btn->setText("Unfollow");
-    }
-    else {
-        this->tool_camera_follow_btn->setText("Follow");
-    }
-    this->gl_widget->setFollowPerson(is_follow);
-}
-void mMainWindow::cameraFocusSlot() {
-    bool is_focus = this->tool_camera_focuson_btn->text() == "Focus";
-    if (is_focus) {
-        this->tool_camera_focuson_btn->setText("Unfocus");
-    }
-    else {
-        this->tool_camera_focuson_btn->setText("Focus");
-    }
-    this->gl_widget->setFocusOnPerson(is_focus);
-}
-void mMainWindow::cameraEditNameSlot(QModelIndex cur_index, QModelIndex bottomright, QVector<int> roles) {
-    if (this->camera_list_model->rowCount() != this->camera_mat_arr.size()) {
-        return;
-    }
-    else {
-        int cur_row = cur_index.row();
-        if (cur_index.data().toString() != this->camera_mat_arr[cur_row].first) {
-            this->camera_mat_arr[cur_row].first = cur_index.data().toString();
+        if (this->cur_camera_type == 0) {
+            this->cameraSetAllFollow(false);
+
+            this->gl_widget->setCurExMat(this->camera_mat_arr[cur_row].second);
+        }
+        else if (this->cur_camera_type == 1) {
+//            qDebug() << this->camera_vec_arr[cur_row].first << " " << index_list[0].data().toString();
+            this->gl_widget->setCurFollowVec(this->camera_vec_arr[cur_row].second);
         }
     }
 }
+void mMainWindow::cameraFollowSlot() {
+    if (this->gl_widget->getIsHasPose()) {
+        bool is_follow = this->tool_camera_follow_btn->text() == "Follow";
+        if (is_follow) {
+            this->tool_camera_follow_btn->setText("Unfollow");
+        }
+        else {
+            this->tool_camera_follow_btn->setText("Follow");
+        }
+        this->gl_widget->setFollowPerson(is_follow);
+    }
+    else {
+        QMessageBox::critical(this, "Camera Error", "Need a pose in the scene!");
+    }
+}
+void mMainWindow::cameraFocusSlot() {
+    if (this->gl_widget->getIsHasPose()) {
+        bool is_focus = this->tool_camera_focuson_btn->text() == "Focus";
+        if (is_focus) {
+            this->tool_camera_focuson_btn->setText("Unfocus");
+        }
+        else {
+            this->tool_camera_focuson_btn->setText("Focus");
+        }
+        this->gl_widget->setFocusOnPerson(is_focus);
+    }
+    else {
+        QMessageBox::critical(this, "Camera Error", "Need a pose in the scene!");
+    }
+}
+
+void mMainWindow::cameraSetAllFollow(bool is_follow) {
+    if (!is_follow) {
+        this->tool_camera_follow_btn->setText("Follow");
+        this->tool_camera_focuson_btn->setText("Focus");
+    }
+    else {
+        this->tool_camera_follow_btn->setText("Unfollow");
+        this->tool_camera_focuson_btn->setText("Unfocus");
+    }
+    this->gl_widget->setFollowPerson(is_follow);
+    this->gl_widget->setFocusOnPerson(is_follow);
+
+}
+void mMainWindow::cameraEditNameSlot(QModelIndex cur_index, QModelIndex bottomright, QVector<int> roles) {
+    if (this->cur_camera_type == 0) {
+        if (this->camera_list_model->rowCount() != this->camera_mat_arr.size()) {
+            return;
+        }
+        else {
+            int cur_row = cur_index.row();
+            if (cur_index.data().toString() != this->camera_mat_arr[cur_row].first) {
+                this->camera_mat_arr[cur_row].first = cur_index.data().toString();
+            }
+        }
+    }
+    else if (this->cur_camera_type == 1) {
+        if (this->camera_list_follow_model->rowCount() != this->camera_vec_arr.size()) {
+            return;
+        }
+        else {
+            int cur_row = cur_index.row();
+            if (cur_index.data().toString() != this->camera_vec_arr[cur_row].first) {
+                this->camera_vec_arr[cur_row].first = cur_index.data().toString();
+            }
+        }
+    }
+}
+void mMainWindow::cameraTypeChangeSlot(int index) {
+    this->cur_camera_type = index;
+
+    if (this->cur_camera_type == 0) {
+        this->tool_camera_listview->setModel(this->camera_list_model);
+    }
+    else if (this->cur_camera_type == 1) {
+        if (this->gl_widget->getIsHasPose()) {
+            this->cameraSetAllFollow(true);
+            this->tool_camera_listview->setModel(this->camera_list_follow_model);
+        }
+        else {
+            QMessageBox::critical(this, "Camera Error", "Need a pose in the scene");
+            this->tool_camera_type_combo->setCurrentIndex(0);
+        }
+    }
+}
+
 void mMainWindow::cameraLoadFromFileSlot() {
     QString read_file_name = QFileDialog::getOpenFileName(this, "Load Cameras Data", this->file_dialog_initial_dir, "*");
     if (!read_file_name.isEmpty()) {
@@ -417,25 +529,43 @@ void mMainWindow::cameraLoadFromFileSlot() {
             QTextStream file_stream(&cam_mat_file);
             QString file_string;
             glm::mat4 data_mat;
-            float * data = &data_mat[0][0];
+            glm::vec3 data_vec;
+            float * data;
             file_stream >> file_string;
-            if (file_string == this->camera_data_file_header) {
+            if (file_string == this->camera_data_file_header[this->cur_camera_type]) {
                 while (!file_stream.atEnd()) {
-                    file_stream >> data[0] >> data[1] >> data[2] >> data[3] >>
-                                   data[4] >> data[5] >> data[6] >> data[7] >>
-                                   data[8] >> data[9] >> data[10] >> data[11] >>
-                                   data[12] >> data[13] >> data[14] >> data[15];
-                    file_string = file_stream.readLine();
-                    file_string.remove(0, 1);
-                    // Insert into the network
+                    if (this->cur_camera_type == 0) {
+                        data = &data_mat[0][0];
+                        file_stream >> data[0] >> data[1] >> data[2] >> data[3] >>
+                                       data[4] >> data[5] >> data[6] >> data[7] >>
+                                       data[8] >> data[9] >> data[10] >> data[11] >>
+                                       data[12] >> data[13] >> data[14] >> data[15];
+                        file_string = file_stream.readLine();
+                        file_string.remove(0, 1);
+                        // Insert into the model list
 
-                    this->camera_list_model->insertRow(0);
-                    QModelIndex index = this->camera_list_model->index(0);
-                    this->camera_list_model->setData(index, file_string);
+                        this->camera_list_model->insertRow(0);
+                        QModelIndex index = this->camera_list_model->index(0);
+                        this->camera_list_model->setData(index, file_string);
 
-                    this->camera_mat_arr.insert(this->camera_mat_arr.begin(), std::pair<QString, glm::mat4>(file_string, data_mat));
-                    this->tool_camera_listview->setCurrentIndex(index);
-                    this->cur_camera_num ++;
+                        this->camera_mat_arr.insert(this->camera_mat_arr.begin(), std::pair<QString, glm::mat4>(file_string, data_mat));
+                        this->tool_camera_listview->setCurrentIndex(index);
+                        this->cur_camera_num[this->cur_camera_type] ++;
+                    }
+                    else if (this->cur_camera_type == 1) {
+                        data = &data_vec[0];
+                        file_stream >> data[0] >> data[1] >> data[2];
+                        file_string = file_stream.readLine();
+                        file_string.remove(0, 1);
+                        // Insert into the model list
+                        this->camera_list_follow_model->insertRow(0);
+                        QModelIndex index = this->camera_list_follow_model->index(0);
+                        this->camera_list_follow_model->setData(index, file_string);
+
+                        this->camera_vec_arr.insert(this->camera_vec_arr.begin(), std::pair<QString, glm::vec3>(file_string, data_vec));
+                        this->tool_camera_listview->setCurrentIndex(index);
+                        this->cur_camera_num[this->cur_camera_type] ++;
+                    }
                 }
 
             }
@@ -449,16 +579,25 @@ void mMainWindow::cameraSaveToFileSlot() {
     QString save_file_name = QFileDialog::getSaveFileName(this, "Save Cameras Data", this->file_dialog_initial_dir, "*");
     if (!save_file_name.isEmpty()) {
         QFile cam_mat_file(save_file_name);
-        if (cam_mat_file.open(QIODevice::ReadWrite)) {
+        if (cam_mat_file.open(QIODevice::WriteOnly)) {
             QTextStream file_stream(&cam_mat_file);
             // write the file sign
-            file_stream << this->camera_data_file_header << "\n";
-            for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
-                glm::mat4 cam_ex_mat = this->camera_mat_arr[i].second;
-                file_stream << cam_ex_mat[0][0] << " " << cam_ex_mat[0][1] << " " << cam_ex_mat[0][2] << " " << cam_ex_mat[0][3] << " " << \
-                               cam_ex_mat[1][0] << " " << cam_ex_mat[1][1] << " " << cam_ex_mat[1][2] << " " << cam_ex_mat[1][3] << " " << \
-                               cam_ex_mat[2][0] << " " << cam_ex_mat[2][1] << " " << cam_ex_mat[2][2] << " " << cam_ex_mat[2][3] << " " << \
-                               cam_ex_mat[3][0] << " " << cam_ex_mat[3][1] << " " << cam_ex_mat[3][2] << " " << cam_ex_mat[3][3] << " " << this->camera_mat_arr[i].first << "\n";
+            file_stream << this->camera_data_file_header[this->cur_camera_type] << "\n";
+
+            if (this->cur_camera_type == 0) {
+                for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
+                    glm::mat4 cam_ex_mat = this->camera_mat_arr[i].second;
+                    file_stream << cam_ex_mat[0][0] << " " << cam_ex_mat[0][1] << " " << cam_ex_mat[0][2] << " " << cam_ex_mat[0][3] << " " << \
+                                   cam_ex_mat[1][0] << " " << cam_ex_mat[1][1] << " " << cam_ex_mat[1][2] << " " << cam_ex_mat[1][3] << " " << \
+                                   cam_ex_mat[2][0] << " " << cam_ex_mat[2][1] << " " << cam_ex_mat[2][2] << " " << cam_ex_mat[2][3] << " " << \
+                                   cam_ex_mat[3][0] << " " << cam_ex_mat[3][1] << " " << cam_ex_mat[3][2] << " " << cam_ex_mat[3][3] << " " << this->camera_mat_arr[i].first << "\n";
+                }
+            }
+            else if (this->cur_camera_type == 1) {
+                for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
+                    glm::vec3 cam_ex_vec = this->camera_vec_arr[i].second;
+                    file_stream << cam_ex_vec[0] << " " << cam_ex_vec[1] << " " << cam_ex_vec[2] << " " << this->camera_vec_arr[i].first << "\n";
+                }
             }
             cam_mat_file.close();
         }

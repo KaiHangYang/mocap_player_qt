@@ -5,12 +5,17 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "mRotateUtils.h"
+#include <opencv2/highgui/highgui.hpp>
 
 mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int wnd_height) : QGLWidget(gl_format, parent) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
     // set cam_in_mat cam_ex_mat and is_ar here
+    this->cur_capture_sum = 0;
+    this->cur_capture_view_mats = std::vector<glm::mat4>();
+    this->is_set_capture_frame = false;
 
+    this->is_with_floor = true;
     this->pose_state = -1;
     this->temp_pose_state = 1;
     this->is_has_pose = false;
@@ -90,7 +95,12 @@ void mGLWidget::wheelEvent(QWheelEvent *event) {
 }
 void mGLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
+    if (this->is_with_floor) {
+        glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
+    }
+    else {
+        glClearColor(0.5f, 0.5f, 0.5f, 1.f);
+    }
     this->draw();
 }
 
@@ -103,6 +113,25 @@ void mGLWidget::draw() {
     if (this->pose_state == 1 && this->temp_pose_state == 1) {
         this->sendProgress(false);
         this->mocap_data->getOneFrame(cur_pose_joints, this->scene->getRawExMat());
+    }
+
+    // Just handle the frame capture
+    if (this->is_set_capture_frame && this->cur_capture_sum < this->cur_capture_view_mats.size()) {
+        this->scene->render(cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum]);
+
+        cv::Mat captured_img;
+        this->swapBuffers(); // Important to capture frames
+        this->scene->captureFrame(captured_img);
+        emit saveCapturedImageSignal(captured_img, this->cur_capture_sum);
+        this->cur_capture_sum++;
+
+        return;
+    }
+    else if (this->is_set_capture_frame) {
+        this->is_set_capture_frame = false;
+        this->cur_capture_sum = 0;
+        this->cur_capture_view_mats.clear();
+        this->tempStartPose();
     }
 
     this->scene->render(cur_pose_joints);
@@ -133,15 +162,33 @@ void mGLWidget::setCurFollowVec(glm::vec3 cur_follow_vec) {
 glm::vec3 mGLWidget::getCurFollowVec() {
     return this->scene->getCurFollowVec();
 }
-
 void mGLWidget::setFollowPerson(bool is_follow) {
     this->scene->setFollowPerson(is_follow);
 }
 void mGLWidget::setFocusOnPerson(bool is_focus) {
     this->scene->setFocusOnCenter(is_focus);
 }
-void mGLWidget::captureFrame(cv::Mat & frame) {
-    this->scene->captureFrame(frame);
+
+void mGLWidget::getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras) {
+    this->scene->getSplittedCameras(camera_num, splitted_cameras);
+}
+void mGLWidget::setFollowDefault() {
+    this->scene->setFollowDefault();
+}
+
+void mGLWidget::captureFrame(const std::vector<glm::vec3> & view_vecs) {
+    std::vector<glm::mat4> view_mats;
+    this->scene->convertVec2Mat(view_vecs, view_mats);
+    this->cur_capture_view_mats = view_mats;
+    this->cur_capture_sum = 0;
+    this->tempPausePose();
+
+    this->is_set_capture_frame = true;
+}
+
+void mGLWidget::setUseFloor(bool is_with_floor) {
+    this->scene->setFloor(is_with_floor);
+    this->is_with_floor = is_with_floor;
 }
 /*************** Implementation of slots *****************/
 void mGLWidget::changePoseFile(QString & file_name) {

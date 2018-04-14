@@ -24,7 +24,10 @@ public:
     void setCurFollowVec(glm::vec3 cur_follow_vec);
     void setFollowPerson(bool is_follow);
     void setFocusOnPerson(bool is_focus);
-    void captureFrame(cv::Mat & frame);
+    void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
+    void setFollowDefault();
+    void setUseFloor(bool is_with_floor);
+    void captureFrame(const std::vector<glm::vec3> & view_vecs);
 public slots:
     void changePoseFile(QString & file_name);
     void togglePose();
@@ -35,6 +38,7 @@ public slots:
 signals:
     void doubleClickPoseToggleSignal();
     void progressDisplaySignal(int cur_num, int total, bool is_reset);
+    void saveCapturedImageSignal(cv::Mat & frame, int cur_num);
 protected:
     void initializeGL();
     void paintGL();
@@ -51,6 +55,7 @@ private:
     glm::mat4 cam_in_mat;
     glm::mat4 cam_ex_mat;
     bool is_ar;
+    bool is_with_floor;
 
     int wnd_width;
     int wnd_height;
@@ -71,6 +76,12 @@ private:
 
     /**************** Progress control **************/
     void sendProgress(bool is_reset);
+    /************************************************/
+
+    /************** Capture Control *****************/
+    int cur_capture_sum;
+    std::vector<glm::mat4> cur_capture_view_mats;
+    bool is_set_capture_frame;
     /************************************************/
 };
 

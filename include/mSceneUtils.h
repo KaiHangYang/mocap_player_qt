@@ -17,7 +17,7 @@ public:
     mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, bool is_ar=false, int pose_type=0);
     ~mSceneUtils();
 
-    void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0));
+    void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), glm::mat4 cam_ex_mat = glm::mat4(0.f));
 
     void setExMat(glm::mat4 & cam_ex_mat);
     void setInMat(glm::mat4 & cam_in_mat);
@@ -29,6 +29,8 @@ public:
     glm::mat4 getRawExMat();
     glm::vec3 getCurFollowVec();
     void setCurFollowVec(glm::vec3 cur_follow_vec);
+    void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
+    void setFollowDefault();
 
     void moveCamera(int move_dir);
     void rotateCamrea(const glm::mat4 & rotate_mat);
@@ -37,12 +39,15 @@ public:
     void setFollowPerson(bool is_follow);
     void setFocusOnCenter(bool is_focus_on_center);
     void captureFrame(cv::Mat & cur_frame);
+    void convertVec2Mat(const std::vector<glm::vec3> & follow_vec, std::vector<glm::mat4> & view_mats);
 
     void setSurround(bool do_surround, glm::vec3 surround_center = glm::vec3(0.0,0.0,0.0));
 private:
     std::vector<GLfloat> getGroundVertexs();
     std::vector<GLfloat> getGroundColor();
     void surroundOnePoint(glm::mat4 & model_mat);
+
+    void _render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat);
 
     int wnd_width;
     int wnd_height;

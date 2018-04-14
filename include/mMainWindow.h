@@ -56,6 +56,10 @@ public slots:
     void captureDirSlot();
     void captureOneFrame();
     void cameraTypeChangeSlot(int index);
+    void cameraSplitCircleSlot();
+    void cameraSetDefaultSlot();
+    void sceneFloorSlot();
+    void saveFramesSlot(cv::Mat & frames, int cur_num);
 signals:
     void signalOpenFile(QString & file_path);
 private:
@@ -76,7 +80,6 @@ private:
     int cur_camera_type; // 0 is the global type, 1 is the follow type
     int cur_camera_name_num[2];
     int cur_camera_num[2];
-    int cur_capture_frame_sum;
     std::vector<std::pair<QString, glm::mat4>> camera_mat_arr;
     std::vector<std::pair<QString, glm::vec3>> camera_vec_arr;
 
@@ -133,6 +136,7 @@ private:
     QLabel * tool_camera_type_label;
     QComboBox * tool_camera_type_combo;
     QPushButton * tool_camera_split_horizon;
+    QLineEdit * tool_camera_split_num;
     QPushButton * tool_camera_set_parallel;
 
     // camera add dialog
@@ -157,6 +161,7 @@ private:
     QPushButton * tool_capture_capture_interval;
     QLabel * tool_capture_img_extension_label;
     QComboBox * tool_capture_img_extension_combox;
+    QPushButton * tool_capture_floor_btn;
     /**************************/
 
     // OpenGL widgets

@@ -26,7 +26,6 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->cur_camera_type = 0;
     this->cur_camera_num[0] = 0;this->cur_camera_num[1] = 0;
     this->cur_camera_name_num[0] = 0;this->cur_camera_name_num[1] = 0;
-    this->cur_capture_frame_sum = 0;
 
     // Set the grid widget to contain the widgets
     this->grid_widget = new QWidget(this);
@@ -138,13 +137,7 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_camera_listview = new QListView(this->camera_box); // to show the camera pos name
     this->camera_list_model = new QStringListModel(this->tool_camera_listview);
     this->camera_list_follow_model = new QStringListModel(this->tool_camera_listview);
-
-    if (this->cur_camera_type == 0) {
-        this->tool_camera_listview->setModel(this->camera_list_model);
-    }
-    else if (this->cur_camera_type == 1) {
-        this->tool_camera_listview->setModel(this->camera_list_follow_model);
-    }
+    // The model is set in the end of this function
 
     this->tool_camera_listview->setSelectionMode(QAbstractItemView::ExtendedSelection);
     this->tool_camera_activate_btn = new QPushButton("Use Camera", this->camera_box);
@@ -156,6 +149,11 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_camera_removeall_btn = new QPushButton("Remove All", this->camera_box);
     this->tool_camera_type_label = new QLabel("Camera Type: ", this->camera_box);
     this->tool_camera_type_combo = new QComboBox(this->camera_box);
+    this->tool_camera_split_horizon = new QPushButton("Split Camera", this->camera_box);
+    this->tool_camera_split_num = new QLineEdit(this->camera_box);
+    this->tool_camera_set_parallel = new QPushButton("Default", this->camera_box);
+    this->tool_camera_split_num->setPlaceholderText("1~100");
+    this->tool_camera_split_num->setValidator(new QIntValidator(1, 100, this->camera_box));
 
     this->tool_camera_type_combo->addItem("Global");
     this->tool_camera_type_combo->addItem("Follow");
@@ -196,9 +194,12 @@ void mMainWindow::buildToolBoxTab2() {
     this->camera_box_layout->addWidget(this->tool_camera_follow_btn, 2, 0, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_focuson_btn, 2, 1, 1, 1);
 //    this->camera_box_layout->addWidget(this->tool_camera_removeall_btn, 1, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_listview, 3, 0, 4, 3);
-    this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 7, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 7, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_split_num, 3, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_split_horizon, 3, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_set_parallel, 3, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_listview, 4, 0, 4, 3);
+    this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 8, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 8, 2, 1, 1);
 
     //      Box for capture control
     this->capture_box = new QGroupBox("Capture Control:", this->tool_box_2);
@@ -207,6 +208,7 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_capture_dir_label = new QLabel("Save Dir:", this->capture_box);
     this->tool_capture_dir_input = new mLineEditWidget(this->capture_box);
     this->tool_capture_dir_input->setReadOnly(true);
+    this->tool_capture_dir_input->setPlaceholderText("Double click to choose directory!");
 
     this->tool_capture_step_label = new QLabel("Step:", this->capture_box);
     this->tool_capture_step_input = new QLineEdit(this->capture_box);
@@ -218,6 +220,7 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_capture_img_extension_combox = new QComboBox(this->capture_box);
     this->tool_capture_img_extension_combox->addItem("jpg");
     this->tool_capture_img_extension_combox->addItem("png");
+    this->tool_capture_floor_btn = new QPushButton("No Floor", this->capture_box);
 
     this->capture_box_layout->addWidget(this->tool_capture_dir_label, 0, 0, 1, 1);
     this->capture_box_layout->addWidget(this->tool_capture_dir_input, 0, 1, 1, 3);
@@ -227,12 +230,15 @@ void mMainWindow::buildToolBoxTab2() {
     this->capture_box_layout->addWidget(this->tool_capture_step_input, 1, 3, 1, 1);
     this->capture_box_layout->addWidget(this->tool_capture_capture_one, 2, 0, 1, 2);
     this->capture_box_layout->addWidget(this->tool_capture_capture_interval, 2, 2, 1, 2);
+    this->capture_box_layout->addWidget(this->tool_capture_floor_btn, 3, 0, 1, 2);
 
     this->tool_box_2_layout->addWidget(this->camera_box, 0, 0, 1, 1);
     this->tool_box_2_layout->addWidget(this->capture_box, 1, 0, 1, 1);
 
     this->tool_camera_removeall_btn->setDisabled(true);
     this->tool_camera_removeall_btn->hide();
+
+    this->cameraTypeChangeSlot(this->cur_camera_type);
 }
 void mMainWindow::bindEvents() {
     // Set the events
@@ -269,6 +275,11 @@ void mMainWindow::bindEvents() {
     connect(this->tool_capture_dir_input, SIGNAL(lineEditOpenDirSignal()), this, SLOT(captureDirSlot()));
     connect(this->tool_capture_capture_one, SIGNAL(clicked()), this, SLOT(captureOneFrame()));
     connect(this->tool_camera_type_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraTypeChangeSlot(int)));
+    connect(this->tool_capture_floor_btn, SIGNAL(clicked()), this, SLOT(sceneFloorSlot()));
+
+    connect(this->tool_camera_split_horizon, SIGNAL(clicked()), this, SLOT(cameraSplitCircleSlot()));
+    connect(this->tool_camera_set_parallel, SIGNAL(clicked()), this, SLOT(cameraSetDefaultSlot()));
+    connect(this->gl_widget, SIGNAL(saveCapturedImageSignal(cv::Mat&,int)), this, SLOT(saveFramesSlot(cv::Mat&,int)));
 }
 
 
@@ -509,6 +520,10 @@ void mMainWindow::cameraTypeChangeSlot(int index) {
         this->tool_camera_follow_btn->show();
         this->tool_camera_focuson_btn->show();
         this->tool_camera_listview->setModel(this->camera_list_model);
+
+        this->tool_camera_split_horizon->hide();
+        this->tool_camera_split_num->hide();
+        this->tool_camera_set_parallel->hide();
     }
     else if (this->cur_camera_type == 1) {
         if (this->gl_widget->getIsHasPose()) {
@@ -516,12 +531,44 @@ void mMainWindow::cameraTypeChangeSlot(int index) {
             this->tool_camera_follow_btn->hide();
             this->tool_camera_focuson_btn->hide();
             this->tool_camera_listview->setModel(this->camera_list_follow_model);
+
+            this->tool_camera_split_horizon->show();
+            this->tool_camera_split_num->show();
+            this->tool_camera_set_parallel->show();
         }
         else {
             QMessageBox::critical(this, "Camera Error", "Need a pose in the scene");
             this->tool_camera_type_combo->setCurrentIndex(0);
         }
     }
+}
+
+void mMainWindow::cameraSplitCircleSlot() {
+
+    int camera_num = this->tool_camera_split_num->text().toInt();
+    if (this->tool_camera_split_num->text() == "" || camera_num <= 0) {
+        QMessageBox::critical(this, "Value Error", "Need a valid split number!");
+        return;
+    }
+    std::vector<glm::vec3> splited_cameras;
+    this->gl_widget->getSplittedCameras(camera_num, splited_cameras);
+
+    for (int i = 0; i < camera_num; ++i) {
+        int cur_row = 0;
+        this->camera_list_follow_model->insertRow(cur_row);
+        QModelIndex index = this->camera_list_follow_model->index(cur_row);
+
+        this->camera_list_follow_model->setData(index, "splitted camera " + QString::number(i));
+
+        this->camera_vec_arr.insert(this->camera_vec_arr.begin(), std::pair<QString, glm::vec3>(index.data().toString(), splited_cameras[i]));
+
+        this->tool_camera_listview->setCurrentIndex(index);
+        this->cur_camera_num[this->cur_camera_type]++;
+    }
+}
+
+void mMainWindow::cameraSetDefaultSlot() {
+    this->gl_widget->setFollowDefault();
 }
 
 void mMainWindow::cameraLoadFromFileSlot() {
@@ -614,18 +661,41 @@ void mMainWindow::captureDirSlot() {
     }
 }
 
+void mMainWindow::saveFramesSlot(cv::Mat & frame, int cur_num) {
+    QString dir_name = this->tool_capture_dir_input->text();
+    QFileInfo dir_info(dir_name);
+    if (!dir_name.isEmpty() && dir_info.isDir()) {
+        QString cur_frame_num = QString::number(this->progress_bar->value());
+        QString img_name = dir_name + "/" + cur_frame_num + "-" + QString::number(cur_num) + "." + this->tool_capture_img_extension_combox->currentText();
+        cv::imwrite(img_name.toStdString(), frame);
+    }
+}
+
 void mMainWindow::captureOneFrame() {
     QString dir_name = this->tool_capture_dir_input->text();
     QFileInfo dir_info(dir_name);
     if (!dir_name.isEmpty() && dir_info.isDir()) {
-        cv::Mat frame;
-        this->gl_widget->captureFrame(frame);
-        QString img_name = dir_name + "/" + QString::number(this->cur_capture_frame_sum) + "." + this->tool_capture_img_extension_combox->currentText();
-
-        cv::imwrite(img_name.toStdString(), frame);
-        this->cur_capture_frame_sum += 1;
+        // Get view mats
+        std::vector<glm::vec3> cur_view_vecs;
+        for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
+            cur_view_vecs.push_back(this->camera_vec_arr[i].second);
+        }
+        this->gl_widget->captureFrame(cur_view_vecs);
     }
     else {
         QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
     }
 }
+
+
+void mMainWindow::sceneFloorSlot() {
+    bool is_has_floor = this->tool_capture_floor_btn->text() == "Use Floor";
+    if (is_has_floor) {
+        this->tool_capture_floor_btn->setText("No Floor");
+    }
+    else {
+        this->tool_capture_floor_btn->setText("Use Floor");
+    }
+    this->gl_widget->setUseFloor(is_has_floor);
+}
+

@@ -73,7 +73,7 @@ private:
     glm::mat4 cur_cam_ex_r_mat;
     glm::mat4 cur_cam_ex_t_mat;
 
-    glm::vec2 cur_follow_dert;
+    glm::vec3 cur_follow_dert;
     glm::vec3 person_center_pos;
 
     /***** center surround *****/

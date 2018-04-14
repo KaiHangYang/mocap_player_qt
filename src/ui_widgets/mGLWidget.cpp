@@ -128,6 +128,9 @@ void mGLWidget::setCurExMat(glm::mat4 cur_ex_mat) {
 void mGLWidget::setFollowPerson(bool is_follow) {
     this->scene->setFollowPerson(is_follow);
 }
+void mGLWidget::setFocusOnPerson(bool is_focus) {
+    this->scene->setFocusOnCenter(is_focus);
+}
 void mGLWidget::captureFrame(cv::Mat & frame) {
     this->scene->captureFrame(frame);
 }

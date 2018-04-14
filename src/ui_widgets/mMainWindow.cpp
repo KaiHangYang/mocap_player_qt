@@ -143,6 +143,7 @@ void mMainWindow::buildToolBoxTab2() {
 //    this->tool_camera_add_btn = new QPushButton("Add", this->camera_box);
     this->tool_camera_addcurr_btn = new QPushButton("Add Current", this->camera_box);
     this->tool_camera_follow_btn = new QPushButton("Follow", this->camera_box);
+    this->tool_camera_focuson_btn = new QPushButton("Focus", this->camera_box);
     this->tool_camera_remove_btn = new QPushButton("Remove", this->camera_box);
     this->tool_camera_removeall_btn = new QPushButton("Remove All", this->camera_box);
     this->tool_camera_loadfromfile_btn = new QPushButton("Load", this->camera_box);
@@ -171,9 +172,10 @@ void mMainWindow::buildToolBoxTab2() {
     //    this->camera_box_layout->addWidget(this->tool_camera_add_btn, 0, 0, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_addcurr_btn, 0, 0, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_activate_btn, 0, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_follow_btn, 0, 2, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_remove_btn, 1, 0, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_removeall_btn, 1, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_remove_btn, 0, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_follow_btn, 1, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_focuson_btn, 1, 1, 1, 1);
+//    this->camera_box_layout->addWidget(this->tool_camera_removeall_btn, 1, 1, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_listview, 2, 0, 4, 3);
     this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 6, 1, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 6, 2, 1, 1);
@@ -210,6 +212,7 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_box_2_layout->addWidget(this->capture_box, 1, 0, 1, 1);
 
     this->tool_camera_removeall_btn->setDisabled(true);
+    this->tool_camera_removeall_btn->hide();
 }
 void mMainWindow::bindEvents() {
     // Set the events
@@ -237,6 +240,7 @@ void mMainWindow::bindEvents() {
     connect(this->tool_camera_removeall_btn, SIGNAL(clicked()), this, SLOT(cameraRemoveAllSlot()));
     connect(this->tool_camera_activate_btn, SIGNAL(clicked()), this, SLOT(cameraActivateSlot()));
     connect(this->tool_camera_follow_btn, SIGNAL(clicked()), this, SLOT(cameraFollowSlot()));
+    connect(this->tool_camera_focuson_btn, SIGNAL(clicked()), this, SLOT(cameraFocusSlot()));
     connect(this->camera_list_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(cameraEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
     connect(this->tool_camera_loadfromfile_btn, SIGNAL(clicked()), this, SLOT(cameraLoadFromFileSlot()));
     connect(this->tool_camera_savetofile_btn, SIGNAL(clicked()), this, SLOT(cameraSaveToFileSlot()));
@@ -378,14 +382,21 @@ void mMainWindow::cameraFollowSlot() {
     bool is_follow = this->tool_camera_follow_btn->text() == "Follow";
     if (is_follow) {
         this->tool_camera_follow_btn->setText("Unfollow");
-        // Set the camera follow here
-        this->gl_widget->setFollowPerson(is_follow);
     }
     else {
         this->tool_camera_follow_btn->setText("Follow");
-        // Set the camera unfollow here
-        this->gl_widget->setFollowPerson(is_follow);
     }
+    this->gl_widget->setFollowPerson(is_follow);
+}
+void mMainWindow::cameraFocusSlot() {
+    bool is_focus = this->tool_camera_focuson_btn->text() == "Focus";
+    if (is_focus) {
+        this->tool_camera_focuson_btn->setText("Unfocus");
+    }
+    else {
+        this->tool_camera_focuson_btn->setText("Focus");
+    }
+    this->gl_widget->setFocusOnPerson(is_focus);
 }
 void mMainWindow::cameraEditNameSlot(QModelIndex cur_index, QModelIndex bottomright, QVector<int> roles) {
     if (this->camera_list_model->rowCount() != this->camera_mat_arr.size()) {

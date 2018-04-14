@@ -23,7 +23,8 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->VAO = vao;
     this->core_func = core_func;
     this->is_follow_person = false;
-    this->is_focus_on_center = true;
+    this->is_focus_on_center = false;
+    this->person_center_pos = glm::vec3(0.f);
 
     // The parameter maybe changed as reality make sure the ground_col and ground_row is even
     this->ground_col = 100;
@@ -256,7 +257,7 @@ void mSceneUtils::moveCamera(int move_dir) {
     }
     if (this->is_follow_person) {
         // the cam_ex_t_mat is -(camera pos)
-        this->cur_follow_dert = glm::vec2(-this->cur_cam_ex_t_mat[3][0] - this->person_center_pos[0], -this->cur_cam_ex_t_mat[3][2] - this->person_center_pos[2]);
+        this->cur_follow_dert = glm::vec3(-this->cur_cam_ex_t_mat[3][0] - this->person_center_pos[0], -this->cur_cam_ex_t_mat[3][1] - this->person_center_pos[1], -this->cur_cam_ex_t_mat[3][2] - this->person_center_pos[2]);
     }
 }
 void mSceneUtils::rotateCamrea(const glm::mat4 &rotate_mat) {
@@ -267,7 +268,8 @@ void mSceneUtils::getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat
         // the cam_ex_t_mat is -(camera pos)
         // only update the cur_follow_dert
         this->cur_cam_ex_t_mat[3][0] = -(this->cur_follow_dert[0] + this->person_center_pos[0]);
-        this->cur_cam_ex_t_mat[3][2] = -(this->cur_follow_dert[1] + this->person_center_pos[2]);
+        this->cur_cam_ex_t_mat[3][1] = -(this->cur_follow_dert[1] + this->person_center_pos[1]);
+        this->cur_cam_ex_t_mat[3][2] = -(this->cur_follow_dert[2] + this->person_center_pos[2]);
     }
     if (this->is_focus_on_center) {
         glm::vec3 camera_pos(-this->cur_cam_ex_t_mat[3][0], -this->cur_cam_ex_t_mat[3][1], -this->cur_cam_ex_t_mat[3][2]);

@@ -50,6 +50,7 @@ public slots:
     void cameraSaveToFileSlot();
     void cameraActivateSlot();
     void cameraFollowSlot();
+    void cameraFocusSlot();
     void cameraEditNameSlot(QModelIndex topleft, QModelIndex bottomright, QVector<int> roles);
     void captureDirSlot();
     void captureOneFrame();
@@ -120,6 +121,7 @@ private:
     QPushButton * tool_camera_remove_btn;
     QPushButton * tool_camera_removeall_btn;
     QPushButton * tool_camera_follow_btn;
+    QPushButton * tool_camera_focuson_btn;
     // camera add dialog
     QDialog * tool_camera_dialog;
     QGridLayout * camera_dialog_layout;

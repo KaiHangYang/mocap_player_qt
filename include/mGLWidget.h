@@ -32,6 +32,8 @@ public:
 public slots:
     void changePoseFile(QString & file_name);
     void togglePose();
+    void startPose();
+    void stopPose();
     void resetPose();
     void tempStartPose();
     void tempPausePose();
@@ -39,7 +41,8 @@ public slots:
 signals:
     void doubleClickPoseToggleSignal();
     void progressDisplaySignal(int cur_num, int total, bool is_reset);
-    void saveCapturedImageSignal(cv::Mat & frame, int cur_num);
+    void saveCapturedFrameSignal(cv::Mat & frame, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_num);
+    void changePoseFileSignal();
 protected:
     void initializeGL();
     void paintGL();

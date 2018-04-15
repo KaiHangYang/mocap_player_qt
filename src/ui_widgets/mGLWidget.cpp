@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "mRotateUtils.h"
 #include <opencv2/highgui/highgui.hpp>
+#include "mVisual.h"
 
 mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int wnd_height) : QGLWidget(gl_format, parent) {
     this->wnd_width = wnd_width;
@@ -62,7 +63,6 @@ void mGLWidget::mousePressEvent(QMouseEvent * event) {
 
 void mGLWidget::mouseMoveEvent(QMouseEvent *event) {
     mCamRotate::mouse_move_callback(event);
-
 }
 void mGLWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     emit doubleClickPoseToggleSignal();
@@ -102,41 +102,6 @@ void mGLWidget::paintGL() {
         glClearColor(0.5f, 0.5f, 0.5f, 1.f);
     }
     this->draw();
-}
-
-void mGLWidget::draw() {
-    glm::mat4 cur_ex_r_mat, cur_ex_t_mat, cur_rotate_mat;
-    this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
-    cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat);
-    this->scene->rotateCamrea(cur_rotate_mat);
-
-    if (this->pose_state == 1 && this->temp_pose_state == 1) {
-        this->sendProgress(false);
-        this->mocap_data->getOneFrame(cur_pose_joints, this->scene->getRawExMat());
-    }
-
-    // Just handle the frame capture
-    if (this->is_set_capture_frame) {
-        if (this->cur_capture_sum < this->cur_capture_view_mats.size()) {
-            this->scene->render(cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum]);
-
-            cv::Mat captured_img;
-            this->swapBuffers(); // Important to capture frames
-            this->scene->captureFrame(captured_img);
-            emit saveCapturedImageSignal(captured_img, this->cur_capture_sum);
-            this->cur_capture_sum++;
-
-            return;
-        }
-        else {
-            this->is_set_capture_frame = false;
-            this->cur_capture_sum = 0;
-            this->cur_capture_view_mats.clear();
-            this->tempStartPose();
-        }
-    }
-
-    this->scene->render(cur_pose_joints);
 }
 
 int mGLWidget::getPoseState() {
@@ -216,7 +181,7 @@ void mGLWidget::changePoseFile(QString & file_name) {
         this->is_has_pose = true;
         this->pose_state = 0;
         this->sendProgress(true);
-        this->mocap_data->getOneFrame(cur_pose_joints, this->scene->getRawExMat());
+        this->mocap_data->getOneFrame(this->cur_pose_joints, 0.0);
     }
     else {
         this->is_has_pose = false;
@@ -227,12 +192,18 @@ void mGLWidget::changePoseFile(QString & file_name) {
 void mGLWidget::togglePose() {
     if (this->is_has_pose) {
         if (this->pose_state == 1) {
-            this->pose_state = 0;
+            this->stopPose();
         }
         else if (this->pose_state == 0){
-            this->pose_state = 1;
+            this->startPose();
         }
     }
+}
+void mGLWidget::startPose() {
+    this->pose_state = 1;
+}
+void mGLWidget::stopPose() {
+    this->pose_state = 0;
 }
 void mGLWidget::resetPose() {
     if (this->is_has_pose) {
@@ -240,7 +211,7 @@ void mGLWidget::resetPose() {
         this->mocap_data->resetCounter();
         this->sendProgress(false);
         // Reset to the first frame pose
-        this->mocap_data->getOneFrame(this->cur_pose_joints, this->scene->getRawExMat());
+        this->mocap_data->getOneFrame(this->cur_pose_joints, 0.0);
     }
 }
 
@@ -248,7 +219,7 @@ void mGLWidget::setPose(float ratio) {
     int cur_frame_num = this->mocap_data->getTotalFrame() * ratio;
     this->mocap_data->setFramePos(cur_frame_num);
     this->sendProgress(false);
-    this->mocap_data->getOneFrame(this->cur_pose_joints, this->scene->getRawExMat());
+    this->mocap_data->getOneFrame(this->cur_pose_joints, 0.0);
 }
 
 void mGLWidget::tempPausePose() {
@@ -260,4 +231,51 @@ void mGLWidget::tempStartPose() {
     if (this->is_has_pose) {
         this->temp_pose_state = 1; // temp start
     }
+}
+
+void mGLWidget::draw() {
+    glm::mat4 cur_ex_r_mat, cur_ex_t_mat, cur_rotate_mat;
+    this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
+    cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat);
+    this->scene->rotateCamrea(cur_rotate_mat);
+
+    if (this->pose_state == 1 && this->temp_pose_state == 1) {
+        this->sendProgress(false);
+        std::vector<glm::vec3> tmp_pose_joints;
+        bool result = this->mocap_data->getOneFrame(tmp_pose_joints, 0.0);
+        if (!result) {
+            // read finished then read the next file
+            emit changePoseFileSignal();
+        }
+        else {
+            this->cur_pose_joints = tmp_pose_joints;
+            // if use capture all, here I need to set flags for it.
+        }
+    }
+
+    // Just handle the frame capture of only one
+    if (this->is_set_capture_frame) {
+        if (this->cur_capture_sum < this->cur_capture_view_mats.size()) {
+            this->scene->render(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum]);
+            std::vector<glm::vec2> labels_2d;
+            std::vector<glm::vec3> labels_3d;
+            this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum], labels_2d, labels_3d);
+
+            cv::Mat captured_img;
+            this->swapBuffers(); // Important to capture frames
+            this->scene->captureFrame(captured_img);
+//            mVTools::drawLines(captured_img, labels_2d);
+            emit saveCapturedFrameSignal(captured_img, labels_2d, labels_3d, this->cur_capture_sum);
+            this->cur_capture_sum++;
+            return;
+        }
+        else {
+            this->is_set_capture_frame = false;
+            this->cur_capture_sum = 0;
+            this->cur_capture_view_mats.clear();
+            this->tempStartPose();
+        }
+    }
+
+    this->scene->render(cur_pose_joints);
 }

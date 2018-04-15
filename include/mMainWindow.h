@@ -36,7 +36,10 @@ public slots:
     void fileRemoveSlot();
     void fileRemoveAllSlot();
     void fileActivatedSlot(QModelIndex index);
+    void fileHighlightCurrentSlot();
     void videoToggleSlot();
+    void videoStartSlot();
+    void videoStopSlot();
     void videoResetSlot();
     void progressBarDisplaySlot(int cur_num, int total, bool is_reset);
     void progressBarSetSlot(float cur_ratio);
@@ -59,9 +62,9 @@ public slots:
     void cameraSplitCircleSlot();
     void cameraSetDefaultSlot();
     void sceneFloorSlot();
-    void saveFramesSlot(cv::Mat & frames, int cur_num);
-signals:
-    void signalOpenFile(QString & file_path);
+    void saveFramesSlot(cv::Mat & frames, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_num);
+    void changeNextPoseSlot();
+
 private:
     /************** Functions for build the GUI *************/
     void buildGLView();
@@ -77,6 +80,7 @@ private:
     int wnd_height;
 
     /****** Just for store *****/
+    int cur_pose_file_index;
     int cur_camera_type; // 0 is the global type, 1 is the follow type
     int cur_camera_name_num[2];
     int cur_camera_num[2];
@@ -105,20 +109,31 @@ private:
     QWidget * tool_box;
     QWidget * tool_box_2;
     QGroupBox * file_box;
+    QGroupBox * pose_box;
     QWidget * video_box;
     QGroupBox * camera_box;
 
     QGridLayout * tool_box_layout;
     QGridLayout * tool_box_2_layout;
     QGridLayout * file_box_layout;
+    QGridLayout * pose_box_layout;
     QGridLayout * video_box_layout;
     QGridLayout * camera_box_layout;
 
     QPushButton * tool_file_add_btn;
     QPushButton * tool_file_remove_btn;
     QPushButton * tool_file_removeall_btn;
+    QPushButton * tool_file_highlight_current;
     QListView * tool_file_listview;
     QListView * tool_camera_listview;
+
+    QLabel * tool_pose_change_step_label;
+    QLineEdit * tool_pose_change_step_input;
+    QPushButton * tool_pose_change_step_btn;
+
+    QLabel * tool_pose_jitter_size_label;
+    QLineEdit * tool_pose_jitter_size_input;
+    QPushButton * tool_pose_jitter_size_btn;
 
     QPushButton * tool_video_toggle_btn;
     QPushButton * tool_video_reset_btn;

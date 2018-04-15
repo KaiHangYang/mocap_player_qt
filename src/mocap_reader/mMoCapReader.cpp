@@ -2,7 +2,7 @@
 #include <QFileInfo>
 #include <QDebug>
 
-bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, int index) {
+bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, float pose_change_size, int index) {
 
     if (this->cur_frame_num >= this->total_frame_num) {
         // The data is not valid
@@ -14,35 +14,57 @@ bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, int index) {
 
     if (index >= 0 && index < this->total_frame_num) {
         frame_index = index;
-    }
-    else {
-        frame_index = this->cur_frame_num;
-        this->cur_frame_num ++;
-        if (this->cur_frame_num >= this->total_frame_num) {
-            this->cur_frame_num = 0;
+        for (int i = 0; i < this->num_of_joints; ++i) {
+            joints[i] = this->data[i][frame_index];
         }
-    }
 
-    for (int i = 0; i < this->num_of_joints; ++i) {
-        joints[i] = this->data[i][frame_index];
-    }
-
-    return true;
-}
-bool mMoCapData::getOneFrame(std::vector<glm::vec3> & joints, glm::mat4 cam_ex_mat, int index) {
-    std::vector<glm::vec3> cur_joints;
-
-    if (this->getOneFrame(cur_joints, index)) {
-        joints.clear();
-        for (int i = 0; i < cur_joints.size(); ++i) {
-            glm::vec4 cur_pos = cam_ex_mat * glm::vec4(cur_joints[i],1.0);
-            joints.push_back(glm::vec3(cur_pos));
-        }
+        this->pose_adjuster->adjustAccordingToBoneLength(joints, this->is_use_jitters);
         return true;
     }
     else {
-        return false;
+        do {
+            for (int i = 0; i < this->num_of_joints; ++i) {
+                joints[i] = this->data[i][frame_index];
+            }
+            this->cur_frame_num++;
+            frame_index = this->cur_frame_num;
+        } while (this->calMaxChange(this->prev_choosed_data, joints) < pose_change_size && this->cur_frame_num < this->total_frame_num);
+
+        if (this->cur_frame_num > this->total_frame_num) {
+            return false;
+        }
+
+        this->pose_adjuster->adjustAccordingToBoneLength(joints, this->is_use_jitters);
+        this->prev_choosed_data = joints;
+        return true;
     }
+}
+//bool mMoCapData::getOneFrame(std::vector<glm::vec3> & joints, glm::mat4 cam_ex_mat, float pose_change_size, int index) {
+//    std::vector<glm::vec3> cur_joints;
+
+//    if (this->getOneFrame(cur_joints, pose_change_size, index)) {
+//        joints.clear();
+//        for (int i = 0; i < cur_joints.size(); ++i) {
+//            glm::vec4 cur_pos = cam_ex_mat * glm::vec4(cur_joints[i],1.0);
+//            joints.push_back(glm::vec3(cur_pos));
+//        }
+//        return true;
+//    }
+//    else {
+//        return false;
+//    }
+//}
+
+float mMoCapData::calMaxChange(const std::vector<glm::vec3> & prev, const std::vector<glm::vec3> & cur) {
+    float max_change = 0.0f;
+    float cur_point_change = 0;
+    for (int i = 0; i < prev.size(); ++i) {
+        cur_point_change = glm::length(prev[i] - cur[i]);
+        if (cur_point_change >= max_change) {
+            max_change = cur_point_change;
+        }
+    }
+    return max_change;
 }
 
 void mMoCapData::resetCounter() {

@@ -9,7 +9,6 @@
 
 #include "mShader.h"
 #include "mMeshReader.h"
-#include "mPoseAdjuster.h"
 
 class mPoseModel {
 public:
@@ -17,15 +16,13 @@ public:
     mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, int pose_type=0);
     ~mPoseModel();
 
-    void draw(std::vector<glm::vec3> points, glm::mat4 raw_cam_ex_mat_inverse, glm::mat4 & cam_ex_mat, int render_type=0);
-    void setJitterPose(bool is_use_jitter, float jitter_size = 0.1);
+    void draw(std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, int render_type=0);
 
     /***************Pose parameters********************/
     std::vector<glm::u32vec2> bone_indices;
     int num_of_joints;
 private:
-    mPoseAdjuster * pose_adjuster;
-    bool is_use_jitter;
+
     void renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat, int render_type = 0);
 
     mMeshReader * mesh_reader;

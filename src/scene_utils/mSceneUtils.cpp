@@ -9,7 +9,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgcodecs/imgcodecs.hpp>
-#include <mPoseDefs.h>
+#include "mPoseDefs.h"
 
 static float move_step = 80.0;
 
@@ -377,6 +377,24 @@ void mSceneUtils::convertVec2Mat(const std::vector<glm::vec3> & follow_vec, std:
     }
 }
 
+// TODO: The 3D view coordinate labels need to be checked.
+//       THe 2D is right, after visualized.
+void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
+    // Joints is in the global coordinate
+    labels_2d = std::vector<glm::vec2>(joints.size());
+    labels_3d = std::vector<glm::vec3>(joints.size());
+
+    glm::mat4 cur_view_mat = view_mat;
+    glm::vec3 root_joint = glm::vec3(cur_view_mat * glm::vec4(joints[joints.size() - 1], 1.f));
+
+    for (int i = 0; i < joints.size(); ++i) {
+        glm::vec4 cur_2d = this->cam_proj_mat * cur_view_mat * glm::vec4(joints[i], 1.0);
+        cur_2d /= cur_2d.w;
+        labels_2d[i] = glm::vec2(this->wnd_width * (cur_2d.x + 1.f) / 2.f , this->wnd_height * (1.f - cur_2d.y) / 2.f);
+        labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints[i], 1.f)) - root_joint;
+    }
+    mPoseDef::scalePose(labels_3d, 920);
+}
 /********************* Going to set the rotate around one person ********************/
 void mSceneUtils::surroundOnePoint(glm::mat4 & model_mat) {
     //std::cout << this->surround_center[0] << this->surround_center[1] << this->surround_center[2] << std::endl;
@@ -389,10 +407,11 @@ void mSceneUtils::setSurround(bool do_surround, glm::vec3 surround_center) {
 }
 
 void mSceneUtils::render(std::vector<glm::vec3> points_3d, glm::mat4 cam_ex_mat) {
-    // Currently the points is set to be in the camera coordinate !!!!!!
+    // points_3d is in the global coordinate
     if (points_3d.size() == this->pose_model->num_of_joints) {
-        this->person_center_pos = glm::vec3(this->cam_ex_mat_inverse * glm::vec4(points_3d[points_3d.size()-1], 1.0));
+        this->person_center_pos = points_3d[points_3d.size()-1];
     }
+
     // correct the x direction
     glm::vec3 dir_z(this->cur_cam_ex_r_mat[0][2], this->cur_cam_ex_r_mat[1][2], this->cur_cam_ex_r_mat[2][2]);
     // The default head position
@@ -454,7 +473,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
         }
 
         if (points_3d.size() == this->pose_model->num_of_joints) {
-            this->pose_model->draw(points_3d, this->cam_ex_mat_inverse, cur_cam_ex_mat, 1);
+            this->pose_model->draw(points_3d, cur_cam_ex_mat, 1);
         }
     }
 
@@ -515,7 +534,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
     }
 
     if (points_3d.size() == this->pose_model->num_of_joints) {
-        this->pose_model->draw(points_3d, this->cam_ex_mat_inverse, cur_cam_ex_mat, 0);
+        this->pose_model->draw(points_3d, cur_cam_ex_mat, 0);
     }
 }
 

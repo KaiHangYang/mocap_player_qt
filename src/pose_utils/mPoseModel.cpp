@@ -42,9 +42,6 @@ static float skeleton_style[] = {
 
 mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, int pose_type) {
 
-    this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length, mPoseDef::bones_length_index, mPoseDef::bones_indices,mPoseDef::bones_cal_rank);
-    this->is_use_jitter = false;
-
     this->pose_shader = pose_shader;
     this->depth_shader = depth_shader;
 
@@ -74,7 +71,6 @@ mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core
 
 mPoseModel::~mPoseModel() {
     this->mesh_reader->~mMeshReader();
-    this->pose_adjuster->~mPoseAdjuster();
 }
 
 void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat, int render_type) {
@@ -160,28 +156,21 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
     }
 }
 
-void mPoseModel::setJitterPose(bool is_use_jitter, float jitter_size) {
-    this->is_use_jitter = is_use_jitter;
-    if (this->is_use_jitter) {
-        this->pose_adjuster->setBonesLengthJitters(jitter_size);
-    }
-}
-void mPoseModel::draw(std::vector<glm::vec3> points, glm::mat4 raw_cam_ex_mat_inv, glm::mat4 & cam_ex_mat, int render_type) {
-    this->pose_adjuster->adjustAccordingToBoneLength(points, this->is_use_jitter);
-    int p_num = points.size();
+void mPoseModel::draw(std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, int render_type) {
+//    int p_num = points.size();
 
-    glm::vec3 * p_ptr = &points[0];
-    glm::vec4 p_cur;
+//    glm::vec3 * p_ptr = &points[0];
+//    glm::vec4 p_cur;
 
-    for (int i = 0; i < p_num; ++i) {
-        p_cur = glm::vec4(*p_ptr, 1.0);
+//    for (int i = 0; i < p_num; ++i) {
+//        p_cur = glm::vec4(*p_ptr, 1.0);
 
-        p_cur = raw_cam_ex_mat_inv * p_cur;
+//        p_cur = raw_cam_ex_mat_inv * p_cur;
 
-        p_ptr->x = p_cur[0];
-        p_ptr->y = p_cur[1];
-        p_ptr->z = p_cur[2];
-        p_ptr++;
-    }
+//        p_ptr->x = p_cur[0];
+//        p_ptr->y = p_cur[1];
+//        p_ptr->z = p_cur[2];
+//        p_ptr++;
+//    }
     this->renderPose(points, cam_ex_mat, render_type);
 }

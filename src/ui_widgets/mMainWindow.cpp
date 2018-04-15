@@ -26,6 +26,7 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->cur_camera_type = 0;
     this->cur_camera_num[0] = 0;this->cur_camera_num[1] = 0;
     this->cur_camera_name_num[0] = 0;this->cur_camera_name_num[1] = 0;
+    this->cur_pose_file_index = 0;
 
     // Set the grid widget to contain the widgets
     this->grid_widget = new QWidget(this);
@@ -91,7 +92,7 @@ void mMainWindow::buildToolBoxs() {
     // Set the control box layout
     this->tool_box_tabs = new QTabWidget(this);
     this->buildToolBoxTab1();
-    this->tool_box_tabs->addTab(this->tool_box, "Files Control");
+    this->tool_box_tabs->addTab(this->tool_box, "Pose Control");
     this->buildToolBoxTab2();
     this->tool_box_tabs->addTab(this->tool_box_2, "Cameras Control");
 }
@@ -107,6 +108,8 @@ void mMainWindow::buildToolBoxTab1() {
     this->tool_file_add_btn = new QPushButton("Add", this->file_box);
     this->tool_file_remove_btn = new QPushButton("Remove", this->file_box);
     this->tool_file_removeall_btn = new QPushButton("Remove All", this->file_box);
+    this->tool_file_highlight_current = new QPushButton("Highlight Current", this->file_box);
+
     this->tool_file_listview = new QListView(this->file_box);
     this->file_list_model = new QStringListModel(this->tool_file_listview);
     this->tool_file_listview->setModel(this->file_list_model);
@@ -116,9 +119,30 @@ void mMainWindow::buildToolBoxTab1() {
     this->file_box_layout->addWidget(this->tool_file_add_btn, 0, 0, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_remove_btn, 0, 1, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_removeall_btn, 0, 2, 1, 1);
-    this->file_box_layout->addWidget(this->tool_file_listview, 1, 0, 4, 3);
+    this->file_box_layout->addWidget(this->tool_file_highlight_current, 1, 0, 1, 3);
+    this->file_box_layout->addWidget(this->tool_file_listview, 2, 0, 4, 3);
 
-    this->tool_box_layout->addWidget(this->file_box, 0, 0, 1, 1);
+    //      Box for pose
+    this->pose_box = new QGroupBox("Pose Control:", this->tool_box);
+    this->pose_box_layout = new QGridLayout;
+    this->pose_box->setLayout(this->pose_box_layout);
+    this->tool_pose_change_step_label = new QLabel("Change Size:", this->pose_box);
+    this->tool_pose_change_step_input = new QLineEdit(this->pose_box);
+    this->tool_pose_change_step_btn = new QPushButton("Set", this->pose_box);
+
+    this->tool_pose_jitter_size_label = new QLabel("Jitter Size(%):", this->pose_box);
+    this->tool_pose_jitter_size_input = new QLineEdit(this->pose_box);
+    this->tool_pose_jitter_size_btn = new QPushButton("Set", this->pose_box);
+
+    this->pose_box_layout->addWidget(this->tool_pose_change_step_label, 0, 0, 1, 1);
+    this->pose_box_layout->addWidget(this->tool_pose_change_step_input, 0, 1, 1, 1);
+    this->pose_box_layout->addWidget(this->tool_pose_change_step_btn, 0, 2, 1, 1);
+    this->pose_box_layout->addWidget(this->tool_pose_jitter_size_label, 1, 0, 1, 1);
+    this->pose_box_layout->addWidget(this->tool_pose_jitter_size_input, 1, 1, 1, 1);
+    this->pose_box_layout->addWidget(this->tool_pose_jitter_size_btn, 1, 2, 1, 1);
+
+    this->tool_box_layout->addWidget(this->file_box, 0, 0, 3, 1);
+    this->tool_box_layout->addWidget(this->pose_box, 3, 0, 1, 1);
 
     // Disable some button
     this->tool_file_removeall_btn->setDisabled(true);
@@ -243,7 +267,6 @@ void mMainWindow::buildToolBoxTab2() {
 void mMainWindow::bindEvents() {
     // Set the events
     connect(this->ui->openAct, SIGNAL(triggered()), this, SLOT(fileAddSlot()));
-    connect(this, SIGNAL(signalOpenFile(QString&)), this->gl_widget, SLOT(changePoseFile(QString&)));
     connect(this->ui->exitAct, SIGNAL(triggered()), this, SLOT(close()));
 
     // Tool box event
@@ -251,6 +274,7 @@ void mMainWindow::bindEvents() {
     connect(this->tool_file_remove_btn, SIGNAL(clicked()), this, SLOT(fileRemoveSlot()));
     connect(this->tool_file_removeall_btn, SIGNAL(clicked()), this, SLOT(fileRemoveAllSlot()));
     connect(this->tool_file_listview, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(fileActivatedSlot(QModelIndex)));
+    connect(this->tool_file_highlight_current, SIGNAL(clicked()), this, SLOT(fileHighlightCurrentSlot()));
     // Pose box event
     connect(this->tool_video_toggle_btn, SIGNAL(clicked()), this, SLOT(videoToggleSlot()));
     connect(this->tool_video_reset_btn, SIGNAL(clicked()), this, SLOT(videoResetSlot()));
@@ -279,13 +303,15 @@ void mMainWindow::bindEvents() {
 
     connect(this->tool_camera_split_horizon, SIGNAL(clicked()), this, SLOT(cameraSplitCircleSlot()));
     connect(this->tool_camera_set_parallel, SIGNAL(clicked()), this, SLOT(cameraSetDefaultSlot()));
-    connect(this->gl_widget, SIGNAL(saveCapturedImageSignal(cv::Mat&,int)), this, SLOT(saveFramesSlot(cv::Mat&,int)));
+    connect(this->gl_widget, SIGNAL(saveCapturedFrameSignal(cv::Mat&,std::vector<glm::vec2>,std::vector<glm::vec3>,int)), this, SLOT(saveFramesSlot(cv::Mat&,std::vector<glm::vec2>,std::vector<glm::vec3>,int)));
+    connect(this->gl_widget, SIGNAL(changePoseFileSignal()), this, SLOT(changeNextPoseSlot()));
 }
 
 
 /********************** Implementation of Slots **********************/
 
 void mMainWindow::fileAddSlot() {
+    this->cur_pose_file_index = 0;
     QStringList file_names = QFileDialog::getOpenFileNames(this, "Add Files", this->file_dialog_initial_dir, this->file_dialog_extension);
     if (file_names.size() > 0) {
 
@@ -316,6 +342,7 @@ void mMainWindow::fileAddSlot() {
     }
 }
 void mMainWindow::fileRemoveSlot() {
+    this->cur_pose_file_index = 0;
     QModelIndexList index_list = this->tool_file_listview->selectionModel()->selectedIndexes();
 
     while (!index_list.isEmpty()) {
@@ -324,24 +351,40 @@ void mMainWindow::fileRemoveSlot() {
     }
 }
 void mMainWindow::fileRemoveAllSlot() {
+    this->cur_pose_file_index = 0;
     this->file_list_model->removeRows(0, this->file_list_model->rowCount());
 }
 void mMainWindow::fileActivatedSlot(QModelIndex index) {
     QString file_path = index.data().toString();
+    this->cur_pose_file_index = index.row();
     // Change the button text
     this->tool_video_toggle_btn->setIcon(this->icon_play);
-    emit signalOpenFile(file_path);
+    this->gl_widget->changePoseFile(file_path);
+    this->videoStartSlot();
+    this->fileHighlightCurrentSlot();
+}
+void mMainWindow::fileHighlightCurrentSlot() {
+    int cur_sum = this->file_list_model->rowCount();
+    if (this->cur_pose_file_index < cur_sum) {
+        this->tool_file_listview->setCurrentIndex(this->file_list_model->index(this->cur_pose_file_index));
+    }
 }
 
 void mMainWindow::videoToggleSlot() {
     if (this->gl_widget->getPoseState() == 0) {
-        this->tool_video_toggle_btn->setIcon(this->icon_pause);
-        this->gl_widget->togglePose();
+        this->videoStartSlot();
     }
     else if (this->gl_widget->getPoseState() == 1) {
-        this->tool_video_toggle_btn->setIcon(this->icon_play);
-        this->gl_widget->togglePose();
+        this->videoStopSlot();
     }
+}
+void mMainWindow::videoStartSlot() {
+    this->tool_video_toggle_btn->setIcon(this->icon_pause);
+    this->gl_widget->togglePose();
+}
+void mMainWindow::videoStopSlot() {
+    this->tool_video_toggle_btn->setIcon(this->icon_play);
+    this->gl_widget->togglePose();
 }
 void mMainWindow::videoResetSlot() {
     if (this->gl_widget->getIsHasPose()) {
@@ -661,13 +704,29 @@ void mMainWindow::captureDirSlot() {
     }
 }
 
-void mMainWindow::saveFramesSlot(cv::Mat & frame, int cur_num) {
+void mMainWindow::saveFramesSlot(cv::Mat & frame, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_num) {
     QString dir_name = this->tool_capture_dir_input->text();
     QFileInfo dir_info(dir_name);
     if (!dir_name.isEmpty() && dir_info.isDir()) {
         QString cur_frame_num = QString::number(this->progress_bar->value());
         QString img_name = dir_name + "/" + cur_frame_num + "-" + QString::number(cur_num) + "." + this->tool_capture_img_extension_combox->currentText();
         cv::imwrite(img_name.toStdString(), frame);
+        // Then save the points
+        QFile label_file(dir_name + "/" + cur_frame_num + "." + "txt");
+        if (label_file.open(QIODevice::Append | QIODevice::WriteOnly)) {
+            QTextStream label_file_stream(&label_file);
+            label_file_stream << cur_num;
+            label_file_stream << "\n";
+            for (int p = 0; p < labels_2d.size(); ++p) {
+                label_file_stream << labels_2d[p].x << " " << labels_2d[p].y << " ";
+            }
+            label_file_stream << "\n";
+            for (int p = 0; p < labels_3d.size(); ++p) {
+                label_file_stream << labels_3d[p].x << " " << labels_3d[p].y << " " << labels_3d[p].z << " ";
+            }
+            label_file_stream << "\n";
+            label_file.close();
+        }
     }
 }
 
@@ -696,7 +755,6 @@ void mMainWindow::captureOneFrame() {
     }
 }
 
-
 void mMainWindow::sceneFloorSlot() {
     bool is_has_floor = this->tool_capture_floor_btn->text() == "Use Floor";
     if (is_has_floor) {
@@ -708,3 +766,17 @@ void mMainWindow::sceneFloorSlot() {
     this->gl_widget->setUseFloor(is_has_floor);
 }
 
+void mMainWindow::changeNextPoseSlot() {
+    this->videoStopSlot();
+    int cur_sum = this->file_list_model->rowCount();
+    this->cur_pose_file_index ++;
+    if (cur_sum == 0) {
+        QMessageBox::critical(this, "Pose File Error", "There is no pose file in the list!");
+    }
+    else if (this->cur_pose_file_index >= cur_sum) {
+        QMessageBox::warning(this, "Warning", "No more pose file to process!");
+    }
+    else {
+        this->fileActivatedSlot(this->file_list_model->index(this->cur_pose_file_index));
+    }
+}

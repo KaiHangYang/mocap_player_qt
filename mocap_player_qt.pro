@@ -38,7 +38,8 @@ SOURCES += \
     src/mocap_reader/mMoCapReader.cpp \
     src/ui_widgets/mProgressBarWidget.cpp \
     src/ui_widgets/mLineEditWidget.cpp \
-    src/pose_utils/mPoseAdjuster.cpp
+    src/pose_utils/mPoseAdjuster.cpp \
+    src/visual_utils/mVisual.cpp
 
 
 HEADERS += \
@@ -58,14 +59,15 @@ HEADERS += \
     include/mMoCapReader.h \
     include/mProgressBarWidget.h \
     include/mLineEditWidget.h \
-    include/mPoseAdjuster.h
+    include/mPoseAdjuster.h \
+    include/mVisual.h
 
 
 INCLUDEPATH += ./include/ \
             /usr/local/Cellar/glm/0.9.8.5/include \
             /usr/local/Cellar/assimp/3.2/include \
             /usr/local/Cellar/opencv/3.0.0/include
-LIBS += -L/usr/local/Cellar/assimp/3.2/lib/ -lassimp -L/usr/local/lib/ -lopencv_core -lopencv_highgui -lopencv_imgcodecs
+LIBS += -L/usr/local/Cellar/assimp/3.2/lib/ -lassimp -L/usr/local/lib/ -lopencv_core -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc
 
 FORMS += \
         window.ui \

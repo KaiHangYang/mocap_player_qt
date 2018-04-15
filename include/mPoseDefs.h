@@ -32,6 +32,20 @@ namespace mPoseDef {
     });
     static const std::vector<float> bones_length({6.90715, 6.71018, 10.9442, 8.52009, 18.0373, 3.64953, 15.7058, 15.4187});
     static const std::vector<unsigned int> bones_length_index({0, 1, 2, 3, 1, 2, 3, 4, 5, 6, 7, 5, 6, 7});
+
+
+    /******** Notice: The joints must be root related ********/
+    static void scalePose(std::vector<glm::vec3> & joints, float target_length) {
+        // 7, 9, 10, 12, 13
+        float cur_length = glm::length(joints[bones_indices[7].x] - joints[bones_indices[7].y]);
+        cur_length += 0.5 * (glm::length(joints[bones_indices[9].x] - joints[bones_indices[9].y]) + glm::length(joints[bones_indices[10].x] - joints[bones_indices[10].y]));
+        cur_length += 0.5 * (glm::length(joints[bones_indices[12].x] - joints[bones_indices[12].y]) + glm::length(joints[bones_indices[13].x] - joints[bones_indices[13].y]));
+        float scale = target_length / cur_length;
+        for (int i = 0; i < joints.size(); ++i) {
+            joints[i] *= scale;
+        }
+    }
+
 }
 
 #endif

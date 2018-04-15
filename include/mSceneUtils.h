@@ -18,6 +18,7 @@ public:
     ~mSceneUtils();
 
     void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), glm::mat4 cam_ex_mat = glm::mat4(0.f));
+    void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), glm::vec3 cam_ex_vec = glm::vec3(0.f));
 
     void setExMat(glm::mat4 & cam_ex_mat);
     void setInMat(glm::mat4 & cam_in_mat);
@@ -32,6 +33,7 @@ public:
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
     void setFollowDefault();
     void getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
+    void getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::vec3 & view_vec, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
 
     void moveCamera(int move_dir);
     void rotateCamrea(const glm::mat4 & rotate_mat);
@@ -40,15 +42,14 @@ public:
     void setFollowPerson(bool is_follow);
     void setFocusOnCenter(bool is_focus_on_center);
     void captureFrame(cv::Mat & cur_frame);
-    void convertVec2Mat(const std::vector<glm::vec3> & follow_vec, std::vector<glm::mat4> & view_mats);
 
-    void setSurround(bool do_surround, glm::vec3 surround_center = glm::vec3(0.0,0.0,0.0));
 private:
     std::vector<GLfloat> getGroundVertexs();
     std::vector<GLfloat> getGroundColor();
-    void surroundOnePoint(glm::mat4 & model_mat);
 
+    void _beforeRender(const std::vector<glm::vec3> & points_3d);
     void _render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat);
+    glm::mat4 convertVec2Mat(const glm::vec3 & follow_vec, glm::vec3 person_center_pos);
 
     int wnd_width;
     int wnd_height;
@@ -85,11 +86,6 @@ private:
 
     glm::vec3 cur_follow_dert;
     glm::vec3 person_center_pos;
-
-    /***** center surround *****/
-    glm::vec3 surround_center;
-    bool do_use_surround;
-    /***************************/
 
     mShader * scene_shader;
     mShader * depth_shader;

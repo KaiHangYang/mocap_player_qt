@@ -58,13 +58,15 @@ public slots:
     void cameraEditNameSlot(QModelIndex topleft, QModelIndex bottomright, QVector<int> roles);
     void captureDirSlot();
     void captureOneFrame();
+    void captureAllFrames();
     void cameraTypeChangeSlot(int index);
     void cameraSplitCircleSlot();
     void cameraSetDefaultSlot();
     void sceneFloorSlot();
-    void saveFramesSlot(cv::Mat & frames, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_num);
+    void saveFramesSlot(cv::Mat & frames, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num);
     void changeNextPoseSlot();
-
+    void poseSetChangeSize();
+    void poseSetJitterSize();
 private:
     /************** Functions for build the GUI *************/
     void buildGLView();

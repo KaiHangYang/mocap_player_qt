@@ -11,13 +11,13 @@ bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, float pose_change_s
 
     joints = std::vector<glm::vec3>(num_of_joints);
     int frame_index = this->cur_frame_num;
+    std::vector<glm::vec3> scaled_joints;
 
     if (index >= 0 && index < this->total_frame_num) {
         frame_index = index;
         for (int i = 0; i < this->num_of_joints; ++i) {
             joints[i] = this->data[i][frame_index];
         }
-
         this->pose_adjuster->adjustAccordingToBoneLength(joints, this->is_use_jitters);
         return true;
     }
@@ -26,6 +26,7 @@ bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, float pose_change_s
             for (int i = 0; i < this->num_of_joints; ++i) {
                 joints[i] = this->data[i][frame_index];
             }
+            this->pose_adjuster->adjustAccordingToBoneLength(joints, this->is_use_jitters);
             this->cur_frame_num++;
             frame_index = this->cur_frame_num;
         } while (this->calMaxChange(this->prev_choosed_data, joints) < pose_change_size && this->cur_frame_num < this->total_frame_num);
@@ -34,7 +35,6 @@ bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, float pose_change_s
             return false;
         }
 
-        this->pose_adjuster->adjustAccordingToBoneLength(joints, this->is_use_jitters);
         this->prev_choosed_data = joints;
         return true;
     }
@@ -55,7 +55,10 @@ bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, float pose_change_s
 //    }
 //}
 
-float mMoCapData::calMaxChange(const std::vector<glm::vec3> & prev, const std::vector<glm::vec3> & cur) {
+float mMoCapData::calMaxChange(std::vector<glm::vec3> prev, std::vector<glm::vec3> cur) {
+    mPoseDef::scalePose(prev);
+    mPoseDef::scalePose(cur);
+
     float max_change = 0.0f;
     float cur_point_change = 0;
     for (int i = 0; i < prev.size(); ++i) {

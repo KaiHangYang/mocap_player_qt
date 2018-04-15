@@ -15,12 +15,16 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->cur_capture_sum = 0;
     this->cur_capture_view_mats = std::vector<glm::mat4>();
     this->is_set_capture_frame = false;
+    this->is_set_capture_all_frames = false;
+    this->cur_capture_type = 0; // global
+
 
     this->is_with_floor = true;
     this->pose_state = -1;
     this->temp_pose_state = 1;
     this->is_has_pose = false;
     this->cur_pose_joints = std::vector<glm::vec3>();
+    this->pose_change_step = 200;
 
     this->is_ar = false;
     this->cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)this->wnd_width / this->wnd_height, 0.01f, 1000000.f));
@@ -144,14 +148,14 @@ void mGLWidget::setFollowDefault() {
 }
 
 void mGLWidget::captureFrame(const std::vector<glm::vec3> & view_vecs) {
-    std::vector<glm::mat4> view_mats;
-    this->scene->convertVec2Mat(view_vecs, view_mats);
-    if (view_mats.size() == 0) {
-        this->cur_capture_view_mats = std::vector<glm::mat4>({this->getCurExMat()});
+
+    if (view_vecs.size() == 0) {
+        this->cur_capture_view_vecs = std::vector<glm::vec3>({this->getCurFollowVec()});
     }
     else {
-        this->cur_capture_view_mats = view_mats;
+        this->cur_capture_view_vecs = view_vecs;
     }
+    this->cur_capture_type = 1;
     this->cur_capture_sum = 0;
     this->tempPausePose();
 
@@ -164,10 +168,48 @@ void mGLWidget::captureFrame(const std::vector<glm::mat4> & view_mats) {
     else {
         this->cur_capture_view_mats = view_mats;
     }
+    this->cur_capture_type = 0;
     this->cur_capture_sum = 0;
     this->tempPausePose();
 
     this->is_set_capture_frame = true;
+}
+
+void mGLWidget::resetCapture() {
+    if (this->is_set_capture_all_frames) {
+        if (this->cur_capture_type == 1) {
+            this->captureFrame(this->cur_capture_view_vecs);
+        }
+        else if (this->cur_capture_type == 0){
+            this->captureFrame(this->cur_capture_view_mats);
+        }
+    }
+    else {
+        this->is_set_capture_frame = false;
+        this->cur_capture_view_mats.clear();
+        this->cur_capture_view_vecs.clear();
+        this->cur_capture_sum = 0;
+        this->cur_capture_type = 0;
+    }
+}
+
+void mGLWidget::captureAllFrames(const std::vector<glm::vec3> &view_vecs) {
+    this->cur_capture_type = 1;
+    this->is_set_capture_all_frames = true;
+    this->captureFrame(view_vecs);
+}
+
+void mGLWidget::captureAllFrames(const std::vector<glm::mat4> &view_mats) {
+    this->cur_capture_type = 0;
+    this->is_set_capture_all_frames = true;
+    this->captureFrame(view_mats);
+}
+
+void mGLWidget::stopCapture() {
+    if (this->is_set_capture_all_frames) {
+        this->is_set_capture_all_frames = false;
+        this->resetCapture();
+    }
 }
 
 void mGLWidget::setUseFloor(bool is_with_floor) {
@@ -233,6 +275,10 @@ void mGLWidget::tempStartPose() {
     }
 }
 
+void mGLWidget::setPoseChangeStep(float change_step) {
+    this->pose_change_step = change_step;
+}
+
 void mGLWidget::draw() {
     glm::mat4 cur_ex_r_mat, cur_ex_t_mat, cur_rotate_mat;
     this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
@@ -242,7 +288,7 @@ void mGLWidget::draw() {
     if (this->pose_state == 1 && this->temp_pose_state == 1) {
         this->sendProgress(false);
         std::vector<glm::vec3> tmp_pose_joints;
-        bool result = this->mocap_data->getOneFrame(tmp_pose_joints, 0.0);
+        bool result = this->mocap_data->getOneFrame(tmp_pose_joints, this->pose_change_step);
         if (!result) {
             // read finished then read the next file
             emit changePoseFileSignal();
@@ -251,31 +297,40 @@ void mGLWidget::draw() {
             this->cur_pose_joints = tmp_pose_joints;
             // if use capture all, here I need to set flags for it.
         }
+        if (this->is_set_capture_all_frames) {
+            this->tempPausePose();
+        }
     }
 
     // Just handle the frame capture of only one
     if (this->is_set_capture_frame) {
-        if (this->cur_capture_sum < this->cur_capture_view_mats.size()) {
-            this->scene->render(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum]);
+        if ((this->cur_capture_type == 0 && this->cur_capture_sum < this->cur_capture_view_mats.size()) || (this->cur_capture_type == 1 && this->cur_capture_sum < this->cur_capture_view_vecs.size())) {
             std::vector<glm::vec2> labels_2d;
             std::vector<glm::vec3> labels_3d;
-            this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum], labels_2d, labels_3d);
+
+            if (this->cur_capture_type == 0) {
+                this->scene->render(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum]);
+                this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum], labels_2d, labels_3d);
+            }
+            else if (this->cur_capture_type == 1) {
+                this->scene->render(this->cur_pose_joints, this->cur_capture_view_vecs[this->cur_capture_sum]);
+                this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_view_vecs[this->cur_capture_sum], labels_2d, labels_3d);
+            }
 
             cv::Mat captured_img;
             this->swapBuffers(); // Important to capture frames
             this->scene->captureFrame(captured_img);
-//            mVTools::drawLines(captured_img, labels_2d);
-            emit saveCapturedFrameSignal(captured_img, labels_2d, labels_3d, this->cur_capture_sum);
+            mVTools::drawLines(captured_img, labels_2d);
+            int cur_frame_num = this->mocap_data->getCurFrame();
+            emit saveCapturedFrameSignal(captured_img, labels_2d, labels_3d, cur_frame_num, this->cur_capture_sum);
             this->cur_capture_sum++;
             return;
         }
         else {
-            this->is_set_capture_frame = false;
-            this->cur_capture_sum = 0;
-            this->cur_capture_view_mats.clear();
+            this->resetCapture();
             this->tempStartPose();
         }
     }
 
-    this->scene->render(cur_pose_joints);
+    this->scene->render(cur_pose_joints, glm::mat4(0.f));
 }

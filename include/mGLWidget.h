@@ -29,6 +29,12 @@ public:
     void setUseFloor(bool is_with_floor);
     void captureFrame(const std::vector<glm::vec3> & view_vecs);
     void captureFrame(const std::vector<glm::mat4> & view_mats);
+    void captureAllFrames(const std::vector<glm::vec3> & view_vecs);
+    void captureAllFrames(const std::vector<glm::mat4> & view_mats);
+    void resetCapture();
+    void stopCapture();
+    void setPoseChangeStep(float change_step);
+
 public slots:
     void changePoseFile(QString & file_name);
     void togglePose();
@@ -41,7 +47,7 @@ public slots:
 signals:
     void doubleClickPoseToggleSignal();
     void progressDisplaySignal(int cur_num, int total, bool is_reset);
-    void saveCapturedFrameSignal(cv::Mat & frame, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_num);
+    void saveCapturedFrameSignal(cv::Mat & frame, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num);
     void changePoseFileSignal();
 protected:
     void initializeGL();
@@ -76,6 +82,7 @@ private:
     int temp_pose_state;
     bool is_has_pose;
     std::vector<glm::vec3> cur_pose_joints;
+    float pose_change_step;
     /************************************************/
 
     /**************** Progress control **************/
@@ -85,7 +92,10 @@ private:
     /************** Capture Control *****************/
     int cur_capture_sum;
     std::vector<glm::mat4> cur_capture_view_mats;
+    std::vector<glm::vec3> cur_capture_view_vecs;
     bool is_set_capture_frame;
+    bool is_set_capture_all_frames;
+    int cur_capture_type;
     /************************************************/
 };
 

@@ -41,7 +41,7 @@ private:
     std::vector<std::vector<glm::vec3>> data;
     std::vector<glm::vec3> prev_choosed_data;
     mPoseAdjuster * pose_adjuster;
-    float calMaxChange(const std::vector<glm::vec3> & prev, const std::vector<glm::vec3> & cur);
+    float calMaxChange(std::vector<glm::vec3> prev, std::vector<glm::vec3> cur);
     bool is_use_jitters;
 };
 

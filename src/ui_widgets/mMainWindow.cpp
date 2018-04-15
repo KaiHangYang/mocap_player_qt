@@ -126,12 +126,14 @@ void mMainWindow::buildToolBoxTab1() {
     this->pose_box = new QGroupBox("Pose Control:", this->tool_box);
     this->pose_box_layout = new QGridLayout;
     this->pose_box->setLayout(this->pose_box_layout);
-    this->tool_pose_change_step_label = new QLabel("Change Size:", this->pose_box);
+    this->tool_pose_change_step_label = new QLabel("Change Size(mm):", this->pose_box);
     this->tool_pose_change_step_input = new QLineEdit(this->pose_box);
+    this->tool_pose_change_step_input->setPlaceholderText("Default is 200.0");
     this->tool_pose_change_step_btn = new QPushButton("Set", this->pose_box);
 
-    this->tool_pose_jitter_size_label = new QLabel("Jitter Size(%):", this->pose_box);
+    this->tool_pose_jitter_size_label = new QLabel("Jitter Size(0~1):", this->pose_box);
     this->tool_pose_jitter_size_input = new QLineEdit(this->pose_box);
+    this->tool_pose_jitter_size_input->setPlaceholderText("Default is 0");
     this->tool_pose_jitter_size_btn = new QPushButton("Set", this->pose_box);
 
     this->pose_box_layout->addWidget(this->tool_pose_change_step_label, 0, 0, 1, 1);
@@ -298,13 +300,16 @@ void mMainWindow::bindEvents() {
 
     connect(this->tool_capture_dir_input, SIGNAL(lineEditOpenDirSignal()), this, SLOT(captureDirSlot()));
     connect(this->tool_capture_capture_one, SIGNAL(clicked()), this, SLOT(captureOneFrame()));
+    connect(this->tool_capture_capture_interval, SIGNAL(clicked()), this, SLOT(captureAllFrames()));
     connect(this->tool_camera_type_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraTypeChangeSlot(int)));
     connect(this->tool_capture_floor_btn, SIGNAL(clicked()), this, SLOT(sceneFloorSlot()));
 
     connect(this->tool_camera_split_horizon, SIGNAL(clicked()), this, SLOT(cameraSplitCircleSlot()));
     connect(this->tool_camera_set_parallel, SIGNAL(clicked()), this, SLOT(cameraSetDefaultSlot()));
-    connect(this->gl_widget, SIGNAL(saveCapturedFrameSignal(cv::Mat&,std::vector<glm::vec2>,std::vector<glm::vec3>,int)), this, SLOT(saveFramesSlot(cv::Mat&,std::vector<glm::vec2>,std::vector<glm::vec3>,int)));
+    connect(this->gl_widget, SIGNAL(saveCapturedFrameSignal(cv::Mat&,std::vector<glm::vec2>,std::vector<glm::vec3>,int,int)), this, SLOT(saveFramesSlot(cv::Mat&,std::vector<glm::vec2>,std::vector<glm::vec3>,int,int)));
     connect(this->gl_widget, SIGNAL(changePoseFileSignal()), this, SLOT(changeNextPoseSlot()));
+    connect(this->tool_pose_change_step_btn, SIGNAL(clicked()), this, SLOT(poseSetChangeSize()));
+    connect(this->tool_pose_jitter_size_btn, SIGNAL(clicked()), this, SLOT(poseSetJitterSize()));
 }
 
 
@@ -704,11 +709,22 @@ void mMainWindow::captureDirSlot() {
     }
 }
 
-void mMainWindow::saveFramesSlot(cv::Mat & frame, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_num) {
+void mMainWindow::saveFramesSlot(cv::Mat & frame, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num) {
     QString dir_name = this->tool_capture_dir_input->text();
     QFileInfo dir_info(dir_name);
     if (!dir_name.isEmpty() && dir_info.isDir()) {
-        QString cur_frame_num = QString::number(this->progress_bar->value());
+        QDir save_dir;
+        QModelIndex cur_index = this->file_list_model->index(this->cur_pose_file_index);
+        QString pose_file_name = cur_index.data().toString();
+        pose_file_name = pose_file_name.split("/").back();
+        pose_file_name = pose_file_name.split(".")[0];
+
+        dir_name = dir_name + "/" + pose_file_name;
+        if (!save_dir.exists(dir_name)) {
+            save_dir.mkdir(dir_name);
+        }
+
+        QString cur_frame_num = QString::number(cur_frame);
         QString img_name = dir_name + "/" + cur_frame_num + "-" + QString::number(cur_num) + "." + this->tool_capture_img_extension_combox->currentText();
         cv::imwrite(img_name.toStdString(), frame);
         // Then save the points
@@ -754,6 +770,41 @@ void mMainWindow::captureOneFrame() {
         QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
     }
 }
+void mMainWindow::captureAllFrames() {
+    QString dir_name = this->tool_capture_dir_input->text();
+    QFileInfo dir_info(dir_name);
+    if (this->cur_pose_file_index >= this->file_list_model->rowCount()) {
+        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
+        return;
+    }
+
+    QModelIndex cur_index = this->file_list_model->index(this->cur_pose_file_index);
+    this->fileActivatedSlot(cur_index);
+    this->videoResetSlot();
+
+    if (!dir_name.isEmpty() && dir_info.isDir()) {
+        // Get view mats
+        if (this->cur_camera_type == 0) {
+            std::vector<glm::mat4> cur_view_mats;
+            for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
+                cur_view_mats.push_back(this->camera_mat_arr[i].second);
+            }
+            this->gl_widget->captureAllFrames(cur_view_mats);
+            this->videoStartSlot();
+        }
+        else {
+            std::vector<glm::vec3> cur_view_vecs;
+            for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
+                cur_view_vecs.push_back(this->camera_vec_arr[i].second);
+            }
+            this->gl_widget->captureAllFrames(cur_view_vecs);
+            this->videoStartSlot();
+        }
+    }
+    else {
+        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
+    }
+}
 
 void mMainWindow::sceneFloorSlot() {
     bool is_has_floor = this->tool_capture_floor_btn->text() == "Use Floor";
@@ -774,9 +825,40 @@ void mMainWindow::changeNextPoseSlot() {
         QMessageBox::critical(this, "Pose File Error", "There is no pose file in the list!");
     }
     else if (this->cur_pose_file_index >= cur_sum) {
+        this->gl_widget->stopCapture();
         QMessageBox::warning(this, "Warning", "No more pose file to process!");
     }
     else {
         this->fileActivatedSlot(this->file_list_model->index(this->cur_pose_file_index));
     }
+}
+void mMainWindow::poseSetChangeSize() {
+    QString change_size_str = this->tool_pose_change_step_input->text();
+    float change_size;
+    if (!change_size_str.isEmpty() && (change_size = change_size_str.toFloat()) >= 0) {
+        if (change_size == 0) {
+            this->tool_pose_change_step_input->setText("0");
+        }
+        this->gl_widget->setPoseChangeStep(change_size);
+    }
+    else {
+        QMessageBox::critical(this, "Value Error", "Change size must be a positive float!");
+    }
+}
+void mMainWindow::poseSetJitterSize() {
+    QString jitter_size_str = this->tool_pose_jitter_size_input->text();
+    float jitter_size;
+    if (!jitter_size_str.isEmpty()) {
+        jitter_size = jitter_size_str.toFloat();
+        if (jitter_size >= 0 && jitter_size <= 1) {
+            if (jitter_size == 0) {
+                this->tool_pose_jitter_size_input->setText("0");
+            }
+            //
+            return;
+        }
+    }
+
+    QMessageBox::critical(this, "Value Error", "Jitter size must be a float (0~1)!");
+
 }

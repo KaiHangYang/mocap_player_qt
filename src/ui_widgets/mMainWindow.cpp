@@ -676,11 +676,20 @@ void mMainWindow::captureOneFrame() {
     QFileInfo dir_info(dir_name);
     if (!dir_name.isEmpty() && dir_info.isDir()) {
         // Get view mats
-        std::vector<glm::vec3> cur_view_vecs;
-        for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
-            cur_view_vecs.push_back(this->camera_vec_arr[i].second);
+        if (this->cur_camera_type == 0) {
+            std::vector<glm::mat4> cur_view_mats;
+            for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
+                cur_view_mats.push_back(this->camera_mat_arr[i].second);
+            }
+            this->gl_widget->captureFrame(cur_view_mats);
         }
-        this->gl_widget->captureFrame(cur_view_vecs);
+        else {
+            std::vector<glm::vec3> cur_view_vecs;
+            for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
+                cur_view_vecs.push_back(this->camera_vec_arr[i].second);
+            }
+            this->gl_widget->captureFrame(cur_view_vecs);
+        }
     }
     else {
         QMessageBox::critical(this, "Path Error", "Save directory is not valid!");

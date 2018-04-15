@@ -28,6 +28,7 @@ public:
     void setFollowDefault();
     void setUseFloor(bool is_with_floor);
     void captureFrame(const std::vector<glm::vec3> & view_vecs);
+    void captureFrame(const std::vector<glm::mat4> & view_mats);
 public slots:
     void changePoseFile(QString & file_name);
     void togglePose();

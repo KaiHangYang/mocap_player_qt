@@ -116,22 +116,24 @@ void mGLWidget::draw() {
     }
 
     // Just handle the frame capture
-    if (this->is_set_capture_frame && this->cur_capture_sum < this->cur_capture_view_mats.size()) {
-        this->scene->render(cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum]);
+    if (this->is_set_capture_frame) {
+        if (this->cur_capture_sum < this->cur_capture_view_mats.size()) {
+            this->scene->render(cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum]);
 
-        cv::Mat captured_img;
-        this->swapBuffers(); // Important to capture frames
-        this->scene->captureFrame(captured_img);
-        emit saveCapturedImageSignal(captured_img, this->cur_capture_sum);
-        this->cur_capture_sum++;
+            cv::Mat captured_img;
+            this->swapBuffers(); // Important to capture frames
+            this->scene->captureFrame(captured_img);
+            emit saveCapturedImageSignal(captured_img, this->cur_capture_sum);
+            this->cur_capture_sum++;
 
-        return;
-    }
-    else if (this->is_set_capture_frame) {
-        this->is_set_capture_frame = false;
-        this->cur_capture_sum = 0;
-        this->cur_capture_view_mats.clear();
-        this->tempStartPose();
+            return;
+        }
+        else {
+            this->is_set_capture_frame = false;
+            this->cur_capture_sum = 0;
+            this->cur_capture_view_mats.clear();
+            this->tempStartPose();
+        }
     }
 
     this->scene->render(cur_pose_joints);
@@ -179,7 +181,24 @@ void mGLWidget::setFollowDefault() {
 void mGLWidget::captureFrame(const std::vector<glm::vec3> & view_vecs) {
     std::vector<glm::mat4> view_mats;
     this->scene->convertVec2Mat(view_vecs, view_mats);
-    this->cur_capture_view_mats = view_mats;
+    if (view_mats.size() == 0) {
+        this->cur_capture_view_mats = std::vector<glm::mat4>({this->getCurExMat()});
+    }
+    else {
+        this->cur_capture_view_mats = view_mats;
+    }
+    this->cur_capture_sum = 0;
+    this->tempPausePose();
+
+    this->is_set_capture_frame = true;
+}
+void mGLWidget::captureFrame(const std::vector<glm::mat4> & view_mats) {
+    if (view_mats.size() == 0) {
+        this->cur_capture_view_mats = std::vector<glm::mat4>({this->getCurExMat()});
+    }
+    else {
+        this->cur_capture_view_mats = view_mats;
+    }
     this->cur_capture_sum = 0;
     this->tempPausePose();
 

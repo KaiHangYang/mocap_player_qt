@@ -11,9 +11,9 @@ import time
 
 sys.path.append("../")
 
-from utils import data_valid
-from cpm_utils import visualize_tools as vtools
-from cpm_utils import display_utils
+from reader_scripts import data_valid
+from visual_tools import visualize_tools as vtools
+from visual_tools import display_utils
 
 ########### Control the error and button and rotate
 global init_x, init_y, cur_x, cur_y, is_mouse_pressed, now_save
@@ -82,21 +82,14 @@ def cv_mouse_callback(event, x, y, flags, ustc):
         # cv2.waitKey(2)
 
 if __name__ == "__main__":
-    # 8->376, 6->585, 7->420 5->760
-
-    frame_stop_num = 743
-    obj_num = 5
-    use_saved_data = True
 
     input_img_size = 368
     wndWidth = int(input_img_size)
     wndHeight = int(input_img_size)
 
-    tfrecord_file = "/home/kaihang/DataSet_2/mpii_valid_problem/"+str(obj_num)+"/mpi-train-v8s2.tfrecords"
-    data_type = 3
-
+    tfrecord_file = "/home/kaihang/DataSet/sfu_tfrecords/sfu_train.tfrecords"
     ################################ Init tfrecord valider ##################################
-    dataset_reader = data_valid.DataValid(tfrecord_file, data_type)
+    dataset_reader = data_valid.DataValid(tfrecord_file)
     #########################################################################################
 
     ################################Scene Inited ######################################
@@ -118,23 +111,6 @@ if __name__ == "__main__":
 
     mpose_model = vtools.PoseModel(in_cammat_display, mesh_render, (wndWidth, wndHeight), True)
     ####################################################################################
-
-    ########################### For visualization #############################
-    if data_type == 3:
-        global value_bonemaps
-        bm_min_val = -200
-        bm_max_val = 200
-        bm_mid_val = 0
-
-        cv2.imshow("Range map", display_utils.getHeatmapRange(bm_min_val, bm_mid_val, bm_max_val))
-        cv2.waitKey(3)
-
-        cv2.namedWindow("bonemap show")
-        cv2.setMouseCallback("bonemap show", cv_mouse_callback)
-        # cv2.setMouseCallback("tfrecord test", cv_mouse_callback)
-
-        cv2.imshow("value show", np.zeros((50, 150), dtype=np.uint8))
-    ###########################################################################
 
     frame_count = 0
     while not app.windowShouldClose():
@@ -168,48 +144,17 @@ if __name__ == "__main__":
 
         #############################Get Images and points ################################
         if not keep_still:
-            print(frame_count)
 
+            img, points_2d, points_3d = dataset_reader.get_frame()
 
-            # if frame_count == 119:
-            if frame_count == frame_stop_num:
-                keep_still = True
-
-            if data_type == 3:
-                if use_saved_data:
-                    saved_data = np.load(str(obj_num) + "-" + str(frame_stop_num) + ".npy").tolist()
-                    img = saved_data["img"]
-                    points_2d = saved_data["points_2d"]
-                    points_3du = saved_data["points_3du"]
-                    bonemaps = saved_data["bonemaps"]
-                else:
-                    img, points_2d, points_3du, bonemaps = dataset_reader.get_frame()
-
-                if now_save:
-                    now_save = False
-                    np.save(str(obj_num) + "-" + str(frame_count), {"img":img, "points_2d": points_2d, "points_3du": points_3du, "bonemaps": bonemaps})
-
-                img = display_utils.drawLines(img, points_2d)
-                img = display_utils.drawPoints(img, points_2d)
-            else:
-                img, points_2d = dataset_reader.get_frame()
-                for cur_point in points_2d:
-                    img = display_utils.drawLines(img, cur_point)
-                    img = display_utils.drawPoints(img, cur_point)
+            img = display_utils.drawLines(img, points_2d)
+            img = display_utils.drawPoints(img, points_2d)
 
             frame_count += 1
 
+            points_3d += [0, 0, 3000]
         ###################################################################################
-        if data_type == 3:
-            mpose_model.draw(points_3du)
-            # visualize bonemap
-            # bonemaps = cv2.resize(bonemaps, (368, 368), interpolation=cv2.INTER_NEAREST)
-            bm_forshow, value_bonemaps = display_utils.visualizeBonemaps(bonemaps, min_val = bm_min_val, mid_val = bm_mid_val, max_val = bm_max_val)
-            value_bonemaps = cv2.resize(value_bonemaps, (368, 368), interpolation=cv2.INTER_NEAREST)
-            cv2.imshow("bonemap show", cv2.resize(bm_forshow, (368, 368), interpolation=cv2.INTER_NEAREST))
-            # cv2.imshow("bonemap show", bm_forshow)
-            cv2.waitKey(3)
-
+        mpose_model.draw(points_3d)
         cam_scene.drawFrame(img)
 
         app.renderEnd()

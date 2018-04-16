@@ -92,7 +92,7 @@ if __name__ == "__main__":
     reader = data_reader.mDataReader()
     total_camera_num = 6
 
-    data_dir = "/home/kaihang/Desktop/test_dir"
+    data_dir = "/home/kaihang/DataSet/sfu_selected_data/"
     data_list = os.listdir(data_dir)
     data_list = [os.path.join(data_dir, i) for i in data_list]
 
@@ -157,7 +157,6 @@ if __name__ == "__main__":
                 img = cv2.imread(img_path)
                 annot2d = label[0]
                 annot3d = label[1]
-                annot3d[:, 1:3] = -annot3d[:, 1:3]
                 img = display_utils.drawLines(img, annot2d)
                 img = display_utils.drawPoints(img, annot2d)
             else:
@@ -173,7 +172,7 @@ if __name__ == "__main__":
                     quit()
 
         ###################################################################################
-        mpose_model.draw(annot3d - annot3d[14] + np.array([0, 0, 3000]))
+        mpose_model.draw(annot3d - annot3d[14] + np.array([0, 0, 3500]))
         cam_scene.drawFrame(img)
         app.renderEnd()
 

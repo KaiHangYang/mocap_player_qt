@@ -9,4 +9,4 @@ main
 *.so
 *.user
 *.DS_Store
-
+*.pyc

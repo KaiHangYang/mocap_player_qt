@@ -550,4 +550,3 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
         this->pose_model->draw(points_3d, cur_cam_ex_mat, 0);
     }
 }
-

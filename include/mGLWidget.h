@@ -36,7 +36,7 @@ public:
     void setPoseChangeStep(float change_step);
 
 public slots:
-    void changePoseFile(QString & file_name);
+    void changePoseFile(QString & file_name, int cur_dataset_num);
     void togglePose();
     void startPose();
     void stopPose();

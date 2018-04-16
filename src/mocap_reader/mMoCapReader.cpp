@@ -2,6 +2,16 @@
 #include <QFileInfo>
 #include <QDebug>
 
+bool mMoCapData::getJoints(std::vector<glm::vec3> &joints, int frame_index) {
+    for (int i = 0; i < this->num_of_joints; ++i) {
+        joints[i] = this->data[i][frame_index];
+    }
+    // adjust the point for different dataset
+    if (this->cur_dataset_num == 1) {
+        joints[14] = (joints[11] + joints[8]) * 0.5f;
+    }
+}
+
 bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, float pose_change_size, int index) {
 
     if (this->cur_frame_num >= this->total_frame_num) {
@@ -15,17 +25,13 @@ bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, float pose_change_s
 
     if (index >= 0 && index < this->total_frame_num) {
         frame_index = index;
-        for (int i = 0; i < this->num_of_joints; ++i) {
-            joints[i] = this->data[i][frame_index];
-        }
+        this->getJoints(joints, frame_index);
         this->pose_adjuster->adjustAccordingToBoneLength(joints, this->is_use_jitters);
         return true;
     }
     else {
         do {
-            for (int i = 0; i < this->num_of_joints; ++i) {
-                joints[i] = this->data[i][frame_index];
-            }
+            this->getJoints(joints, frame_index);
             this->pose_adjuster->adjustAccordingToBoneLength(joints, this->is_use_jitters);
             this->cur_frame_num++;
             frame_index = this->cur_frame_num;
@@ -133,6 +139,6 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
         return false;
     }
 
-    data->setData(frame_datas, total_frame_nums, num_of_joints);
+    data->setData(frame_datas, total_frame_nums, num_of_joints, dataset);
     return true;
 }

@@ -26,7 +26,9 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->cur_camera_type = 0;
     this->cur_camera_num[0] = 0;this->cur_camera_num[1] = 0;
     this->cur_camera_name_num[0] = 0;this->cur_camera_name_num[1] = 0;
-    this->cur_pose_file_index = 0;
+    this->cur_pose_file_index[0] = 0;
+    this->cur_pose_file_index[1] = 0;
+    this->cur_dataset_num = 0;
 
     // Set the grid widget to contain the widgets
     this->grid_widget = new QWidget(this);
@@ -109,10 +111,16 @@ void mMainWindow::buildToolBoxTab1() {
     this->tool_file_remove_btn = new QPushButton("Remove", this->file_box);
     this->tool_file_removeall_btn = new QPushButton("Remove All", this->file_box);
     this->tool_file_highlight_current = new QPushButton("Highlight Current", this->file_box);
+    this->tool_file_dataset_label = new QLabel("Current Dataset:", this->file_box);
+    this->tool_file_dataset_combo = new QComboBox(this->file_box);
+    this->tool_file_dataset_combo->addItem("SFU");
+    this->tool_file_dataset_combo->addItem("CMU");
 
     this->tool_file_listview = new QListView(this->file_box);
-    this->file_list_model = new QStringListModel(this->tool_file_listview);
-    this->tool_file_listview->setModel(this->file_list_model);
+    this->file_list_model = std::vector<QStringListModel *>(2);
+    this->file_list_model[0] = new QStringListModel(this->tool_file_listview); // listmodel of sfu dataset
+    this->file_list_model[1] = new QStringListModel(this->tool_file_listview); // listmodel of cmu dataset
+    this->tool_file_listview->setModel(this->file_list_model[this->cur_dataset_num]);
     this->tool_file_listview->setEditTriggers(QAbstractItemView::NoEditTriggers);
     this->tool_file_listview->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
@@ -120,7 +128,9 @@ void mMainWindow::buildToolBoxTab1() {
     this->file_box_layout->addWidget(this->tool_file_remove_btn, 0, 1, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_removeall_btn, 0, 2, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_highlight_current, 1, 0, 1, 3);
-    this->file_box_layout->addWidget(this->tool_file_listview, 2, 0, 4, 3);
+    this->file_box_layout->addWidget(this->tool_file_dataset_label, 2, 0, 1, 2);
+    this->file_box_layout->addWidget(this->tool_file_dataset_combo, 2, 2, 1, 1);
+    this->file_box_layout->addWidget(this->tool_file_listview, 3, 0, 4, 3);
 
     //      Box for pose
     this->pose_box = new QGroupBox("Pose Control:", this->tool_box);
@@ -277,6 +287,7 @@ void mMainWindow::bindEvents() {
     connect(this->tool_file_removeall_btn, SIGNAL(clicked()), this, SLOT(fileRemoveAllSlot()));
     connect(this->tool_file_listview, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(fileActivatedSlot(QModelIndex)));
     connect(this->tool_file_highlight_current, SIGNAL(clicked()), this, SLOT(fileHighlightCurrentSlot()));
+    connect(this->tool_file_dataset_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(fileDataSetChangeSlot(int)));
     // Pose box event
     connect(this->tool_video_toggle_btn, SIGNAL(clicked()), this, SLOT(videoToggleSlot()));
     connect(this->tool_video_reset_btn, SIGNAL(clicked()), this, SLOT(videoResetSlot()));
@@ -313,9 +324,15 @@ void mMainWindow::bindEvents() {
 }
 
 
+void mMainWindow::setFileListControlState(bool is_disabled) {
+    this->tool_file_add_btn->setDisabled(is_disabled);
+    this->tool_file_remove_btn->setDisabled(is_disabled);
+    this->tool_file_dataset_combo->setDisabled(is_disabled);
+}
+
 /********************** Implementation of Slots **********************/
 void mMainWindow::fileListAddItem(QString file_path) {
-    QStringList cur_list = this->file_list_model->stringList();
+    QStringList cur_list = this->file_list_model[this->cur_dataset_num]->stringList();
     bool is_exist = false;
     // check if the file exists
     for (int j = 0; j < cur_list.size(); ++j) {
@@ -328,15 +345,15 @@ void mMainWindow::fileListAddItem(QString file_path) {
         return;
     }
     int cur_row = 0;
-    this->file_list_model->insertRow(cur_row);
-    QModelIndex index = this->file_list_model->index(cur_row);
+    this->file_list_model[this->cur_dataset_num]->insertRow(cur_row);
+    QModelIndex index = this->file_list_model[this->cur_dataset_num]->index(cur_row);
 
-    this->file_list_model->setData(index, file_path);
+    this->file_list_model[this->cur_dataset_num]->setData(index, file_path);
     this->tool_file_listview->setCurrentIndex(index); // highlight the inserted item
 }
 
 void mMainWindow::fileAddSlot() {
-    this->cur_pose_file_index = 0;
+    this->cur_pose_file_index[this->cur_dataset_num] = 0;
     QStringList file_names = QFileDialog::getOpenFileNames(this, "Add Files", this->file_dialog_initial_dir, this->file_dialog_extension);
     if (file_names.size() > 0) {
         // Store the last directories
@@ -349,32 +366,36 @@ void mMainWindow::fileAddSlot() {
     }
 }
 void mMainWindow::fileRemoveSlot() {
-    this->cur_pose_file_index = 0;
+    this->cur_pose_file_index[this->cur_dataset_num] = 0;
     QModelIndexList index_list = this->tool_file_listview->selectionModel()->selectedIndexes();
 
     while (!index_list.isEmpty()) {
-        this->file_list_model->removeRow(index_list[0].row());
+        this->file_list_model[this->cur_dataset_num]->removeRow(index_list[0].row());
         index_list = this->tool_file_listview->selectionModel()->selectedIndexes();
     }
 }
 void mMainWindow::fileRemoveAllSlot() {
-    this->cur_pose_file_index = 0;
-    this->file_list_model->removeRows(0, this->file_list_model->rowCount());
+    this->cur_pose_file_index[this->cur_dataset_num] = 0;
+    this->file_list_model[this->cur_dataset_num]->removeRows(0, this->file_list_model[this->cur_dataset_num]->rowCount());
 }
 void mMainWindow::fileActivatedSlot(QModelIndex index) {
     QString file_path = index.data().toString();
-    this->cur_pose_file_index = index.row();
+    this->cur_pose_file_index[this->cur_dataset_num] = index.row();
     // Change the button text
-    this->tool_video_toggle_btn->setIcon(this->icon_play);
-    this->gl_widget->changePoseFile(file_path);
+    this->gl_widget->changePoseFile(file_path, this->cur_dataset_num);
     this->videoStartSlot();
     this->fileHighlightCurrentSlot();
 }
 void mMainWindow::fileHighlightCurrentSlot() {
-    int cur_sum = this->file_list_model->rowCount();
-    if (this->cur_pose_file_index < cur_sum) {
-        this->tool_file_listview->setCurrentIndex(this->file_list_model->index(this->cur_pose_file_index));
+    int cur_sum = this->file_list_model[this->cur_dataset_num]->rowCount();
+    if (this->cur_pose_file_index[this->cur_dataset_num] < cur_sum) {
+        this->tool_file_listview->setCurrentIndex(this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]));
     }
+}
+
+void mMainWindow::fileDataSetChangeSlot(int cur_dataset) {
+    this->cur_dataset_num = cur_dataset;
+    this->tool_file_listview->setModel(this->file_list_model[this->cur_dataset_num]);
 }
 
 void mMainWindow::videoToggleSlot() {
@@ -386,16 +407,20 @@ void mMainWindow::videoToggleSlot() {
     }
 }
 void mMainWindow::videoStartSlot() {
+    // disable the file control will play
+    this->setFileListControlState(true);
     this->tool_video_toggle_btn->setIcon(this->icon_pause);
-    this->gl_widget->togglePose();
+    this->gl_widget->startPose();
 }
 void mMainWindow::videoStopSlot() {
+    // enable again
+    this->setFileListControlState(false);
     this->tool_video_toggle_btn->setIcon(this->icon_play);
-    this->gl_widget->togglePose();
+    this->gl_widget->stopPose();
 }
 void mMainWindow::videoResetSlot() {
     if (this->gl_widget->getIsHasPose()) {
-        this->tool_video_toggle_btn->setIcon(this->icon_play);
+        this->videoStopSlot();
         this->gl_widget->resetPose();
     }
 }
@@ -716,7 +741,7 @@ void mMainWindow::saveFramesSlot(cv::Mat & frame, std::vector<glm::vec2> labels_
     QFileInfo dir_info(dir_name);
     if (!dir_name.isEmpty() && dir_info.isDir()) {
         QDir save_dir;
-        QModelIndex cur_index = this->file_list_model->index(this->cur_pose_file_index);
+        QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
         QString pose_file_name = cur_index.data().toString();
         pose_file_name = pose_file_name.split("/").back();
         pose_file_name = pose_file_name.split(".")[0];
@@ -775,12 +800,12 @@ void mMainWindow::captureOneFrame() {
 void mMainWindow::captureAllFrames() {
     QString dir_name = this->tool_capture_dir_input->text();
     QFileInfo dir_info(dir_name);
-    if (this->cur_pose_file_index >= this->file_list_model->rowCount()) {
+    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
         QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
         return;
     }
 
-    QModelIndex cur_index = this->file_list_model->index(this->cur_pose_file_index);
+    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
     this->fileActivatedSlot(cur_index);
     this->videoResetSlot();
 
@@ -821,17 +846,17 @@ void mMainWindow::sceneFloorSlot() {
 
 void mMainWindow::changeNextPoseSlot() {
     this->videoStopSlot();
-    int cur_sum = this->file_list_model->rowCount();
-    this->cur_pose_file_index ++;
+    int cur_sum = this->file_list_model[this->cur_dataset_num]->rowCount();
+    this->cur_pose_file_index[this->cur_dataset_num]++;
     if (cur_sum == 0) {
         QMessageBox::critical(this, "Pose File Error", "There is no pose file in the list!");
     }
-    else if (this->cur_pose_file_index >= cur_sum) {
+    else if (this->cur_pose_file_index[this->cur_dataset_num] >= cur_sum) {
         this->gl_widget->stopCapture();
         QMessageBox::warning(this, "Warning", "No more pose file to process!");
     }
     else {
-        this->fileActivatedSlot(this->file_list_model->index(this->cur_pose_file_index));
+        this->fileActivatedSlot(this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]));
     }
 }
 void mMainWindow::poseSetChangeSize() {

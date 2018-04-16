@@ -10,9 +10,10 @@
 
 class mMoCapData {
 public:
-    mMoCapData():total_frame_num(0), cur_frame_num(0), num_of_joints(0) {}
-    void setData(std::vector<std::vector<glm::vec3>> data, int total_frame_num, int num_of_joints) {
+    mMoCapData():total_frame_num(0), cur_frame_num(0), num_of_joints(0), cur_dataset_num(0) {}
+    void setData(std::vector<std::vector<glm::vec3>> data, int total_frame_num, int num_of_joints, int cur_dataset_num) {
         this->data = data;
+        this->cur_dataset_num = cur_dataset_num;
         this->cur_frame_num = 0;
         this->total_frame_num = total_frame_num;
         this->num_of_joints = num_of_joints;
@@ -21,8 +22,9 @@ public:
         this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length, mPoseDef::bones_length_index, mPoseDef::bones_indices,mPoseDef::bones_cal_rank);
     }
 
-    mMoCapData(std::vector<std::vector<glm::vec3>> data, int total_frame_num, int num_of_joints) : data(data), cur_frame_num(0), total_frame_num(total_frame_num), num_of_joints(num_of_joints) {
+    mMoCapData(std::vector<std::vector<glm::vec3>> data, int total_frame_num, int num_of_joints, int cur_dataset_num) : data(data), cur_frame_num(0), total_frame_num(total_frame_num), num_of_joints(num_of_joints) {
         this->is_use_jitters = false;
+        this->cur_dataset_num = cur_dataset_num;
         this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length, mPoseDef::bones_length_index, mPoseDef::bones_indices,mPoseDef::bones_cal_rank);
     }
     ~mMoCapData(){}
@@ -38,18 +40,22 @@ private:
     int cur_frame_num;
     int total_frame_num;
     int num_of_joints;
+    int cur_dataset_num;
     std::vector<std::vector<glm::vec3>> data;
     std::vector<glm::vec3> prev_choosed_data;
     mPoseAdjuster * pose_adjuster;
-    float calMaxChange(std::vector<glm::vec3> prev, std::vector<glm::vec3> cur);
     bool is_use_jitters;
+    float calMaxChange(std::vector<glm::vec3> prev, std::vector<glm::vec3> cur);
+    bool getJoints(std::vector<glm::vec3> &joints, int frame_index);
 };
 
 class mMoCapReader {
 public:
     mMoCapReader() {
         this->valid_joints_arrs = std::vector<std::vector<unsigned int>>({
-                                                                             {14, 13, 24, 25, 26, 17, 18, 19, 6, 7, 8, 1, 2, 3, 0} // sfu dataset
+                                                                             {14, 13, 24, 25, 26, 17, 18, 19, 6, 7, 8, 1, 2, 3, 0}, // sfu dataset
+                                                                             {18, 16, 30, 31, 32, 21, 22, 23, 8, 9, 10, 2, 3, 4, 0}, // cmu dataset
+//                                                                             {4, 3, 10, 11, 12, 29, 30, 31, 47, 49, 50, 52, 54, 55, 0} // cmu dataset daz
                                                                          });
     }
     ~mMoCapReader(){}

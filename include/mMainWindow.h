@@ -37,6 +37,7 @@ public slots:
     void fileRemoveAllSlot();
     void fileActivatedSlot(QModelIndex index);
     void fileHighlightCurrentSlot();
+    void fileDataSetChangeSlot(int cur_dataset);
     void videoToggleSlot();
     void videoStartSlot();
     void videoStopSlot();
@@ -75,6 +76,7 @@ private:
     void buildToolBoxTab1();
     void buildToolBoxTab2();
     void bindEvents();
+    void setFileListControlState(bool is_disable);
     /********************************************************/
 
     /************** Function to simplify the implementation ***************/
@@ -87,7 +89,7 @@ private:
     int wnd_height;
 
     /****** Just for store *****/
-    int cur_pose_file_index;
+    int cur_pose_file_index[2];
     int cur_camera_type; // 0 is the global type, 1 is the follow type
     int cur_camera_name_num[2];
     int cur_camera_num[2];
@@ -97,7 +99,8 @@ private:
     QString file_dialog_extension;
     QString file_dialog_initial_dir;
     std::vector<QString> camera_data_file_header;
-    QStringListModel * file_list_model;
+    std::vector<QStringListModel *> file_list_model;
+    int cur_dataset_num;
 
     QStringListModel * camera_list_model;
     QStringListModel * camera_list_follow_model;
@@ -131,6 +134,10 @@ private:
     QPushButton * tool_file_remove_btn;
     QPushButton * tool_file_removeall_btn;
     QPushButton * tool_file_highlight_current;
+
+    QLabel * tool_file_dataset_label;
+    QComboBox * tool_file_dataset_combo;
+
     QListView * tool_file_listview;
     QListView * tool_camera_listview;
 

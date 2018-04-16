@@ -217,8 +217,8 @@ void mGLWidget::setUseFloor(bool is_with_floor) {
     this->is_with_floor = is_with_floor;
 }
 /*************** Implementation of slots *****************/
-void mGLWidget::changePoseFile(QString & file_name) {
-    if (this->mocap_reader.parse(file_name, 0, this->mocap_data)) {
+void mGLWidget::changePoseFile(QString & file_name, int cur_dataset_num) {
+    if (this->mocap_reader.parse(file_name, cur_dataset_num, this->mocap_data)) {
         // Get the first frame pose
         this->is_has_pose = true;
         this->pose_state = 0;

@@ -77,6 +77,11 @@ private:
     void bindEvents();
     /********************************************************/
 
+    /************** Function to simplify the implementation ***************/
+
+    void fileListAddItem(QString file_path);
+    /**********************************************************************/
+
     Ui::mMainWindow *ui;
     int wnd_width;
     int wnd_height;

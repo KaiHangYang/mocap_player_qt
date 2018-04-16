@@ -314,35 +314,37 @@ void mMainWindow::bindEvents() {
 
 
 /********************** Implementation of Slots **********************/
+void mMainWindow::fileListAddItem(QString file_path) {
+    QStringList cur_list = this->file_list_model->stringList();
+    bool is_exist = false;
+    // check if the file exists
+    for (int j = 0; j < cur_list.size(); ++j) {
+        if (cur_list.at(j) == file_path) {
+            is_exist = true;
+            break;
+        }
+    }
+    if (is_exist) {
+        return;
+    }
+    int cur_row = 0;
+    this->file_list_model->insertRow(cur_row);
+    QModelIndex index = this->file_list_model->index(cur_row);
+
+    this->file_list_model->setData(index, file_path);
+    this->tool_file_listview->setCurrentIndex(index); // highlight the inserted item
+}
 
 void mMainWindow::fileAddSlot() {
     this->cur_pose_file_index = 0;
     QStringList file_names = QFileDialog::getOpenFileNames(this, "Add Files", this->file_dialog_initial_dir, this->file_dialog_extension);
     if (file_names.size() > 0) {
-
         // Store the last directories
         QFileInfo cur_dir_info(file_names.at(0));
         this->file_dialog_initial_dir = cur_dir_info.absoluteDir().absolutePath();
 
         for (int i = 0; i < file_names.size(); ++i) {
-            QStringList cur_list = this->file_list_model->stringList();
-            bool is_exist = false;
-            // check if the file exists
-            for (int j = 0; j < cur_list.size(); ++j) {
-                if (cur_list.at(j) == file_names.at(i)) {
-                    is_exist = true;
-                    break;
-                }
-            }
-            if (is_exist) {
-                continue;
-            }
-            int cur_row = 0;
-            this->file_list_model->insertRow(cur_row);
-            QModelIndex index = this->file_list_model->index(cur_row);
-
-            this->file_list_model->setData(index, file_names.at(i));
-            this->tool_file_listview->setCurrentIndex(index);
+            this->fileListAddItem(file_names.at(i));
         }
     }
 }

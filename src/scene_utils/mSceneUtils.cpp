@@ -369,11 +369,9 @@ glm::mat4 mSceneUtils::convertVec2Mat(const glm::vec3 & follow_vec, glm::vec3 pe
 
 // TODO: The 3D view coordinate labels need to be checked.
 //       THe 2D is right, after visualized.
-void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
-    // Joints is in the global coordinate
+void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
     labels_2d = std::vector<glm::vec2>(joints.size());
     labels_3d = std::vector<glm::vec3>(joints.size());
-
     glm::mat4 cur_view_mat = view_mat;
     glm::vec3 root_joint = glm::vec3(cur_view_mat * glm::vec4(joints[joints.size() - 1], 1.f));
 
@@ -382,26 +380,24 @@ void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, cons
         cur_2d /= cur_2d.w;
         labels_2d[i] = glm::vec2(this->wnd_width * (cur_2d.x + 1.f) / 2.f , this->wnd_height * (1.f - cur_2d.y) / 2.f);
         labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints[i], 1.f)) - root_joint;
+
+        // Cause the camera in the real word
+        labels_3d[i].y *= -1;
+        labels_3d[i].z *= -1;
     }
     mPoseDef::scalePose(labels_3d);
 }
 
+void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
+    // Joints is in the global coordinate
+    this->_getLabelsFromFrame(joints, view_mat, labels_2d, labels_3d);
+}
+
 void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::vec3 & view_vec, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
     // Joints is in the global coordinate
-    labels_2d = std::vector<glm::vec2>(joints.size());
-    labels_3d = std::vector<glm::vec3>(joints.size());
-
     glm::vec3 root_joint = joints[joints.size() - 1];
     glm::mat4 cur_view_mat = this->convertVec2Mat(view_vec, root_joint);
-    root_joint = glm::vec3(cur_view_mat * glm::vec4(root_joint, 1.f));
-
-    for (int i = 0; i < joints.size(); ++i) {
-        glm::vec4 cur_2d = this->cam_proj_mat * cur_view_mat * glm::vec4(joints[i], 1.0);
-        cur_2d /= cur_2d.w;
-        labels_2d[i] = glm::vec2(this->wnd_width * (cur_2d.x + 1.f) / 2.f , this->wnd_height * (1.f - cur_2d.y) / 2.f);
-        labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints[i], 1.f)) - root_joint;
-    }
-    mPoseDef::scalePose(labels_3d);
+    this->_getLabelsFromFrame(joints, cur_view_mat, labels_2d, labels_3d);
 }
 
 void mSceneUtils::_beforeRender(const std::vector<glm::vec3> & points_3d) {

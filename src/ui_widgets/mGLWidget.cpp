@@ -320,7 +320,7 @@ void mGLWidget::draw() {
             cv::Mat captured_img;
             this->swapBuffers(); // Important to capture frames
             this->scene->captureFrame(captured_img);
-            mVTools::drawLines(captured_img, labels_2d);
+//            mVTools::drawLines(captured_img, labels_2d);
             int cur_frame_num = this->mocap_data->getCurFrame();
             emit saveCapturedFrameSignal(captured_img, labels_2d, labels_3d, cur_frame_num, this->cur_capture_sum);
             this->cur_capture_sum++;

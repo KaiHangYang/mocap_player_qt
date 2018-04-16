@@ -32,6 +32,7 @@ public:
     void setCurFollowVec(glm::vec3 cur_follow_vec);
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
     void setFollowDefault();
+
     void getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
     void getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::vec3 & view_vec, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
 
@@ -49,6 +50,7 @@ private:
 
     void _beforeRender(const std::vector<glm::vec3> & points_3d);
     void _render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat);
+    void _getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
     glm::mat4 convertVec2Mat(const glm::vec3 & follow_vec, glm::vec3 person_center_pos);
 
     int wnd_width;

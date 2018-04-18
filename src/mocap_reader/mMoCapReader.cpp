@@ -118,6 +118,11 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
     int num_of_joints = 0;
 
     if (surfix == "bvh") {
+        if (dataset != 0 || dataset != 1) {
+            qDebug() << "Only dataset 0 and 1 accept bvh!";
+            return false;
+        }
+
         std::vector<unsigned int> cur_valid_joints_arr = this->valid_joints_arrs[dataset];
         bvh::Bvh bvh_content;
         bvh::Bvh_parser bvh_parser;
@@ -133,6 +138,35 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
             frame_datas[i] = bvh_joints[cur_valid_joints_arr[i]]->pos();
         }
 
+    }
+    else if (surfix == "mpi") {
+        if (dataset != 2) {
+            qDebug() << "Only data 2 accept mpi";
+            return false;
+        }
+        QFile data_file(file_path);
+        if (data_file.open(QIODevice::ReadOnly)) {
+            QByteArray data = data_file.readAll();
+            std::vector<unsigned int> cur_valid_joints_arr = this->valid_joints_arrs[dataset];
+            char * data_ptr = data.data();
+            total_frame_nums = *((int *)(data_ptr));
+            num_of_joints = cur_valid_joints_arr.size();
+
+            data_ptr += 4 * (1 + 2 * num_of_joints * total_frame_nums); // point to the start of the joints_3d
+            float * joints_3d = (float *)data_ptr;
+            frame_datas = std::vector<std::vector<glm::vec3>>(num_of_joints);
+            for (int i = 0; i < num_of_joints; ++i) {
+                frame_datas[i] = std::vector<glm::vec3>(total_frame_nums);
+                for (int j = 0; j < total_frame_nums; ++j) {
+                    int initial_index = num_of_joints * 3 * j + 3 * i;
+                    frame_datas[i][j] = glm::vec3(joints_3d[initial_index + 0], joints_3d[initial_index + 1], joints_3d[initial_index + 2]);
+                }
+            }
+        }
+        else {
+            qDebug() << "mMoCapReader.cpp: failed to read " << file_path;
+            return false;
+        }
     }
     else {
         qDebug() << "mMoCapReader.cpp: Mocap data file " << file_path << " is not support!";

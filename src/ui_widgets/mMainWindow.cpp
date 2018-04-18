@@ -15,7 +15,7 @@
 mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString title) : QMainWindow(parent), ui(new Ui::mMainWindow) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
-    this->file_dialog_extension = "BVH Files(*.bvh)";
+    this->file_dialog_extension = "MoCap Files(*.bvh *.mpi *.h36)";
     this->file_dialog_initial_dir = ".";
     this->camera_data_file_header = std::vector<QString>({"#M_CAMERA_DATA", "#M_CAMERA_FOLLOW_DATA"});
 
@@ -115,15 +115,19 @@ void mMainWindow::buildToolBoxTab1() {
     this->tool_file_dataset_combo = new QComboBox(this->file_box);
     this->tool_file_dataset_combo->addItem("SFU");
     this->tool_file_dataset_combo->addItem("CMU");
+    this->tool_file_dataset_combo->addItem("MPI");
+    this->tool_file_dataset_combo->addItem("H36");
     this->tool_file_list_load_btn = new QPushButton("Load", this->file_box);
     this->tool_file_list_save_btn = new QPushButton("Save", this->file_box);
     this->tool_file_list_num_label = new QLabel("0/0", this->file_box);
 
 
     this->tool_file_listview = new QListView(this->file_box);
-    this->file_list_model = std::vector<QStringListModel *>(2);
+    this->file_list_model = std::vector<QStringListModel *>(4);
     this->file_list_model[0] = new QStringListModel(this->tool_file_listview); // listmodel of sfu dataset
     this->file_list_model[1] = new QStringListModel(this->tool_file_listview); // listmodel of cmu dataset
+    this->file_list_model[2] = new QStringListModel(this->tool_file_listview); // listmodel of mpi dataset
+    this->file_list_model[3] = new QStringListModel(this->tool_file_listview); // listmodel of mpi dataset
     this->tool_file_listview->setModel(this->file_list_model[this->cur_dataset_num]);
     this->tool_file_listview->setEditTriggers(QAbstractItemView::NoEditTriggers);
     this->tool_file_listview->setSelectionMode(QAbstractItemView::ExtendedSelection);

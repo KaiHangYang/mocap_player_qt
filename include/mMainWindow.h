@@ -38,6 +38,10 @@ public slots:
     void fileActivatedSlot(QModelIndex index);
     void fileHighlightCurrentSlot();
     void fileDataSetChangeSlot(int cur_dataset);
+    void updateFileListNumShow();
+    void fileListLoadFromFileSlot();
+    void fileListSaveToFileSlot();
+
     void videoToggleSlot();
     void videoStartSlot();
     void videoStopSlot();
@@ -77,6 +81,7 @@ private:
     void buildToolBoxTab2();
     void bindEvents();
     void setFileListControlState(bool is_disable);
+
     /********************************************************/
 
     /************** Function to simplify the implementation ***************/
@@ -134,6 +139,9 @@ private:
     QPushButton * tool_file_remove_btn;
     QPushButton * tool_file_removeall_btn;
     QPushButton * tool_file_highlight_current;
+    QPushButton * tool_file_list_load_btn;
+    QPushButton * tool_file_list_save_btn;
+    QLabel * tool_file_list_num_label;
 
     QLabel * tool_file_dataset_label;
     QComboBox * tool_file_dataset_combo;

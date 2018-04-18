@@ -115,6 +115,10 @@ void mMainWindow::buildToolBoxTab1() {
     this->tool_file_dataset_combo = new QComboBox(this->file_box);
     this->tool_file_dataset_combo->addItem("SFU");
     this->tool_file_dataset_combo->addItem("CMU");
+    this->tool_file_list_load_btn = new QPushButton("Load", this->file_box);
+    this->tool_file_list_save_btn = new QPushButton("Save", this->file_box);
+    this->tool_file_list_num_label = new QLabel("0/0", this->file_box);
+
 
     this->tool_file_listview = new QListView(this->file_box);
     this->file_list_model = std::vector<QStringListModel *>(2);
@@ -131,6 +135,10 @@ void mMainWindow::buildToolBoxTab1() {
     this->file_box_layout->addWidget(this->tool_file_dataset_label, 2, 0, 1, 2);
     this->file_box_layout->addWidget(this->tool_file_dataset_combo, 2, 2, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_listview, 3, 0, 4, 3);
+    this->file_box_layout->addWidget(this->tool_file_list_load_btn, 7, 1, 1, 1);
+    this->file_box_layout->addWidget(this->tool_file_list_save_btn, 7, 2, 1, 1);
+    this->file_box_layout->addWidget(this->tool_file_list_num_label, 7, 0, 1, 1);
+
 
     //      Box for pose
     this->pose_box = new QGroupBox("Pose Control:", this->tool_box);
@@ -288,6 +296,8 @@ void mMainWindow::bindEvents() {
     connect(this->tool_file_listview, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(fileActivatedSlot(QModelIndex)));
     connect(this->tool_file_highlight_current, SIGNAL(clicked()), this, SLOT(fileHighlightCurrentSlot()));
     connect(this->tool_file_dataset_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(fileDataSetChangeSlot(int)));
+    connect(this->tool_file_list_load_btn, SIGNAL(clicked()), this, SLOT(fileListLoadFromFileSlot()));
+    connect(this->tool_file_list_save_btn, SIGNAL(clicked()), this, SLOT(fileListSaveToFileSlot()));
     // Pose box event
     connect(this->tool_video_toggle_btn, SIGNAL(clicked()), this, SLOT(videoToggleSlot()));
     connect(this->tool_video_reset_btn, SIGNAL(clicked()), this, SLOT(videoResetSlot()));
@@ -331,6 +341,9 @@ void mMainWindow::setFileListControlState(bool is_disabled) {
 }
 
 /********************** Implementation of Slots **********************/
+void mMainWindow::updateFileListNumShow() {
+    this->tool_file_list_num_label->setText(QString::number(1 + this->tool_file_listview->currentIndex().row()) + "/" + QString::number(this->file_list_model[this->cur_dataset_num]->rowCount()));
+}
 void mMainWindow::fileListAddItem(QString file_path) {
     QStringList cur_list = this->file_list_model[this->cur_dataset_num]->stringList();
     bool is_exist = false;
@@ -364,6 +377,8 @@ void mMainWindow::fileAddSlot() {
             this->fileListAddItem(file_names.at(i));
         }
     }
+
+    this->updateFileListNumShow();
 }
 void mMainWindow::fileRemoveSlot() {
     this->cur_pose_file_index[this->cur_dataset_num] = 0;
@@ -373,10 +388,12 @@ void mMainWindow::fileRemoveSlot() {
         this->file_list_model[this->cur_dataset_num]->removeRow(index_list[0].row());
         index_list = this->tool_file_listview->selectionModel()->selectedIndexes();
     }
+    this->updateFileListNumShow();
 }
 void mMainWindow::fileRemoveAllSlot() {
     this->cur_pose_file_index[this->cur_dataset_num] = 0;
     this->file_list_model[this->cur_dataset_num]->removeRows(0, this->file_list_model[this->cur_dataset_num]->rowCount());
+    this->updateFileListNumShow();
 }
 void mMainWindow::fileActivatedSlot(QModelIndex index) {
     QString file_path = index.data().toString();
@@ -385,6 +402,7 @@ void mMainWindow::fileActivatedSlot(QModelIndex index) {
     this->gl_widget->changePoseFile(file_path, this->cur_dataset_num);
     this->videoStartSlot();
     this->fileHighlightCurrentSlot();
+    this->updateFileListNumShow();
 }
 void mMainWindow::fileHighlightCurrentSlot() {
     int cur_sum = this->file_list_model[this->cur_dataset_num]->rowCount();
@@ -396,6 +414,51 @@ void mMainWindow::fileHighlightCurrentSlot() {
 void mMainWindow::fileDataSetChangeSlot(int cur_dataset) {
     this->cur_dataset_num = cur_dataset;
     this->tool_file_listview->setModel(this->file_list_model[this->cur_dataset_num]);
+    this->updateFileListNumShow();
+}
+
+void mMainWindow::fileListLoadFromFileSlot() {
+    QString file_name = QFileDialog::getOpenFileName(this, "Open file list file", this->file_dialog_initial_dir, "*");
+    QFileInfo file_info(file_name);
+    if (file_info.isFile()) {
+        QFile file_list(file_name);
+        if (file_list.open(QIODevice::ReadOnly)) {
+            QTextStream file_list_stream(&file_list);
+            QString file_line;
+            while (!file_list_stream.atEnd()) {
+                file_line = file_list_stream.readLine();
+                file_info.setFile(file_line);
+                if (file_info.isFile()) {
+                    this->fileListAddItem(file_line);
+                }
+            }
+            file_list.close();
+        }
+        else {
+            QMessageBox::critical(this, "Path Error", "File list file is not valid!");
+        }
+    }
+    this->updateFileListNumShow();
+}
+
+void mMainWindow::fileListSaveToFileSlot() {
+    QString file_name = QFileDialog::getSaveFileName(this, "Save file list file save", this->file_dialog_initial_dir, "*");
+    if (!file_name.isEmpty()) {
+        QFile file_list_file(file_name);
+        if (file_list_file.open(QIODevice::WriteOnly)) {
+            QTextStream file_list_stream(&file_list_file);
+            QStringList file_list = this->file_list_model[this->cur_dataset_num]->stringList();
+
+            for (int i = 0; i < file_list.size(); ++i) {
+                file_list_stream << file_list.at(i) << "\n";
+            }
+
+            file_list_file.close();
+        }
+        else {
+            QMessageBox::critical(this, "Path Error", "File list file is not valid!");
+        }
+    }
 }
 
 void mMainWindow::videoToggleSlot() {

@@ -21,7 +21,6 @@ bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, float pose_change_s
 
     joints = std::vector<glm::vec3>(num_of_joints);
     int frame_index = this->cur_frame_num;
-    std::vector<glm::vec3> scaled_joints;
 
     if (index >= 0 && index < this->total_frame_num) {
         frame_index = index;
@@ -118,7 +117,7 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
     int num_of_joints = 0;
 
     if (surfix == "bvh") {
-        if (dataset != 0 || dataset != 1) {
+        if (dataset != 0 && dataset != 1) {
             qDebug() << "Only dataset 0 and 1 accept bvh!";
             return false;
         }
@@ -141,7 +140,7 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
     }
     else if (surfix == "mpi") {
         if (dataset != 2) {
-            qDebug() << "Only data 2 accept mpi";
+            qDebug() << "Only dataset 2 accept .mpi";
             return false;
         }
         QFile data_file(file_path);
@@ -153,6 +152,35 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
             num_of_joints = cur_valid_joints_arr.size();
 
             data_ptr += 4 * (1 + 2 * num_of_joints * total_frame_nums); // point to the start of the joints_3d
+            float * joints_3d = (float *)data_ptr;
+            frame_datas = std::vector<std::vector<glm::vec3>>(num_of_joints);
+            for (int i = 0; i < num_of_joints; ++i) {
+                frame_datas[i] = std::vector<glm::vec3>(total_frame_nums);
+                for (int j = 0; j < total_frame_nums; ++j) {
+                    int initial_index = num_of_joints * 3 * j + 3 * i;
+                    frame_datas[i][j] = glm::vec3(joints_3d[initial_index + 0], joints_3d[initial_index + 1], joints_3d[initial_index + 2]);
+                }
+            }
+        }
+        else {
+            qDebug() << "mMoCapReader.cpp: failed to read " << file_path;
+            return false;
+        }
+    }
+    else if (surfix == "h36") {
+        if (dataset != 3) {
+            qDebug() << "Only dataset 3 accept .h36";
+            return false;
+        }
+        QFile data_file(file_path);
+        if (data_file.open(QIODevice::ReadOnly)) {
+            QByteArray data = data_file.readAll();
+            std::vector<unsigned int> cur_valid_joints_arr = this->valid_joints_arrs[dataset];
+            char * data_ptr = data.data();
+            total_frame_nums = *((int *)(data_ptr));
+            num_of_joints = cur_valid_joints_arr.size();
+
+            data_ptr += 4; // point to the start of the joints_3d
             float * joints_3d = (float *)data_ptr;
             frame_datas = std::vector<std::vector<glm::vec3>>(num_of_joints);
             for (int i = 0; i < num_of_joints; ++i) {

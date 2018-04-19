@@ -17,8 +17,12 @@ void mPoseAdjuster::setBonesLengthJitters(float jitter_size) {
 }
 
 void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, bool with_jitters) {
+    std::vector<float> bones_length;
+    this->calBonesLength(joints, bones_length);
+
     std::vector<glm::vec3> bones_vec_arr(this->pose_bones_indices.size());
     std::vector<float> cur_bones_length;
+
     if (with_jitters) {
         cur_bones_length = this->pose_jitter_bones_length;
     }
@@ -46,6 +50,7 @@ void mPoseAdjuster::calBonesLength(const std::vector<glm::vec3> & joints, std::v
         glm::i32vec2 cur_bone = this->pose_bones_indices[i];
         bones_length[i] = glm::length(joints[cur_bone.x] - joints[cur_bone.y]);
     }
+    qDebug() << "spin / upper arm" <<  bones_length[7] / ((bones_length[2] + bones_length[5]) / 2.0);
 }
 
 void mPoseAdjuster::printBonesLength(const std::vector<float> & bones_length) {

@@ -55,7 +55,8 @@ public:
         this->valid_joints_arrs = std::vector<std::vector<unsigned int>>({
                                                                              {14, 13, 24, 25, 26, 17, 18, 19, 6, 7, 8, 1, 2, 3, 0}, // sfu dataset
                                                                              {18, 16, 30, 31, 32, 21, 22, 23, 8, 9, 10, 2, 3, 4, 0}, // cmu(max bvh) dataset
-                                                                             {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14} // mpi dataset(converted)
+                                                                             {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}, // mpi dataset(converted)
+                                                                             {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14} // h36 dataset(converted)
                                                                          });
     }
     ~mMoCapReader(){}

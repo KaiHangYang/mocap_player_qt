@@ -7,7 +7,6 @@
 #include <ctime>
 #include <cstdlib>
 
-
 namespace mOurOpt {
     std::vector<double> optimize(std::vector<double> points_3d, const std::vector<double> & i_bones_length);
 }

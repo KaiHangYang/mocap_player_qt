@@ -4,13 +4,13 @@
 #include <QDebug>
 
 namespace mOurOpt {
-const double points_energy_weights[15] = {1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+const double points_energy_weights[15] = {0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 const int m_root_pos = mPoseDef::root_of_joints;
 const int m_bones_num = mPoseDef::num_of_bones;
 const int m_joints_num = mPoseDef::num_of_joints;
 const double MY_PI = 3.14159265359;
 const double MY_ZERO = MY_PI / 100000;
-const int discard_bones = 0;
+const int discard_bones = 2;
 
 const int bones_indices[m_joints_num][m_joints_num] = {
                                                     {-1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,-1},//0
@@ -32,14 +32,14 @@ const int bones_indices[m_joints_num][m_joints_num] = {
 
 // TODO The initial skeleton. This may depend on the real global coords
 const int points_index_arr[15] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
-const int bones_path_sum = 5;
-const int bones_path_lens[] = {4, 4, 3, 5, 5};
+
+const int bones_path_sum = 4;
+const int bones_path_lens[] = {4, 4, 4, 4};
 const int bones_nums[] = {
     14, 8, 9, 10,
     14, 11, 12, 13,
-    14, 1, 0,
-    14, 1, 2, 3, 4,
-    14, 1, 5, 6, 7
+    1, 2, 3, 4,
+    1, 5, 6, 7
 };
 const double bone_rel_pos[m_bones_num][3] = {
     {0.0, 1.0, 0.0}, //0
@@ -59,13 +59,14 @@ const double bone_rel_pos[m_bones_num][3] = {
 };
 
 const int angle_params_indices[m_bones_num] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+    -1, 0, 1, 2, 3, 4, 5, -1, 6, 7, 8, 9, 10, 11,
 };
+std::vector<glm::dvec3> joints_pos_keeped(m_bones_num, glm::dvec3(0.f));
 std::vector<double> bones_length = mPoseDef::bones_length_dbl;
 std::vector<unsigned int> bones_length_index = mPoseDef::bones_length_index;
 /************************************* Parameters of the Optimizers ***************************************/
 const int num_of_residuals = 3 * m_joints_num;
-const int num_of_parameters = 3 + 3 * (m_bones_num - discard_bones) + 1;
+const int num_of_parameters = 3 + 3 + 3 * (m_bones_num - discard_bones) + 1; // test for two center opt
 /***************************************************************************************************/
 
 template<typename T>
@@ -145,9 +146,9 @@ void mat4_p_multi(double const * mat1, T * p, T * result) {
 template<typename T>
 std::vector<T> points_from_angles(const T * const param) {
 
-    T mid_rotate[9];
     T cur_rotate[9];
     T initial_rotate[9];
+    T initial_rotate_2[9];
     T tmp_cur_rotate[9];
     T r_mat[9];
     T rel_cur_point[3];
@@ -156,15 +157,15 @@ std::vector<T> points_from_angles(const T * const param) {
     // The first three elements is the global rotate
     // TODO I disabled some theta
     int num_of_theta = m_bones_num - discard_bones;
-    T root_pos[3] = {T(0), T(0), T(0)}; // Assume all the points is root-related
-    const T * theta = &param[3];
+
+    const T * theta = &param[6];
     std::vector<T> result_points(3 * m_joints_num, T(0));
+    /*************** Fill the known joints *****************/
+    result_points[3 * 14 + 0] = T(0); result_points[3 * 14 + 1] = T(0); result_points[3 * 14 + 2] = T(0);
+    result_points[3 * 0 + 0] = T(joints_pos_keeped[0].x); result_points[3 * 0 + 1] = T(joints_pos_keeped[0].y); result_points[3 * 0 + 2] = T(joints_pos_keeped[0].z);
+    result_points[3 * 1 + 0] = T(joints_pos_keeped[1].x); result_points[3 * 1 + 1] = T(joints_pos_keeped[1].y); result_points[3 * 1 + 2] = T(joints_pos_keeped[1].z);
 
-    result_points[3*m_root_pos + 0] = root_pos[0];
-    result_points[3*m_root_pos + 1] = root_pos[1];
-    result_points[3*m_root_pos + 2] = root_pos[2];
 
-    bool first_to_mid = true;
     int const * bone_num = &bones_nums[0];
 
     int indice;
@@ -174,40 +175,40 @@ std::vector<T> points_from_angles(const T * const param) {
     T angles[3];
     
     // The root rotate angles is 0 ~ 3
-    get_rotate_mat<T>(param[0], param[1], param[2], initial_rotate);
+    get_rotate_mat<T>(param[0], param[1], param[2], initial_rotate); // root point
+    get_rotate_mat<T>(param[3], param[4], param[5], initial_rotate_2); // neck point
+
     for (int i = 0; i < bones_path_sum; ++i) {
-        memcpy(cur_rotate, initial_rotate, sizeof(initial_rotate));
+        if (i < 2) {
+            memcpy(cur_rotate, initial_rotate, sizeof(initial_rotate));
+        }
+        else {
+            memcpy(cur_rotate, initial_rotate_2, sizeof(initial_rotate_2));
+        }
 
         for (unsigned int p = 1; p < bones_path_lens[i]; ++p) {
             bone_from = *(bone_num++);
             bone_to = *(bone_num);
 
             indice = bones_indices[ bone_to ][ bone_from ];
-            if (!first_to_mid && indice == 7) {
-                memcpy(cur_rotate, mid_rotate, sizeof(cur_rotate));
+
+            tmp_index = 3 * angle_params_indices[indice];
+
+            if (tmp_index < 0) {
+                // Only use the real direction to calculate the points,
+                // Not the eular angle
+                qDebug() << "Can't get here";
+                exit(-1);
             }
             else {
+                angles[0] = theta[tmp_index];
+                angles[1] = theta[tmp_index + 1];
+                angles[2] = theta[tmp_index + 2];
 
-                tmp_index = 3 * angle_params_indices[indice];
-                if (tmp_index < 0) {
-                    // The angle is removed 
-                    angles[0] = T(0);
-                    angles[1] = T(0);
-                    angles[2] = T(0);
-                }
-                else {
-                    angles[0] = theta[tmp_index];
-                    angles[1] = theta[tmp_index + 1];
-                    angles[2] = theta[tmp_index + 2];
-                }
                 get_rotate_mat(angles[0], angles[1], angles[2], r_mat);
 
                 mat3_mat3_multi(cur_rotate, r_mat, tmp_cur_rotate);
                 memcpy(cur_rotate, tmp_cur_rotate, sizeof(cur_rotate));
-                if (first_to_mid && indice == 7) {
-                    first_to_mid = false;
-                    memcpy(mid_rotate, cur_rotate, sizeof(mid_rotate));
-                }
 
                 bone_len = T(bones_length[bones_length_index[indice]]);
 
@@ -260,6 +261,12 @@ public:
 };
 
 std::vector<double> optimize(std::vector<double> points_3d, const std::vector<double> & i_bones_length) {
+
+    /************ Test for "keep the direction of head bone and spin bone" ***************/
+    joints_pos_keeped[14] = glm::dvec3(0, 0, 0);
+    joints_pos_keeped[1] = joints_pos_keeped[14] +  i_bones_length[7] * glm::normalize(glm::dvec3(points_3d[1 * 3 + 0], points_3d[1 * 3 + 1], points_3d[1 * 3 + 2]) - glm::dvec3(points_3d[14 * 3 + 0], points_3d[14 * 3 + 1], points_3d[14 * 3 + 2]));
+    joints_pos_keeped[0] = joints_pos_keeped[1] + i_bones_length[0] * glm::normalize(glm::dvec3(points_3d[0 * 3 + 0], points_3d[0 * 3 + 1], points_3d[0 * 3 + 2]) - glm::dvec3(points_3d[1 * 3 + 0], points_3d[1 * 3 + 1], points_3d[1 * 3 + 2]));
+    /*************************************************************************************/
 
     bones_length = i_bones_length;
     ceres::Problem problem;

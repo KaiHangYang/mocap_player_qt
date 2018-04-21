@@ -39,7 +39,8 @@ SOURCES += \
     src/ui_widgets/mProgressBarWidget.cpp \
     src/ui_widgets/mLineEditWidget.cpp \
     src/pose_utils/mPoseAdjuster.cpp \
-    src/visual_utils/mVisual.cpp
+    src/visual_utils/mVisual.cpp \
+    src/optimize_utils/mOurOpt.cpp
 
 
 HEADERS += \
@@ -60,7 +61,8 @@ HEADERS += \
     include/mProgressBarWidget.h \
     include/mLineEditWidget.h \
     include/mPoseAdjuster.h \
-    include/mVisual.h
+    include/mVisual.h \
+    include/mOurOpt.h
 
 
 INCLUDEPATH += ./include/ \

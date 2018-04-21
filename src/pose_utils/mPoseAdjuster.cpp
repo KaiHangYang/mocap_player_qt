@@ -19,8 +19,6 @@ void mPoseAdjuster::setBonesLengthJitters(float jitter_size) {
 }
 
 void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, bool with_jitters) {
-//    std::vector<float> bones_length;
-//    this->calBonesLength(joints, bones_length);
 
     std::vector<glm::vec3> bones_vec_arr(this->pose_bones_indices.size());
     std::vector<float> cur_bones_length;
@@ -32,6 +30,7 @@ void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, 
         cur_bones_length = this->pose_bones_length;
     }
 
+    /************************** My way to calculate the bones *****************************/
     // TODO add random and set the jitter to be a state
 //    for (int i = 0; i < this->pose_bones_indices.size(); ++i) {
 //        glm::i32vec2 cur_bone = this->pose_bones_indices[i];
@@ -63,6 +62,14 @@ void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, 
         joints[i] = root_joint + glm::vec3(opt_joints[3*i + 0], opt_joints[3*i + 1], opt_joints[3*i + 2]);
     }
     /**********************************************************************************/
+//    std::vector<float> bones_length;
+//    this->calBonesLength(joints, bones_length);
+//    glm::vec3 root_pos = joints[14];
+//    float scale = 4*9.2f / (bones_length[7] + (bones_length[9] + bones_length[12]) / 2.f);
+//    for (int i = 0; i < joints.size(); ++i) {
+//        joints[i] = (joints[i] - root_pos) * scale + root_pos;
+//    }
+    /***************************** Show the raw scaled data ***************************/
 }
 
 void mPoseAdjuster::calBonesLength(const std::vector<glm::vec3> & joints, std::vector<float> & bones_length) {

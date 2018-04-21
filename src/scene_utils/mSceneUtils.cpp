@@ -370,22 +370,24 @@ glm::mat4 mSceneUtils::convertVec2Mat(const glm::vec3 & follow_vec, glm::vec3 pe
 // TODO: The 3D view coordinate labels need to be checked.
 //       THe 2D is right, after visualized.
 void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
-    labels_2d = std::vector<glm::vec2>(joints.size());
-    labels_3d = std::vector<glm::vec3>(joints.size());
-    glm::mat4 cur_view_mat = view_mat;
-    glm::vec3 root_joint = glm::vec3(cur_view_mat * glm::vec4(joints[joints.size() - 1], 1.f));
+    if (joints.size() != 0) {
+        labels_2d = std::vector<glm::vec2>(joints.size());
+        labels_3d = std::vector<glm::vec3>(joints.size());
+        glm::mat4 cur_view_mat = view_mat;
+        glm::vec3 root_joint = glm::vec3(cur_view_mat * glm::vec4(joints[joints.size() - 1], 1.f));
 
-    for (int i = 0; i < joints.size(); ++i) {
-        glm::vec4 cur_2d = this->cam_proj_mat * cur_view_mat * glm::vec4(joints[i], 1.0);
-        cur_2d /= cur_2d.w;
-        labels_2d[i] = glm::vec2(this->wnd_width * (cur_2d.x + 1.f) / 2.f , this->wnd_height * (1.f - cur_2d.y) / 2.f);
-        labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints[i], 1.f)) - root_joint;
+        for (int i = 0; i < joints.size(); ++i) {
+            glm::vec4 cur_2d = this->cam_proj_mat * cur_view_mat * glm::vec4(joints[i], 1.0);
+            cur_2d /= cur_2d.w;
+            labels_2d[i] = glm::vec2(this->wnd_width * (cur_2d.x + 1.f) / 2.f , this->wnd_height * (1.f - cur_2d.y) / 2.f);
+            labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints[i], 1.f)) - root_joint;
 
-        // Cause the camera in the real word
-        labels_3d[i].y *= -1;
-        labels_3d[i].z *= -1;
+            // Cause the camera in the real word
+            labels_3d[i].y *= -1;
+            labels_3d[i].z *= -1;
+        }
+        mPoseDef::scalePose(labels_3d);
     }
-    mPoseDef::scalePose(labels_3d);
 }
 
 void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {

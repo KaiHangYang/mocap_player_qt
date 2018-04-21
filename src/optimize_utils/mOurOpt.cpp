@@ -65,7 +65,7 @@ std::vector<glm::dvec3> joints_pos_keeped(m_bones_num, glm::dvec3(0.f));
 std::vector<double> bones_length = mPoseDef::bones_length_dbl;
 std::vector<unsigned int> bones_length_index = mPoseDef::bones_length_index;
 /************************************* Parameters of the Optimizers ***************************************/
-const int num_of_residuals = 3 * m_joints_num;
+const int num_of_residuals = 3 * m_joints_num + 3; // the extra 3 is that the root must be the center of the two hip points
 const int num_of_parameters = 3 + 3 + 3 * (m_bones_num - discard_bones) + 1; // test for two center opt
 /***************************************************************************************************/
 
@@ -252,6 +252,15 @@ public:
             *(r_ptr++) = T(points_energy_weights[i]) * (*(p_3d_ptr++) - cur_scale * (*(np_ptr++)));
             *(r_ptr++) = T(points_energy_weights[i]) * (*(p_3d_ptr++) - cur_scale * (*(np_ptr++)));
         }
+        // root point constraint
+        int left_index = 24; // 3 * 8
+        int right_index = 33; // 3 * 11
+        int root_index = 42; // 3 * 14
+
+        *(r_ptr++) = T(4000) * (new_points[root_index + 0] - (new_points[left_index + 0] + new_points[right_index + 0]) / T(2));
+        *(r_ptr++) = T(4000) * (new_points[root_index + 1] - (new_points[left_index + 1] + new_points[right_index + 1]) / T(2));
+        *(r_ptr++) = T(4000) * (new_points[root_index + 2] - (new_points[left_index + 2] + new_points[right_index + 2]) / T(2));
+
         return true;
     }
     // first is the redisuals, then the size of parameters

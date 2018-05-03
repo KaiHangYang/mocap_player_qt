@@ -90,7 +90,7 @@ class H36Transfer():
         self.valid_keypoint_arr = [15, 16, 25, 26, 28, 17, 18, 20, 1, 2, 3, 6, 7, 8, 0]
         self.raw_joint_num = 32
         self.cur_joint_num = 15
-        self.camera = all_cam_id[3]
+        self.camera = all_cam_id[0]
 
     def getActions(self, txt_dir):
         action_arr = {}
@@ -155,4 +155,5 @@ if __name__ == "__main__":
 
     reader = H36Transfer()
 
-    reader.parse(1 - 1, "/home/kaihang/DataSet_2/H3.6m/S1/PoseFeaturesTXT/D3_Positions_mono_universal/", "/home/kaihang/Desktop/test.h36")
+    for i in [1, 5, 6, 7, 8, 9, 11]:
+        reader.parse(i - 1, "/home/kaihang/DataSet_2/H3.6m/S"+str(i)+"/PoseFeaturesTXT/D3_Positions_mono_universal/", "/home/kaihang/DataSet/MoCap/h36/" + str(i) + ".h36")

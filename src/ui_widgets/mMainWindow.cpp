@@ -16,7 +16,7 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
     this->file_dialog_extension = "MoCap Files(*.bvh *.mpi *.h36)";
-    this->file_dialog_initial_dir = ".";
+    this->file_dialog_initial_dir = "/home/kaihang/DataSet/MoCap";
     this->camera_data_file_header = std::vector<QString>({"#M_CAMERA_DATA", "#M_CAMERA_FOLLOW_DATA"});
 
     this->ui->setupUi(this);

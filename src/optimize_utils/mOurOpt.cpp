@@ -4,7 +4,7 @@
 #include <QDebug>
 
 namespace mOurOpt {
-const double points_energy_weights[15] = {0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+const double points_energy_weights[15] = {0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 const int m_root_pos = mPoseDef::root_of_joints;
 const int m_bones_num = mPoseDef::num_of_bones;
 const int m_joints_num = mPoseDef::num_of_joints;
@@ -292,6 +292,20 @@ std::vector<double> optimize(std::vector<double> points_3d, const std::vector<do
     option.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
     option.minimizer_progress_to_stdout = true;
     ceres::Solver::Summary summary;
+
+//    problem.SetParameterLowerBound(&params[0], 6 + 0 * 3 + 0, - MY_PI / 12);
+//    problem.SetParameterUpperBound(&params[0], 6 + 0 * 3 + 0, MY_PI / 12);
+//    problem.SetParameterLowerBound(&params[0], 6 + 0 * 3 + 1, - MY_PI / 12);
+//    problem.SetParameterUpperBound(&params[0], 6 + 0 * 3 + 1, MY_PI / 12);
+//    problem.SetParameterLowerBound(&params[0], 6 + 0 * 3 + 2, - MY_PI / 12);
+//    problem.SetParameterUpperBound(&params[0], 6 + 0 * 3 + 2, MY_PI / 12);
+
+//    problem.SetParameterLowerBound(&params[0], 6 + 3 * 3 + 0, - MY_PI / 12);
+//    problem.SetParameterUpperBound(&params[0], 6 + 3 * 3 + 0, MY_PI / 12);
+//    problem.SetParameterLowerBound(&params[0], 6 + 3 * 3 + 1, - MY_PI / 12);
+//    problem.SetParameterUpperBound(&params[0], 6 + 3 * 3 + 1, MY_PI / 12);
+//    problem.SetParameterLowerBound(&params[0], 6 + 3 * 3 + 2, - MY_PI / 12);
+//    problem.SetParameterUpperBound(&params[0], 6 + 3 * 3 + 2, MY_PI / 12);
 
     ceres::Solve(option, &problem, &summary);
 

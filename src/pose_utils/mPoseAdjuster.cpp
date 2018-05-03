@@ -30,6 +30,7 @@ void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, 
         cur_bones_length = this->pose_bones_length;
     }
 
+    // TODO: Waiting for implementation for the adjustor!!!!!!!!!!
     /************************** My way to calculate the bones *****************************/
     // TODO add random and set the jitter to be a state
 //    for (int i = 0; i < this->pose_bones_indices.size(); ++i) {
@@ -45,31 +46,33 @@ void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, 
 //    }
 
     /************************** Test for the optimize method **************************/
-    std::vector<double> opt_bone_length(cur_bones_length.size());
-    std::vector<double> opt_joints(3*joints.size(), 0);
-    glm::vec3 root_joint = joints[joints.size() - 1];
-    glm::vec3 cur_joint;
-    std::copy(cur_bones_length.begin(), cur_bones_length.end(), opt_bone_length.begin());
+//    std::vector<double> opt_bone_length(cur_bones_length.size());
+//    std::vector<double> opt_joints(3*joints.size(), 0);
+//    glm::vec3 root_joint = joints[joints.size() - 1];
+//    glm::vec3 cur_joint;
+//    std::copy(cur_bones_length.begin(), cur_bones_length.end(), opt_bone_length.begin());
 
+//    for (int i = 0; i < joints.size(); ++i) {
+//        cur_joint = joints[i] - root_joint;
+//        opt_joints[3*i + 0] = cur_joint.x; opt_joints[3*i + 1] = cur_joint.y; opt_joints[3*i + 2] = cur_joint.z;
+//    }
+
+//    opt_joints = mOurOpt::optimize(opt_joints, opt_bone_length);
+
+//    for (int i = 0; i < joints.size(); ++i) {
+//        joints[i] = root_joint + glm::vec3(opt_joints[3*i + 0], opt_joints[3*i + 1], opt_joints[3*i + 2]);
+//    }
+    /**********************************************************************************/
+
+    /***************************** Show the raw scaled data ***************************/
+    std::vector<float> bones_length;
+    this->calBonesLength(joints, bones_length);
+    glm::vec3 root_pos = joints[14];
+    float scale = 4*9.2f / (bones_length[7] + (bones_length[9] + bones_length[12]) / 2.f);
     for (int i = 0; i < joints.size(); ++i) {
-        cur_joint = joints[i] - root_joint;
-        opt_joints[3*i + 0] = cur_joint.x; opt_joints[3*i + 1] = cur_joint.y; opt_joints[3*i + 2] = cur_joint.z;
-    }
-
-    opt_joints = mOurOpt::optimize(opt_joints, opt_bone_length);
-
-    for (int i = 0; i < joints.size(); ++i) {
-        joints[i] = root_joint + glm::vec3(opt_joints[3*i + 0], opt_joints[3*i + 1], opt_joints[3*i + 2]);
+        joints[i] = (joints[i] - root_pos) * scale + root_pos;
     }
     /**********************************************************************************/
-//    std::vector<float> bones_length;
-//    this->calBonesLength(joints, bones_length);
-//    glm::vec3 root_pos = joints[14];
-//    float scale = 4*9.2f / (bones_length[7] + (bones_length[9] + bones_length[12]) / 2.f);
-//    for (int i = 0; i < joints.size(); ++i) {
-//        joints[i] = (joints[i] - root_pos) * scale + root_pos;
-//    }
-    /***************************** Show the raw scaled data ***************************/
 }
 
 void mPoseAdjuster::calBonesLength(const std::vector<glm::vec3> & joints, std::vector<float> & bones_length) {

@@ -137,6 +137,22 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
             frame_datas[i] = bvh_joints[cur_valid_joints_arr[i]]->pos();
         }
 
+        std::vector<glm::vec3> neck_up_joints = bvh_joints[this->statistic_joints_arrs[dataset][0]]->pos();
+        std::vector<glm::vec3> neck_down_joints = bvh_joints[this->statistic_joints_arrs[dataset][1]]->pos();
+        std::vector<glm::vec3> spin_joints = bvh_joints[this->statistic_joints_arrs[dataset][2]]->pos();
+
+        /********** Here I can statistic the ratio of up neck and lower neck ***********/
+//        QFile file("/home/kaihang/Desktop/statistic.txt");
+//        file.open(QIODevice::Append);
+//        QTextStream file_stream(&file);
+
+//        for (int i = 0; i < neck_up_joints.size(); ++i) {
+//            float length_1 = glm::length(neck_up_joints[i] - spin_joints[i]);
+//            float length_2 = glm::length(neck_down_joints[i] - spin_joints[i]);
+//            file_stream << length_2 / length_1 << " ";
+//        }
+//        file.close();
+        /********************************************************************************/
     }
     else if (surfix == "mpi") {
         if (dataset != 2) {
@@ -189,6 +205,15 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
                     int initial_index = num_of_joints * 3 * j + 3 * i;
                     frame_datas[i][j] = glm::vec3(joints_3d[initial_index + 0], joints_3d[initial_index + 1], joints_3d[initial_index + 2]);
                 }
+            }
+            // Adjust the neck joints for h36 dataset
+            for (int frame_num = 0; frame_num < total_frame_nums; ++frame_num) {
+                glm::vec3 neck_point = frame_datas[1][frame_num];
+                glm::vec3 root_point = frame_datas[14][frame_num];
+                // statistic average 0.71540362165092952
+                glm::vec3 dir = glm::normalize(neck_point - root_point);
+                neck_point = 0.79540362165092952f * glm::length(neck_point - root_point) * dir + root_point;
+                frame_datas[1][frame_num] = neck_point;
             }
         }
         else {

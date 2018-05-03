@@ -115,7 +115,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
             if (!vertexFlags[line[j]]) {
                 vertexFlags[line[j]] = true;
 
-                curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.1, 1.1, 1.1));
+                curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.3, 1.3, 1.3));
                 curmodel = glm::translate(glm::mat4(1.0f), vertexs[line[j]]) * curmodel;
 
                 shader->setVal("model", curmodel);

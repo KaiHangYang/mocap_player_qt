@@ -36,7 +36,7 @@ public:
     void getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
     void getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::vec3 & view_vec, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
 
-    void moveCamera(int move_dir);
+    void moveCamera(int move_type, QMouseEvent * event = NULL);
     void rotateCamrea(const glm::mat4 & rotate_mat);
     void setFloor(bool is_with_floor=true);
 
@@ -89,11 +89,14 @@ private:
     glm::vec3 cur_follow_dert;
     glm::vec3 person_center_pos;
 
+    glm::vec2 prev_mouse_pos;
+
     mShader * scene_shader;
     mShader * depth_shader;
 
     mPoseModel * pose_model;
     bool is_ar;
+
 
 };
 

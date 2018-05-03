@@ -58,6 +58,12 @@ public:
                                                                              {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}, // mpi dataset(converted)
                                                                              {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14} // h36 dataset(converted)
                                                                          });
+        this->statistic_joints_arrs = std::vector<std::vector<unsigned int>>({
+                                                                               {0, 0, 0},
+                                                                               {17, 16, 0},
+                                                                               {0, 0, 0},
+                                                                               {0, 0, 0}
+                                                                             });
     }
     ~mMoCapReader(){}
     // dataset represent the dataset to parse
@@ -65,7 +71,7 @@ public:
     bool parse(QString file_path, int dataset, mMoCapData * data);
 private:
     std::vector<std::vector<unsigned int>> valid_joints_arrs;
-
+    std::vector<std::vector<unsigned int>> statistic_joints_arrs;
 };
 
 #endif

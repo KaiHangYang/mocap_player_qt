@@ -63,31 +63,33 @@ void mGLWidget::resizeGL(int width, int height) {
 
 void mGLWidget::mousePressEvent(QMouseEvent * event) {
     mCamRotate::mouse_button_callback(event);
+    this->scene->moveCamera(1, event);
 }
 
 void mGLWidget::mouseMoveEvent(QMouseEvent *event) {
     mCamRotate::mouse_move_callback(event);
+    this->scene->moveCamera(2, event);
 }
 void mGLWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     emit doubleClickPoseToggleSignal();
 }
 void mGLWidget::keyPressEvent(QKeyEvent *event) {
-    switch (event->key()) {
-        case Qt::Key_W:
-            // go up
-            this->scene->moveCamera(2);
-            break;
-        case Qt::Key_S:
-            // go down
-            this->scene->moveCamera(-2);
-            break;
-        case Qt::Key_A:
-            this->scene->moveCamera(1);
-            break;
-        case Qt::Key_D:
-            this->scene->moveCamera(-1);
-            break;
-    }
+//    switch (event->key()) {
+//        case Qt::Key_W:
+//            // go up
+//            this->scene->moveCamera(2);
+//            break;
+//        case Qt::Key_S:
+//            // go down
+//            this->scene->moveCamera(-2);
+//            break;
+//        case Qt::Key_A:
+//            this->scene->moveCamera(1);
+//            break;
+//        case Qt::Key_D:
+//            this->scene->moveCamera(-1);
+//            break;
+//    }
 }
 void mGLWidget::wheelEvent(QWheelEvent *event) {
     if (event->angleDelta().y() > 0) {

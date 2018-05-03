@@ -24,6 +24,7 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->is_with_floor = true;
     this->person_center_pos = glm::vec3(0.f);
     this->cur_follow_dert = glm::vec3(0.f);
+    this->prev_mouse_pos = glm::vec2(-1.f);
 
     // The parameter maybe changed as reality make sure the ground_col and ground_row is even
     this->ground_col = 100;
@@ -230,33 +231,28 @@ std::vector<GLfloat> mSceneUtils::getGroundVertexs() {
     return result_gd;
 }
 
-void mSceneUtils::moveCamera(int move_dir) {
-
-    if (move_dir != 0) {
+void mSceneUtils::moveCamera(int move_type, QMouseEvent * event) {
+    if (std::abs(move_type) == 1 && event->buttons() & Qt::MiddleButton) {
+        // set the prev_mouse_pos
+        this->prev_mouse_pos = glm::vec2(event->pos().x(), event->pos().y());
+    }
+    else if (std::abs(move_type) == 2 && event->buttons() & Qt::MiddleButton) {
         glm::vec3 dir_x(this->cur_cam_ex_r_mat[0][0], this->cur_cam_ex_r_mat[1][0], this->cur_cam_ex_r_mat[2][0]);
         glm::vec3 dir_y(this->cur_cam_ex_r_mat[0][1], this->cur_cam_ex_r_mat[1][1], this->cur_cam_ex_r_mat[2][1]);
-        glm::vec3 dir_z(-this->cur_cam_ex_r_mat[0][2], -this->cur_cam_ex_r_mat[1][2], -this->cur_cam_ex_r_mat[2][2]);
 
-        if (move_dir == -1) {
-            this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, -move_step * dir_x * this->move_step_scale);
-        }
-        else if (move_dir == 1) {
-            this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, move_step * dir_x * this->move_step_scale);
-        }
-        else if (move_dir == 2) {
-            this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, -move_step * dir_y * this->move_step_scale / 2.f);
-        }
-        else if (move_dir == -2) {
-            this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, move_step * dir_y * this->move_step_scale / 2.f);
-        }
-        else if (move_dir == -3) {
-            this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, -move_step * dir_z * this->move_step_scale * 3.f);
-        }
-        else if (move_dir == 3) {
-            this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, move_step * dir_z * this->move_step_scale * 3.f);
-        }
+        glm::vec2 cur_mouse_pos = glm::vec2(event->pos().x(), event->pos().y());
+        glm::vec2 move_dert = (cur_mouse_pos - this->prev_mouse_pos);
+
+        this->cur_cam_ex_t_mat = glm::translate(glm::translate(this->cur_cam_ex_t_mat, -move_dert.x * dir_x), move_dert.y * dir_y);
+
+        this->prev_mouse_pos = cur_mouse_pos;
     }
-    if (this->is_follow_person) {
+    else if (std::abs(move_type) == 3) {
+        glm::vec3 dir_z(-this->cur_cam_ex_r_mat[0][2], -this->cur_cam_ex_r_mat[1][2], -this->cur_cam_ex_r_mat[2][2]);
+        float sign = move_type > 0?1.f:-1.f;
+        this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, sign * move_step * dir_z * this->move_step_scale * 4.f);
+    }
+    else if (std::abs(move_type) == 0 && this->is_follow_person) {
         // the cam_ex_t_mat is -(camera pos)
         if (this->cur_follow_dert == glm::vec3(0.f)) {
             // set the default pose

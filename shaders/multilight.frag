@@ -31,10 +31,10 @@ float shadowCalculation(vec3 fragPos, int light_index);
 void main() {    
     // Properties
 
-    if (!gl_FrontFacing) {
-        color = vec4(0.3, 0.3, 0.3, 1.0);
-        return;
-    }
+//    if (!gl_FrontFacing) {
+//        color = vec4(0.3, 0.3, 0.3, 1.0);
+//        return;
+//    }
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
 

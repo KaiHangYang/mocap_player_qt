@@ -44,6 +44,11 @@ public:
     void setFocusOnCenter(bool is_focus_on_center);
     void captureFrame(cv::Mat & cur_frame);
 
+
+    // Just for tmp adjust for normal and vr mode
+    float m_move_dir[3];
+    float m_rotate_dir[2];
+
 private:
     std::vector<GLfloat> getGroundVertexs();
     std::vector<GLfloat> getGroundColor();
@@ -96,6 +101,8 @@ private:
 
     mPoseModel * pose_model;
     bool is_ar;
+
+
 
 
 };

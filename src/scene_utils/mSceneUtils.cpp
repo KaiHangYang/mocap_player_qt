@@ -38,12 +38,15 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
         target_model_size = 30 * 2;
         this->ground_size = 2000.0f;
         this->move_step_scale = 1.f;
-
+        this->m_move_dir[0] = 1;this->m_move_dir[1] = -1;this->m_move_dir[2] = 1;
+        this->m_rotate_dir[0] = 1;this->m_rotate_dir[1] = -1;
     }
     else {
         target_model_size = 2 * 1;
         this->ground_size = 20.f;
         this->move_step_scale = 0.03f;
+        this->m_move_dir[0] = 1;this->m_move_dir[1] = 1;this->m_move_dir[2] = 1;
+        this->m_rotate_dir[0] = 1; this->m_rotate_dir[1] = 1;
     }
 
     this->scene_shader = new mShader(mPoseShaderFiles[0], mPoseShaderFiles[1]);
@@ -125,6 +128,15 @@ void mSceneUtils::setExMat(glm::mat4 & cam_ex_mat) {
 
     this->cur_cam_ex_r_mat = this->cam_ex_r_mat;
     this->cur_cam_ex_t_mat = this->cam_ex_t_mat;
+
+    glm::vec3 dir_z(-this->cur_cam_ex_r_mat[0][2], -this->cur_cam_ex_r_mat[1][2], -this->cur_cam_ex_r_mat[2][2]);
+    glm::vec3 dir_x(this->cur_cam_ex_r_mat[0][0], this->cur_cam_ex_r_mat[1][0], this->cur_cam_ex_r_mat[2][0]);
+    glm::vec3 dir_y(this->cur_cam_ex_r_mat[0][1], this->cur_cam_ex_r_mat[1][1], this->cur_cam_ex_r_mat[2][1]);
+
+    qDebug() << dir_x.x << " " << dir_x.y << " " << dir_x.z;
+    qDebug() << dir_y.x << " " << dir_y.y << " " << dir_y.z;
+    qDebug() << dir_z.x << " " << dir_z.y << " " << dir_z.z;
+    qDebug() << glm::dot(dir_z, dir_y) << " " << glm::dot(dir_z, dir_x) << " " << glm::dot(dir_x, dir_y);
 }
 
 void mSceneUtils::setInMat(glm::mat4 & cam_in_mat) {
@@ -243,14 +255,22 @@ void mSceneUtils::moveCamera(int move_type, QMouseEvent * event) {
         glm::vec2 cur_mouse_pos = glm::vec2(event->pos().x(), event->pos().y());
         glm::vec2 move_dert = (cur_mouse_pos - this->prev_mouse_pos);
 
-        this->cur_cam_ex_t_mat = glm::translate(glm::translate(this->cur_cam_ex_t_mat, -move_dert.x * dir_x), move_dert.y * dir_y);
+        this->cur_cam_ex_t_mat = glm::translate(glm::translate(this->cur_cam_ex_t_mat, -move_dert.x * this->move_step_scale * 33.3333f * dir_x * this->m_move_dir[0]), move_dert.y * this->move_step_scale * 33.3333f * dir_y * m_move_dir[1]);
 
         this->prev_mouse_pos = cur_mouse_pos;
     }
     else if (std::abs(move_type) == 3) {
         glm::vec3 dir_z(-this->cur_cam_ex_r_mat[0][2], -this->cur_cam_ex_r_mat[1][2], -this->cur_cam_ex_r_mat[2][2]);
+        glm::vec3 dir_x(this->cur_cam_ex_r_mat[0][0], this->cur_cam_ex_r_mat[1][0], this->cur_cam_ex_r_mat[2][0]);
+        glm::vec3 dir_y(this->cur_cam_ex_r_mat[0][1], this->cur_cam_ex_r_mat[1][1], this->cur_cam_ex_r_mat[2][1]);
+//        glm::vec3 dir_z = glm::cross(dir_x, dir_y);
+        qDebug() << dir_x.x << " " << dir_x.y << " " << dir_x.z;
+        qDebug() << dir_y.x << " " << dir_y.y << " " << dir_y.z;
+        qDebug() << dir_z.x << " " << dir_z.y << " " << dir_z.z;
+        qDebug() << glm::dot(dir_z, dir_y) << " " << glm::dot(dir_z, dir_x) << " " << glm::dot(dir_x, dir_y);
+        qDebug() << glm::dot(dir_z, dir_z) << " " << glm::dot(dir_y, dir_y) << " " << glm::dot(dir_x, dir_x);
         float sign = move_type > 0?1.f:-1.f;
-        this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, sign * move_step * dir_z * this->move_step_scale * 4.f);
+        this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, sign * move_step * dir_z * this->move_step_scale * 4.f * this->m_move_dir[2]);
     }
     else if (std::abs(move_type) == 0 && this->is_follow_person) {
         // the cam_ex_t_mat is -(camera pos)
@@ -404,14 +424,14 @@ void mSceneUtils::_beforeRender(const std::vector<glm::vec3> & points_3d) {
         this->person_center_pos = points_3d[points_3d.size()-1];
     }
 
-    // correct the x direction
-    glm::vec3 dir_z(this->cur_cam_ex_r_mat[0][2], this->cur_cam_ex_r_mat[1][2], this->cur_cam_ex_r_mat[2][2]);
-    // The default head position
-    glm::vec3 dir_y(0, 1, 0);
-    glm::vec3 dir_x = glm::normalize(glm::cross(dir_y, dir_z));
-    this->cur_cam_ex_r_mat[0][0] = dir_x.x;
-    this->cur_cam_ex_r_mat[1][0] = dir_x.y;
-    this->cur_cam_ex_r_mat[2][0] = dir_x.z;
+//    // correct the x direction
+//    glm::vec3 dir_z(this->cur_cam_ex_r_mat[0][2], this->cur_cam_ex_r_mat[1][2], this->cur_cam_ex_r_mat[2][2]);
+//    // The default head position
+//    glm::vec3 dir_y(0, 1, 0);
+//    glm::vec3 dir_x = glm::normalize(glm::cross(dir_y, dir_z));
+//    this->cur_cam_ex_r_mat[0][0] = dir_x.x;
+//    this->cur_cam_ex_r_mat[1][0] = dir_x.y;
+//    this->cur_cam_ex_r_mat[2][0] = dir_x.z;
 }
 
 void mSceneUtils::render(std::vector<glm::vec3> points_3d, glm::mat4 cam_ex_mat) {
@@ -454,10 +474,10 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
 
         if (this->is_ar) {
             for (int i = 0; i < 6; ++i) {
-                this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mShadowTransforms_AR[i]);
+                this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mShadowTransforms_AR[light_num][i]);
             }
             this->depth_shader->setVal("far_plane", mShadowFarPlane_AR);
-            this->depth_shader->setVal("lightPos", mLightPos_AR);
+            this->depth_shader->setVal("lightPos", mLightPos_AR[light_num]);
         }
         else {
             for (int i = 0; i < 6; ++i) {
@@ -504,6 +524,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
     this->scene_shader->setVal("view", cur_cam_ex_mat);
     this->scene_shader->setVal("model", glm::mat4(1.f));
     this->scene_shader->setVal("normMat", glm::transpose(glm::inverse(glm::mat4(1.f))));
+
     if (this->is_ar) {
         this->scene_shader->setVal("far_plane", mShadowFarPlane_AR);
         this->scene_shader->setVal("shadow_bias", mBias_AR);
@@ -518,11 +539,12 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
         this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].diffuse").c_str(), mDiffuse);
         this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].specular").c_str(), mSpecular);
         if (this->is_ar) {
-            this->scene_shader->setVal("pointLights[0].position", mLightPos_AR);
+            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mLightPos_AR[light_num]);
         }
         else {
             this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mLightPos[light_num]);
         }
+
         this->scene_shader->setVal(("depth_cube["+ std::to_string(light_num) + "]").c_str(), 1 + light_num);
 
         this->core_func->glActiveTexture(GL_TEXTURE1 + light_num);

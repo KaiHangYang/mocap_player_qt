@@ -20,30 +20,30 @@ void mPoseAdjuster::setBonesLengthJitters(float jitter_size) {
 
 void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, bool with_jitters) {
 
-    std::vector<glm::vec3> bones_vec_arr(this->pose_bones_indices.size());
-    std::vector<float> cur_bones_length;
+//    std::vector<glm::vec3> bones_vec_arr(this->pose_bones_indices.size());
+//    std::vector<float> cur_bones_length;
 
-    if (with_jitters) {
-        cur_bones_length = this->pose_jitter_bones_length;
-    }
-    else {
-        cur_bones_length = this->pose_bones_length;
-    }
+//    if (with_jitters) {
+//        cur_bones_length = this->pose_jitter_bones_length;
+//    }
+//    else {
+//        cur_bones_length = this->pose_bones_length;
+//    }
 
     // TODO: Waiting for implementation for the adjustor!!!!!!!!!!
     /************************** My way to calculate the bones *****************************/
 //     TODO add random and set the jitter to be a state
-    for (int i = 0; i < this->pose_bones_indices.size(); ++i) {
-        glm::i32vec2 cur_bone = this->pose_bones_indices[i];
-        bones_vec_arr[i] = glm::normalize(joints[cur_bone.y] - joints[cur_bone.x]);
-    }
+//    for (int i = 0; i < this->pose_bones_indices.size(); ++i) {
+//        glm::i32vec2 cur_bone = this->pose_bones_indices[i];
+//        bones_vec_arr[i] = glm::normalize(joints[cur_bone.y] - joints[cur_bone.x]);
+//    }
 
-    // the first and fixed point is the root point
-    for (int i = 0; i < this->pose_bones_cal_rank.size(); ++i) {
-        int cur_bone_index = this->pose_bones_cal_rank[i];
-        glm::i32vec2 cur_bone = this->pose_bones_indices[cur_bone_index];
-        joints[cur_bone.y] = joints[cur_bone.x] + cur_bones_length[this->pose_bones_length_index[cur_bone_index]] * bones_vec_arr[cur_bone_index];
-    }
+//    // the first and fixed point is the root point
+//    for (int i = 0; i < this->pose_bones_cal_rank.size(); ++i) {
+//        int cur_bone_index = this->pose_bones_cal_rank[i];
+//        glm::i32vec2 cur_bone = this->pose_bones_indices[cur_bone_index];
+//        joints[cur_bone.y] = joints[cur_bone.x] + cur_bones_length[this->pose_bones_length_index[cur_bone_index]] * bones_vec_arr[cur_bone_index];
+//    }
 
     /************************** Test for the optimize method **************************/
 //    std::vector<double> opt_bone_length(cur_bones_length.size());

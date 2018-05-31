@@ -243,20 +243,5 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
 }
 
 void mPoseModel::draw(std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, int render_type) {
-//    int p_num = points.size();
-
-//    glm::vec3 * p_ptr = &points[0];
-//    glm::vec4 p_cur;
-
-//    for (int i = 0; i < p_num; ++i) {
-//        p_cur = glm::vec4(*p_ptr, 1.0);
-
-//        p_cur = raw_cam_ex_mat_inv * p_cur;
-
-//        p_ptr->x = p_cur[0];
-//        p_ptr->y = p_cur[1];
-//        p_ptr->z = p_cur[2];
-//        p_ptr++;
-//    }
     this->renderPose(points, cam_ex_mat, render_type);
 }

@@ -19,7 +19,7 @@ static int mLightSum = 2; /****** Remember to modify the light_num in multilight
 
 static std::vector<glm::vec3> mLightPos({glm::vec3(300, 300, 300), glm::vec3(-300, 300, -300)});
 
-static glm::vec3 mLightPos_AR(0, 3000, 3000); // currently not modified
+static std::vector<glm::vec3> mLightPos_AR({glm::vec3(3000, 3000, 3000), glm::vec3(-3000, 3000, -3000)}); // currently not modified
 
 static glm::vec3 mAmbient(0.3f, 0.3f, 0.3f);
 static glm::vec3 mDiffuse(0.5f, 0.5f, 0.5f);
@@ -60,13 +60,24 @@ std::vector<glm::mat4>({
 })
 });
 
-static std::vector<glm::mat4> mShadowTransforms_AR({
-mShadowProj_AR * glm::lookAt(mLightPos_AR, mLightPos_AR + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-mShadowProj_AR * glm::lookAt(mLightPos_AR, mLightPos_AR + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-mShadowProj_AR * glm::lookAt(mLightPos_AR, mLightPos_AR + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-mShadowProj_AR * glm::lookAt(mLightPos_AR, mLightPos_AR + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-mShadowProj_AR * glm::lookAt(mLightPos_AR, mLightPos_AR + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-mShadowProj_AR * glm::lookAt(mLightPos_AR, mLightPos_AR + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))});
+static std::vector<std::vector<glm::mat4>> mShadowTransforms_AR({
+std::vector<glm::mat4>({
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[0], mLightPos_AR[0] + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[0], mLightPos_AR[0] + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[0], mLightPos_AR[0] + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[0], mLightPos_AR[0] + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[0], mLightPos_AR[0] + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[0], mLightPos_AR[0] + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+}),
+std::vector<glm::mat4>({
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[1], mLightPos_AR[1] + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[1], mLightPos_AR[1] + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[1], mLightPos_AR[1] + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[1], mLightPos_AR[1] + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[1], mLightPos_AR[1] + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    mShadowProj_AR * glm::lookAt(mLightPos_AR[1], mLightPos_AR[1] + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+})
+});
 
 
 /******************************************************************/

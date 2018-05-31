@@ -72,7 +72,7 @@ namespace mCamRotate {
         }
     }
 
-    glm::mat4 getRotateMat(int wnd_width, int wnd_height, const glm::mat4 & view_r_mat) {
+    glm::mat4 getRotateMat(int wnd_width, int wnd_height, const glm::mat4 & view_r_mat, float rotate_dir[2]) {
 
         if (init_pos != cur_pos) {
 
@@ -81,8 +81,8 @@ namespace mCamRotate {
 
             glm::vec3 dir_x = glm::normalize(glm::cross(dir_y, dir_z));
 
-            float div_x = cur_pos.x - init_pos.x;
-            float div_y =  cur_pos.y - init_pos.y;
+            float div_x = (cur_pos.x - init_pos.x) * rotate_dir[0];
+            float div_y =  (cur_pos.y - init_pos.y) * rotate_dir[1];
 
             float x_angle = div_x / wnd_width * 3.141592653589;
             float y_angle = div_y / wnd_height * 3.141592653589;

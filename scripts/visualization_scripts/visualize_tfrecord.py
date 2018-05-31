@@ -87,7 +87,7 @@ if __name__ == "__main__":
     wndWidth = int(input_img_size)
     wndHeight = int(input_img_size)
 
-    tfrecord_file = "/home/kaihang/DataSet/sfu_tfrecords/sfu_train.tfrecords"
+    tfrecord_file = "/home/kaihang/DataSet/sfu_tfrecords/train-2/sfu_train.tfrecords"
     ################################ Init tfrecord valider ##################################
     dataset_reader = data_valid.DataValid(tfrecord_file)
     #########################################################################################

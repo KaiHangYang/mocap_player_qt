@@ -25,8 +25,6 @@ static glm::vec3 mAmbient(0.3f, 0.3f, 0.3f);
 static glm::vec3 mDiffuse(0.5f, 0.5f, 0.5f);
 static glm::vec3 mSpecular(0.4f, 0.4f, 0.4f);
 
-static glm::vec3 mBoneColor(0.9882352941176471, 0.788235294117647, 0.5294117647058824);
-
 /******************** Light Cube parameter ************************/
 static int mShadowUseShadow = 1;
 static int mShadowWndWidth = 4096;

@@ -64,6 +64,7 @@ public slots:
     void captureDirSlot();
     void captureOneFrame();
     void captureAllFrames();
+    void captureVideo();
     void cameraTypeChangeSlot(int index);
     void cameraSplitCircleSlot();
     void cameraSetDefaultSlot();
@@ -192,8 +193,8 @@ private:
 
     QLabel * tool_capture_dir_label;
     mLineEditWidget * tool_capture_dir_input;
-    QLabel * tool_capture_step_label;
-    QLineEdit * tool_capture_step_input;
+
+    QPushButton * tool_capture_capture_video;
     QPushButton * tool_capture_capture_one;
     QPushButton * tool_capture_capture_interval;
     QLabel * tool_capture_img_extension_label;

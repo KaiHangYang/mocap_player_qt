@@ -258,10 +258,7 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_capture_dir_input->setReadOnly(true);
     this->tool_capture_dir_input->setPlaceholderText("Double click to choose directory!");
 
-    this->tool_capture_step_label = new QLabel("Step:", this->capture_box);
-    this->tool_capture_step_input = new QLineEdit(this->capture_box);
-    this->tool_capture_step_input->setValidator(new QIntValidator(0, 60, this->tool_capture_step_input));
-    this->tool_capture_step_input->setPlaceholderText("0~60");
+    this->tool_capture_capture_video = new QPushButton("Capture Video", this->capture_box);
     this->tool_capture_capture_one = new QPushButton("Capture One", this->capture_box);
     this->tool_capture_capture_interval = new QPushButton("Capture All", this->capture_box);
     this->tool_capture_img_extension_label = new QLabel("Img Format: ", this->capture_box);
@@ -274,8 +271,8 @@ void mMainWindow::buildToolBoxTab2() {
     this->capture_box_layout->addWidget(this->tool_capture_dir_input, 0, 1, 1, 3);
     this->capture_box_layout->addWidget(this->tool_capture_img_extension_label, 1, 0, 1, 1);
     this->capture_box_layout->addWidget(this->tool_capture_img_extension_combox, 1, 1, 1, 1);
-    this->capture_box_layout->addWidget(this->tool_capture_step_label, 1, 2, 1, 1);
-    this->capture_box_layout->addWidget(this->tool_capture_step_input, 1, 3, 1, 1);
+    this->capture_box_layout->addWidget(this->tool_capture_capture_video, 1, 2, 1, 2);
+
     this->capture_box_layout->addWidget(this->tool_capture_capture_one, 2, 0, 1, 2);
     this->capture_box_layout->addWidget(this->tool_capture_capture_interval, 2, 2, 1, 2);
     this->capture_box_layout->addWidget(this->tool_capture_floor_btn, 3, 0, 1, 2);
@@ -326,6 +323,7 @@ void mMainWindow::bindEvents() {
     connect(this->tool_capture_dir_input, SIGNAL(lineEditOpenDirSignal()), this, SLOT(captureDirSlot()));
     connect(this->tool_capture_capture_one, SIGNAL(clicked()), this, SLOT(captureOneFrame()));
     connect(this->tool_capture_capture_interval, SIGNAL(clicked()), this, SLOT(captureAllFrames()));
+    connect(this->tool_capture_capture_video, SIGNAL(clicked()), this, SLOT(captureVideo()));
     connect(this->tool_camera_type_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraTypeChangeSlot(int)));
     connect(this->tool_capture_floor_btn, SIGNAL(clicked()), this, SLOT(sceneFloorSlot()));
 
@@ -891,6 +889,36 @@ void mMainWindow::captureAllFrames() {
             for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
                 cur_view_vecs.push_back(this->camera_vec_arr[i].second);
             }
+            this->gl_widget->captureAllFrames(cur_view_vecs);
+            this->videoStartSlot();
+        }
+    }
+    else {
+        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
+    }
+}
+
+void mMainWindow::captureVideo() {
+    QString dir_name = this->tool_capture_dir_input->text();
+    QFileInfo dir_info(dir_name);
+    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
+        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
+        return;
+    }
+
+    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
+    this->fileActivatedSlot(cur_index);
+    this->videoResetSlot();
+
+    if (!dir_name.isEmpty() && dir_info.isDir()) {
+        // Get view mats
+        if (this->cur_camera_type == 0) {
+            std::vector<glm::mat4> cur_view_mats;
+            this->gl_widget->captureAllFrames(cur_view_mats);
+            this->videoStartSlot();
+        }
+        else {
+            std::vector<glm::vec3> cur_view_vecs;
             this->gl_widget->captureAllFrames(cur_view_vecs);
             this->videoStartSlot();
         }

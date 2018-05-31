@@ -2,6 +2,7 @@
 #include <cstring>
 #include "mPoseDefs.h"
 #include "mRenderParameters.h"
+#include <glm/glm.hpp>
 
 //static float skeleton_style[] = {
 //    0, 1.3, // head
@@ -24,20 +25,105 @@
 static float skeleton_style[] = {
     1, 1.0, // head
     1, 1.0, // left shoulder
-    1, 1.0, // head
-    1, 1.0, // left shoulder
-    1, 1.0, // head
-    1, 1.0, // left shoulder
-    1, 1.0, // head
-    1, 1.0, // left shoulder
-    1, 1.0, // head
-    1, 1.0, // left shoulder
-    1, 1.0, // head
-    1, 1.0, // left shoulder
-    1, 1.0, // head
-    1, 1.0, // left shoulder
-    1, 1.0, // head
-    1, 1.0, // left shoulder
+    1, 1.0, // left upper arm
+    1, 1.0, // left lower arm
+    1, 1.0, // right shoulder
+    1, 1.0, // right upper arm
+    1, 1.0, // right lower arm
+    1, 1.0, // spine
+    1, 1.0, // left hip
+    1, 1.0, // left ham,
+    1, 1.0, // left calf,
+    1, 1.0, // right hip
+    1, 1.0, // right ham,
+    1, 1.0, // right calf,
+    1, 1.0, // left feet,
+    1, 1.0, // right feet
+};
+//static glm::vec3 mBoneColors[] = {
+    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // head
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left shoulder
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left upper arm
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left lower arm
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right shoulder
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right upper arm
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right lower arm
+    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // spine
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left hip
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left ham,
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left calf,
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right hip
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right ham,
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right calf,
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left feet,
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824) // right feet
+//};
+
+//static glm::vec3 mJointColors[] = {
+    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // head
+    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // neck
+
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left shoulder
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left upper arm
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left lower arm
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right shoulder
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right upper arm
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right lower arm
+
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left hip
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left ham,
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left calf,
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right hip
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right ham,
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right calf,
+
+    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // root ,
+
+    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left feet,
+    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824) // right feet
+//};
+
+static glm::vec3 mBoneColors[] = {
+    glm::vec3(0, 1, 0), // head
+    glm::vec3(1, 0, 0), // left shoulder
+    glm::vec3(1, 0, 0), // left upper arm
+    glm::vec3(1, 0, 0), // left lower arm
+    glm::vec3(0, 0.6, 1), // right shoulder
+    glm::vec3(0, 0.6, 1), // right upper arm
+    glm::vec3(0, 0.6, 1), // right lower arm
+    glm::vec3(0, 1, 0), // spine
+    glm::vec3(1, 0, 0), // left hip
+    glm::vec3(1, 0, 0), // left ham,
+    glm::vec3(1, 0, 0), // left calf,
+    glm::vec3(0, 0.6, 1), // right hip
+    glm::vec3(0, 0.6, 1), // right ham,
+    glm::vec3(0, 0.6, 1), // right calf,
+    glm::vec3(1, 0, 0), // left feet,
+    glm::vec3(0, 0.6, 1) // right feet
+};
+
+static glm::vec3 mJointColors[] = {
+    glm::vec3(0, 1, 0), // head
+    glm::vec3(0, 1, 0), // neck
+
+    glm::vec3(1, 0, 0), // left shoulder
+    glm::vec3(1, 0, 0), // left upper arm
+    glm::vec3(1, 0, 0), // left lower arm
+    glm::vec3(0, 0.6, 1), // right shoulder
+    glm::vec3(0, 0.6, 1), // right upper arm
+    glm::vec3(0, 0.6, 1), // right lower arm
+
+    glm::vec3(1, 0, 0), // left hip
+    glm::vec3(1, 0, 0), // left ham,
+    glm::vec3(1, 0, 0), // left calf,
+    glm::vec3(0, 0.6, 1), // right hip
+    glm::vec3(0, 0.6, 1), // right ham,
+    glm::vec3(0, 0.6, 1), // right calf,
+
+    glm::vec3(0, 1, 0), // root ,
+
+    glm::vec3(1, 0, 0), // left feet,
+    glm::vec3(0, 0.6, 1) // right feet
 };
 
 mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, int pose_type) {
@@ -99,7 +185,6 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
     // Some uniform has been set in the scene_utils before this function is called
     shader->setVal("renderType", 0);
     shader->setVal("viewPos", glm::vec3(-view_t_mat[3][0], -view_t_mat[3][1], -view_t_mat[3][2]));
-    shader->setVal("fragColor", mBoneColor);
     shader->setVal("projection", this->proj_mat);
     shader->setVal("view", view_mat);
 
@@ -120,6 +205,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
 
                 shader->setVal("model", curmodel);
                 if (render_type == 0) {
+                    shader->setVal("fragColor", mJointColors[line[j]]);
                     shader->setVal("normMat", glm::transpose(glm::inverse(curmodel)));
                 }
                 mesh_reader->render(0);
@@ -148,7 +234,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
         shader->setVal("model", curmodel);
 
         if (render_type == 0) {
-            shader->setVal("fragColor", mBoneColor);
+            shader->setVal("fragColor", mBoneColors[i]);
             shader->setVal("normMat", glm::transpose(glm::inverse(curmodel)));
         }
 

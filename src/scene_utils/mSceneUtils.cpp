@@ -128,15 +128,6 @@ void mSceneUtils::setExMat(glm::mat4 & cam_ex_mat) {
 
     this->cur_cam_ex_r_mat = this->cam_ex_r_mat;
     this->cur_cam_ex_t_mat = this->cam_ex_t_mat;
-
-    glm::vec3 dir_z(-this->cur_cam_ex_r_mat[0][2], -this->cur_cam_ex_r_mat[1][2], -this->cur_cam_ex_r_mat[2][2]);
-    glm::vec3 dir_x(this->cur_cam_ex_r_mat[0][0], this->cur_cam_ex_r_mat[1][0], this->cur_cam_ex_r_mat[2][0]);
-    glm::vec3 dir_y(this->cur_cam_ex_r_mat[0][1], this->cur_cam_ex_r_mat[1][1], this->cur_cam_ex_r_mat[2][1]);
-
-    qDebug() << dir_x.x << " " << dir_x.y << " " << dir_x.z;
-    qDebug() << dir_y.x << " " << dir_y.y << " " << dir_y.z;
-    qDebug() << dir_z.x << " " << dir_z.y << " " << dir_z.z;
-    qDebug() << glm::dot(dir_z, dir_y) << " " << glm::dot(dir_z, dir_x) << " " << glm::dot(dir_x, dir_y);
 }
 
 void mSceneUtils::setInMat(glm::mat4 & cam_in_mat) {
@@ -261,26 +252,19 @@ void mSceneUtils::moveCamera(int move_type, QMouseEvent * event) {
     }
     else if (std::abs(move_type) == 3) {
         glm::vec3 dir_z(-this->cur_cam_ex_r_mat[0][2], -this->cur_cam_ex_r_mat[1][2], -this->cur_cam_ex_r_mat[2][2]);
-        glm::vec3 dir_x(this->cur_cam_ex_r_mat[0][0], this->cur_cam_ex_r_mat[1][0], this->cur_cam_ex_r_mat[2][0]);
-        glm::vec3 dir_y(this->cur_cam_ex_r_mat[0][1], this->cur_cam_ex_r_mat[1][1], this->cur_cam_ex_r_mat[2][1]);
-//        glm::vec3 dir_z = glm::cross(dir_x, dir_y);
-        qDebug() << dir_x.x << " " << dir_x.y << " " << dir_x.z;
-        qDebug() << dir_y.x << " " << dir_y.y << " " << dir_y.z;
-        qDebug() << dir_z.x << " " << dir_z.y << " " << dir_z.z;
-        qDebug() << glm::dot(dir_z, dir_y) << " " << glm::dot(dir_z, dir_x) << " " << glm::dot(dir_x, dir_y);
-        qDebug() << glm::dot(dir_z, dir_z) << " " << glm::dot(dir_y, dir_y) << " " << glm::dot(dir_x, dir_x);
         float sign = move_type > 0?1.f:-1.f;
         this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, sign * move_step * dir_z * this->move_step_scale * 4.f * this->m_move_dir[2]);
     }
-    else if (std::abs(move_type) == 0 && this->is_follow_person) {
+
+    if (std::abs(move_type) == 0 || this->is_follow_person) {
         // the cam_ex_t_mat is -(camera pos)
-        if (this->cur_follow_dert == glm::vec3(0.f)) {
-            // set the default pose
-            this->setFollowDefault();
-        }
-        else {
+//        if (this->cur_follow_dert == glm::vec3(0.f)) {
+//            // set the default pose
+//            this->setFollowDefault();
+//        }
+//        else {
             this->cur_follow_dert = glm::vec3(-this->cur_cam_ex_t_mat[3][0] - this->person_center_pos[0], -this->cur_cam_ex_t_mat[3][1] - this->person_center_pos[1], -this->cur_cam_ex_t_mat[3][2] - this->person_center_pos[2]);
-        }
+//        }
     }
 }
 void mSceneUtils::rotateCamrea(const glm::mat4 &rotate_mat) {

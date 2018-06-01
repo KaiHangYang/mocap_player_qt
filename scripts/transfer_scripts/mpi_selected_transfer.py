@@ -37,14 +37,19 @@ class MPISelectedTransfer():
         for camera_num_index in range(len(self.camera_nums)):
             camera_num = self.camera_nums[camera_num_index]
 
-            save_path = os.path.join(save_dir, "%d.mpi" % camera_num)
+            save_path_train = os.path.join(save_dir, "%d-train.mpi" % camera_num)
+            save_path_valid = os.path.join(save_dir, "%d-valid.mpi" % camera_num)
 
             cur_video_name = "video%d" % camera_num
             cur_video_labels = cur_datas[cur_video_name]
 
-            cur_labels_3du = []
-            cur_labels_2d = []
+            cur_labels_3du_train = []
+            cur_labels_2d_train = []
 
+            cur_labels_3du_valid = []
+            cur_labels_2d_valid = []
+
+            # Now only save the joints_2d and the joints_3du
             for cur_label in cur_video_labels:
                 tmp_label_2d = cur_label[2].copy()
                 tmp_label_3du = []
@@ -52,23 +57,51 @@ class MPISelectedTransfer():
                 for cur_point_index in range(cur_label[2].shape[0]):
                     tmp_label_3du.append(np.dot(self.cam_ex_mat_invs[camera_num_index], np.concatenate([cur_label[4][cur_point_index], [1.0]], 0))[0:3])
 
-                cur_labels_2d.append(tmp_label_2d)
-                cur_labels_3du.append(np.array(tmp_label_3du))
+                if cur_label[0][3]:
+                    cur_labels_2d_train.append(tmp_label_2d)
+                    cur_labels_3du_train.append(np.array(tmp_label_3du))
+                else:
+                    cur_labels_2d_valid.append(tmp_label_2d)
+                    cur_labels_3du_valid.append(np.array(tmp_label_3du))
 
-            cur_labels_3du = np.array(cur_labels_3du, dtype=np.float32)
-            cur_labels_2d = np.array(cur_labels_2d, dtype=np.float32)
+            cur_labels_3du_train = np.array(cur_labels_3du_train, dtype=np.float32)
+            cur_labels_2d_train = np.array(cur_labels_2d_train, dtype=np.float32)
 
-            with open(save_path, "wb") as f:
-                total_frame_sum = cur_labels_3du.shape[0]
+            cur_labels_3du_valid = np.array(cur_labels_3du_valid, dtype=np.float32)
+            cur_labels_2d_valid = np.array(cur_labels_2d_valid, dtype=np.float32)
 
-                joints_2d = cur_labels_2d.flatten().tolist()
-                joints_3d = cur_labels_3du.flatten().tolist()
-                f.write(struct.pack("i", total_frame_sum))
-                f.write(struct.pack("%df" % len(joints_2d), *joints_2d))
-                f.write(struct.pack("%df" % len(joints_3d), *joints_3d))
+            f_train = open(save_path_train, "wb")
+            f_valid = open(save_path_valid, "wb")
 
-            saved_joints2d, saved_joints3d = self.read(save_path)
-            assert((saved_joints2d == cur_labels_2d).all() and (saved_joints3d == cur_labels_3du).all())
+
+            # Save the training data
+            total_frame_sum_train = cur_labels_3du_train.shape[0]
+
+            joints_2d_train = cur_labels_2d_train.flatten().tolist()
+            joints_3d_train = cur_labels_3du_train.flatten().tolist()
+            f_train.write(struct.pack("i", total_frame_sum_train))
+            f_train.write(struct.pack("%df" % len(joints_2d_train), *joints_2d_train))
+            f_train.write(struct.pack("%df" % len(joints_3d_train), *joints_3d_train))
+
+            # Save the valid data
+            total_frame_sum_valid = cur_labels_3du_valid.shape[0]
+
+            joints_2d_valid = cur_labels_2d_valid.flatten().tolist()
+            joints_3d_valid = cur_labels_3du_valid.flatten().tolist()
+            f_valid.write(struct.pack("i", total_frame_sum_valid))
+            f_valid.write(struct.pack("%df" % len(joints_2d_valid), *joints_2d_valid))
+            f_valid.write(struct.pack("%df" % len(joints_3d_valid), *joints_3d_valid))
+
+            f_train.close()
+            f_valid.close()
+
+            # Check the train data
+            saved_joints2d, saved_joints3d = self.read(save_path_train)
+            assert((saved_joints2d == cur_labels_2d_train).all() and (saved_joints3d == cur_labels_3du_train).all())
+
+            # Check the valid data
+            saved_joints2d, saved_joints3d = self.read(save_path_valid)
+            assert((saved_joints2d == cur_labels_2d_valid).all() and (saved_joints3d == cur_labels_3du_valid).all())
 
     def read(self, data_path):
         with open(data_path, "rb") as f:
@@ -86,5 +119,5 @@ class MPISelectedTransfer():
 
 if __name__ == "__main__":
     transfer = MPISelectedTransfer()
-    # transfer.parse("/home/kaihang/DataSet/cropped_mpi_data/combined.npy", "/home/kaihang/Desktop/test_dir")
-    data_2d, data_3d = transfer.read("/home/kaihang/Desktop/test_dir/3.mpi")
+    transfer.parse("/home/kaihang/DataSet/cropped_mpi_data/combined.npy", "/home/kaihang/Desktop/test_dir")
+    # data_2d, data_3d = transfer.read("/home/kaihang/Desktop/test_dir/3.mpi")

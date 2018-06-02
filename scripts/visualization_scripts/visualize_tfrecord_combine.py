@@ -87,9 +87,12 @@ if __name__ == "__main__":
     wndWidth = int(input_img_size)
     wndHeight = int(input_img_size)
 
-    tfrecord_file = "/home/kaihang/DataSet/mpi_inf_tfrecord/train_mpi_part.tfrecord"
+    mocap_tfrecord_file = "/home/kaihang/DataSet/mpi_tfrecords/mpi_train.tfrecords"
+    real_tfrecord_file = "/home/kaihang/DataSet/mpi_inf_tfrecord/train_mpi_part.tfrecord"
+
     ################################ Init tfrecord valider ##################################
-    dataset_reader = data_valid.DataValid(tfrecord_file)
+    mocap_dataset_reader = data_valid.DataValid(mocap_tfrecord_file)
+    real_dataset_reader = data_valid.DataValid(real_tfrecord_file)
     #########################################################################################
 
     ################################Scene Inited ######################################
@@ -145,18 +148,31 @@ if __name__ == "__main__":
         #############################Get Images and points ################################
         if not keep_still:
 
-            img, points_2d, points_3d = dataset_reader.get_frame()
-            print(points_3d)
+            mocap_img, mocap_points_2d, mocap_points_3d = mocap_dataset_reader.get_frame()
+            real_img, real_points_2d, real_points_3d = real_dataset_reader.get_frame()
 
-            img = display_utils.drawLines(img, points_2d)
-            img = display_utils.drawPoints(img, points_2d)
+            mocap_img = display_utils.drawLines(mocap_img, mocap_points_2d)
+            mocap_img = display_utils.drawPoints(mocap_img, mocap_points_2d)
+
+            real_img = display_utils.drawLines(real_img, real_points_2d)
+            real_img = display_utils.drawPoints(real_img, real_points_2d)
 
             frame_count += 1
+            real_points_3d[:] -= real_points_3d[14]
 
-            points_3d += [0, 0, 3000]
+            mocap_points_3d += [0, 0, 3000]
+            real_points_3d += [0, 0, 3000]
+
+            print("Mocap data:", mocap_points_3d)
+            print("Real data:", real_points_3d)
         ###################################################################################
-        mpose_model.draw(points_3d)
-        cam_scene.drawFrame(img)
+        mpose_model.draw(real_points_3d - [500, 0, 0])
+        mpose_model.draw(mocap_points_3d + [500, 0, 0])
+        cam_scene.drawFrame(real_img)
+
+        cv2.imshow("mocap_img", mocap_img)
+        cv2.imshow("real_img", real_img)
+        cv2.waitKey(4)
 
         app.renderEnd()
 

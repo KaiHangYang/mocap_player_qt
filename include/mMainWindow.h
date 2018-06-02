@@ -65,6 +65,7 @@ public slots:
     void captureOneFrame();
     void captureAllFrames();
     void captureVideo();
+    void captureCurrentAll();
     void cameraTypeChangeSlot(int index);
     void cameraSplitCircleSlot();
     void cameraSetDefaultSlot();
@@ -197,6 +198,8 @@ private:
     QPushButton * tool_capture_capture_video;
     QPushButton * tool_capture_capture_one;
     QPushButton * tool_capture_capture_interval;
+    QPushButton * tool_capture_capture_currentall;
+
     QLabel * tool_capture_img_extension_label;
     QComboBox * tool_capture_img_extension_combox;
     QPushButton * tool_capture_floor_btn;

@@ -42,6 +42,8 @@ public:
 
     void setFollowPerson(bool is_follow);
     void setFocusOnCenter(bool is_focus_on_center);
+    bool getFollowPerson();
+    bool getFocusOnCenter();
     void captureFrame(cv::Mat & cur_frame);
 
 

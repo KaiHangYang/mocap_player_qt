@@ -27,9 +27,11 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->pose_change_step = 200;
 
     this->is_ar = true;
+    /**************** camera 8 *****************/
     this->cam_in_mat = glm::mat4({1500.172, 0, this->wnd_width / 2, 0, 0, 1500.837, this->wnd_height / 2, 0, 0, 0, 1, 0, 0, 0, 0, 1});
     this->cam_ex_mat = glm::mat4({0.000575281, 0.06160985, -0.9981001, 221.3543, 0.2082146, -0.9762325, -0.06013997, 659.87, -0.978083, -0.2077844, -0.01338968, 3644.688, 0,
                                   0, 0, 1});
+    /******************************************/
 
 //    this->is_ar = false;
 //    this->cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)this->wnd_width / this->wnd_height, 0.01f, 1000000.f));
@@ -146,7 +148,12 @@ void mGLWidget::setFollowPerson(bool is_follow) {
 void mGLWidget::setFocusOnPerson(bool is_focus) {
     this->scene->setFocusOnCenter(is_focus);
 }
-
+bool mGLWidget::getFollowPerson() {
+    return this->scene->getFollowPerson();
+}
+bool mGLWidget::getFocusOnPerson() {
+    return this->scene->getFocusOnCenter();
+}
 void mGLWidget::getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras) {
     this->scene->getSplittedCameras(camera_num, splitted_cameras);
 }

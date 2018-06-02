@@ -82,17 +82,26 @@ def data_resize_with_cropped(img, joints2d, num_of_joints=15):
 if __name__ == "__main__":
 
     # Then write the tfrecords
-    train_data_path = "/home/kaihang/DataSet/sfu_selected_data/train_subjects"
-    test_data_path = "/home/kaihang/DataSet/sfu_selected_data/valid_subjects"
+    train_data_path = "/home/kaihang/DataSet/mpi_selected_data/train_subjects"
+    test_data_path = "/home/kaihang/DataSet/mpi_selected_data/valid_subjects"
 
-    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet/sfu_tfrecords/sfu_train.tfrecords")
-    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet/sfu_tfrecords/sfu_test.tfrecords")
+    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet/mpi_tfrecords/mpi_train.tfrecords")
+    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet/mpi_tfrecords/mpi_test.tfrecords")
 
-    train_dir_lists = [os.path.join(train_data_path, i) for i in os.listdir(train_data_path)]
-    test_dir_lists = [os.path.join(test_data_path, i) for i in os.listdir(test_data_path)]
+    train_dataset_list = os.listdir(train_data_path)
+    valid_dataset_list = os.listdir(test_data_path)
+
+    train_dataset_list.sort()
+    valid_dataset_list.sort()
+
+    print(train_dataset_list)
+    print(valid_dataset_list)
+
+    train_dir_lists = [os.path.join(train_data_path, i) for i in train_dataset_list]
+    test_dir_lists = [os.path.join(test_data_path, i) for i in valid_dataset_list]
 
     reader = data_reader.mDataReader()
-    camera_num = 6
+    camera_num = 1
 
     # generate train data
     train_data_sum = 0
@@ -107,6 +116,9 @@ if __name__ == "__main__":
 
                 labels_2d = labels[0]
                 labels_3d = labels[1]
+
+                # labels_3d[:, 1:3] = -1 * labels_3d[:, 1:3] # TODO This is the temporary
+
                 img, labels_2d, _, _, _ = data_resize_with_cropped(img, labels_2d)
 
                 example = tf.train.Example(features=tf.train.Features(

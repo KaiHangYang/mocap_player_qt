@@ -24,6 +24,8 @@ public:
     void setCurFollowVec(glm::vec3 cur_follow_vec);
     void setFollowPerson(bool is_follow);
     void setFocusOnPerson(bool is_focus);
+    bool getFollowPerson();
+    bool getFocusOnPerson();
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
     void setFollowDefault();
     void setUseFloor(bool is_with_floor);

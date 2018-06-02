@@ -301,6 +301,7 @@ glm::mat4 mSceneUtils::getRawExMat() {
 }
 
 glm::vec3 mSceneUtils::getCurFollowVec() {
+    this->cur_follow_dert = glm::vec3(-this->cur_cam_ex_t_mat[3][0] - this->person_center_pos[0], -this->cur_cam_ex_t_mat[3][1] - this->person_center_pos[1], -this->cur_cam_ex_t_mat[3][2] - this->person_center_pos[2]);
     return this->cur_follow_dert;
 }
 void mSceneUtils::setCurFollowVec(glm::vec3 cur_follow_vec) {
@@ -315,6 +316,14 @@ void mSceneUtils::setFollowPerson(bool is_follow) {
 void mSceneUtils::setFocusOnCenter(bool is_focus_on_center) {
     this->is_focus_on_center = is_focus_on_center;
 }
+
+bool mSceneUtils::getFollowPerson() {
+    return this->is_follow_person;
+}
+bool mSceneUtils::getFocusOnCenter() {
+    return this->is_focus_on_center;
+}
+
 void mSceneUtils::captureFrame(cv::Mat & cur_frame) {
     this->core_func->glReadBuffer(GL_FRONT);
     if (cur_frame.size().height != this->wnd_height || cur_frame.size().width != this->wnd_width) {
@@ -373,7 +382,12 @@ void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, con
     if (joints.size() != 0) {
         labels_2d = std::vector<glm::vec2>(joints.size());
         labels_3d = std::vector<glm::vec3>(joints.size());
+
+        // Used for the "Current camera" Mode
         glm::mat4 cur_view_mat = view_mat;
+        if (cur_view_mat == glm::mat4(0.f)) {
+            cur_view_mat = this->getCurExMat();
+        }
         glm::vec3 root_joint = glm::vec3(cur_view_mat * glm::vec4(joints[joints.size() - 1], 1.f));
 
         for (int i = 0; i < joints.size(); ++i) {

@@ -171,8 +171,8 @@ if __name__ == "__main__":
             print("Mocap data:", mocap_points_3d)
             print("Real data:", real_points_3d)
         ###################################################################################
-        mpose_model.draw(real_points_3d - [0, 500, 0])
-        mpose_model.draw(mocap_points_3d + [0, 500, 0])
+        mpose_model.draw(real_points_3d - [500, 0, 0])
+        mpose_model.draw(mocap_points_3d + [500, 0, 0])
         cam_scene.drawFrame(real_img)
 
         cv2.imshow("mocap_img", mocap_img)

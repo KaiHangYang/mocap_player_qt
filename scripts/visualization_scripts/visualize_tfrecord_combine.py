@@ -160,14 +160,19 @@ if __name__ == "__main__":
             frame_count += 1
             real_points_3d[:] -= real_points_3d[14]
 
+            scale_ratio = mocap_points_3d[0:14] / real_points_3d[0:14]
+            scale_ratio = np.mean(scale_ratio)
+
+            real_points_3d *= scale_ratio
+
             mocap_points_3d += [0, 0, 3000]
             real_points_3d += [0, 0, 3000]
 
             print("Mocap data:", mocap_points_3d)
             print("Real data:", real_points_3d)
         ###################################################################################
-        mpose_model.draw(real_points_3d - [500, 0, 0])
-        mpose_model.draw(mocap_points_3d + [500, 0, 0])
+        mpose_model.draw(real_points_3d - [0, 500, 0])
+        mpose_model.draw(mocap_points_3d + [0, 500, 0])
         cam_scene.drawFrame(real_img)
 
         cv2.imshow("mocap_img", mocap_img)

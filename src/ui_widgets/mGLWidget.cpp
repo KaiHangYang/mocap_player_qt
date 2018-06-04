@@ -8,6 +8,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "mVisual.h"
 
+#include "mRenderParameters.h"
+
 mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int wnd_height) : QGLWidget(gl_format, parent) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
@@ -26,16 +28,10 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->cur_pose_joints = std::vector<glm::vec3>();
     this->pose_change_step = 200;
 
-    this->is_ar = true;
-    /**************** camera 8 *****************/
-    this->cam_in_mat = glm::mat4({1500.172, 0, this->wnd_width / 2, 0, 0, 1500.837, this->wnd_height / 2, 0, 0, 0, 1, 0, 0, 0, 0, 1});
-    this->cam_ex_mat = glm::mat4({0.000575281, 0.06160985, -0.9981001, 221.3543, 0.2082146, -0.9762325, -0.06013997, 659.87, -0.978083, -0.2077844, -0.01338968, 3644.688, 0,
-                                  0, 0, 1});
-    /******************************************/
+    this->is_ar = m_is_ar;
+    this->cam_in_mat = m_cam_in_mat;
+    this->cam_ex_mat = m_cam_ex_mat;
 
-//    this->is_ar = false;
-//    this->cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)this->wnd_width / this->wnd_height, 0.01f, 1000000.f));
-//    this->cam_ex_mat = glm::transpose(glm::lookAt(glm::vec3(0, 10.f, 300.f), glm::vec3(0, 10.f, 0), glm::vec3(0, 1, 0)));
     this->mocap_data = new mMoCapData;
 
     this->setFocusPolicy(Qt::StrongFocus);

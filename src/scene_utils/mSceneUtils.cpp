@@ -35,7 +35,7 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
 
     float target_model_size;
     if (is_ar) {
-        target_model_size = 30 * 2;
+        target_model_size = 26 * 2;
         this->ground_size = 2000.0f;
         this->move_step_scale = 1.f;
         this->m_move_dir[0] = 1;this->m_move_dir[1] = -1;this->m_move_dir[2] = 1;
@@ -397,8 +397,10 @@ void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, con
             labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints[i], 1.f)) - root_joint;
 
             // Cause the camera in the real word
-            labels_3d[i].y *= -1;
-            labels_3d[i].z *= -1;
+            if (!this->is_ar) {
+                labels_3d[i].y *= -1;
+                labels_3d[i].z *= -1;
+            }
         }
         mPoseDef::scalePose(labels_3d);
     }

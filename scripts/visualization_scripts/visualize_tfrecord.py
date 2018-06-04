@@ -87,7 +87,8 @@ if __name__ == "__main__":
     wndWidth = int(input_img_size)
     wndHeight = int(input_img_size)
 
-    tfrecord_file = "/home/kaihang/DataSet/mpi_inf_tfrecord/train_mpi_part.tfrecord"
+    tfrecord_file = "/home/kaihang/DataSet/sfu_tfrecords/sfu_train.tfrecords"
+    # tfrecord_file = "/home/kaihang/DataSet/mpi_tfrecords/mpi_train.tfrecords"
     ################################ Init tfrecord valider ##################################
     dataset_reader = data_valid.DataValid(tfrecord_file)
     #########################################################################################
@@ -146,7 +147,14 @@ if __name__ == "__main__":
         if not keep_still:
 
             img, points_2d, points_3d = dataset_reader.get_frame()
-            print(points_3d)
+
+            spin_len = np.linalg.norm(points_3d[1] - points_3d[14])
+            upper_leg_len_1 = np.linalg.norm(points_3d[8] - points_3d[9])
+            upper_leg_len_2 = np.linalg.norm(points_3d[11] - points_3d[12])
+            lower_leg_len_1 = np.linalg.norm(points_3d[9] - points_3d[10])
+            lower_leg_len_2 = np.linalg.norm(points_3d[12] - points_3d[13])
+
+            print(spin_len, upper_leg_len_1, upper_leg_len_2, lower_leg_len_1, lower_leg_len_2)
 
             img = display_utils.drawLines(img, points_2d)
             img = display_utils.drawPoints(img, points_2d)

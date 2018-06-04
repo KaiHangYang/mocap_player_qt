@@ -42,14 +42,14 @@ namespace mPoseDef {
         float target_length = scaleTargetLength;
         // 7, 9, 10, 12, 13
         float cur_length = glm::length(joints[bones_indices[7].x] - joints[bones_indices[7].y]);
-        cur_length += 0.5 * (glm::length(joints[bones_indices[9].x] - joints[bones_indices[9].y]) + glm::length(joints[bones_indices[10].x] - joints[bones_indices[10].y]));
-        cur_length += 0.5 * (glm::length(joints[bones_indices[12].x] - joints[bones_indices[12].y]) + glm::length(joints[bones_indices[13].x] - joints[bones_indices[13].y]));
+        cur_length += 0.5 * (glm::length(joints[bones_indices[9].x] - joints[bones_indices[9].y]));
+        cur_length += 0.5 * (glm::length(joints[bones_indices[12].x] - joints[bones_indices[12].y]));
+
         float scale = target_length / cur_length;
         for (int i = 0; i < joints.size(); ++i) {
             joints[i] *= scale;
         }
     }
-
 }
 
 #endif

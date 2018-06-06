@@ -133,10 +133,19 @@ void mSceneUtils::setExMat(glm::mat4 & cam_ex_mat) {
 void mSceneUtils::setInMat(glm::mat4 & cam_in_mat) {
     this->cam_in_mat = cam_in_mat;
     if (this->is_ar) {
+//        this->cam_proj_mat = glm::transpose(glm::mat4({
+//            2.0*this->cam_in_mat[0][0] / wnd_width, 0, -1 + 2.0*this->cam_in_mat[0][2] / wnd_width, 0.0,
+//            0, -2.0*this->cam_in_mat[1][1]/wnd_height, 1 - 2.0*this->cam_in_mat[1][2] / wnd_height, 0.0,
+//            0, 0, 1, -2 * this->cam_in_mat[0][0],
+//            0, 0, 1, 0}));
+
+        // Currently, the below code works, Now I will make sure from the procedure of calculation
+        // The new z projected is only used for clip, so I can assume the near plane 1 and far plane inf. without change the new image(x and y);
+        // See http://www.songho.ca/opengl/gl_projectionmatrix.html
         this->cam_proj_mat = glm::transpose(glm::mat4({
             2.0*this->cam_in_mat[0][0] / wnd_width, 0, -1 + 2.0*this->cam_in_mat[0][2] / wnd_width, 0.0,
             0, -2.0*this->cam_in_mat[1][1]/wnd_height, 1 - 2.0*this->cam_in_mat[1][2] / wnd_height, 0.0,
-            0, 0, 1, -2 * this->cam_in_mat[0][0],
+            0, 0, 1, -2 * 1,
             0, 0, 1, 0}));
     }
     else {

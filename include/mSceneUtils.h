@@ -33,8 +33,8 @@ public:
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
     void setFollowDefault();
 
-    void getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
-    void getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::vec3 & view_vec, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
+    void getLabelsFromFrame(const std::vector<glm::vec3> &joints, const glm::mat4 &view_mat, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
+    void getLabelsFromFrame(const std::vector<glm::vec3> &joints, const glm::vec3 &view_vec, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
 
     void moveCamera(int move_type, QMouseEvent * event = NULL);
     void rotateCamrea(const glm::mat4 & rotate_mat);

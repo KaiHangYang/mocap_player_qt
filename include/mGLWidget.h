@@ -49,7 +49,8 @@ public slots:
 signals:
     void doubleClickPoseToggleSignal();
     void progressDisplaySignal(int cur_num, int total, bool is_reset);
-    void saveCapturedFrameSignal(cv::Mat & frame, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num);
+    void saveCapturedFrameSignal(cv::Mat & frame, int cur_frame, int cur_num);
+    void saveCapturedLabelSignal(std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num, bool is_raw);
     void changePoseFileSignal();
 protected:
     void initializeGL();
@@ -84,6 +85,7 @@ private:
     int temp_pose_state;
     bool is_has_pose;
     std::vector<glm::vec3> cur_pose_joints;
+    std::vector<glm::vec3> cur_pose_joints_raw;
     float pose_change_step;
     /************************************************/
 

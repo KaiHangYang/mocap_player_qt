@@ -82,7 +82,12 @@ def data_resize_with_cropped(img, joints2d, num_of_joints=15):
 if __name__ == "__main__":
 
     # Then write the tfrecords
-    camera_num = 1
+    is_ar = True
+
+    if is_ar:
+        camera_num = 1
+    else:
+        camera_num = 6
 
     train_data_path = "/home/kaihang/DataSet/mpi_selected_data/train_subjects"
     test_data_path = "/home/kaihang/DataSet/mpi_selected_data/valid_subjects"

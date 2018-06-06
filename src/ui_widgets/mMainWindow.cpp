@@ -333,7 +333,8 @@ void mMainWindow::bindEvents() {
 
     connect(this->tool_camera_split_horizon, SIGNAL(clicked()), this, SLOT(cameraSplitCircleSlot()));
     connect(this->tool_camera_set_parallel, SIGNAL(clicked()), this, SLOT(cameraSetDefaultSlot()));
-    connect(this->gl_widget, SIGNAL(saveCapturedFrameSignal(cv::Mat&,std::vector<glm::vec2>,std::vector<glm::vec3>,int,int)), this, SLOT(saveFramesSlot(cv::Mat&,std::vector<glm::vec2>,std::vector<glm::vec3>,int,int)));
+    connect(this->gl_widget, SIGNAL(saveCapturedFrameSignal(cv::Mat&,int,int)), this, SLOT(saveFramesSlot(cv::Mat&,int,int)));
+    connect(this->gl_widget, SIGNAL(saveCapturedLabelSignal(std::vector<glm::vec2>,std::vector<glm::vec3>,int,int,bool)), this, SLOT(saveLabelsSlot(std::vector<glm::vec2>,std::vector<glm::vec3>,int,int,bool)));
     connect(this->gl_widget, SIGNAL(changePoseFileSignal()), this, SLOT(changeNextPoseSlot()));
     connect(this->tool_pose_change_step_btn, SIGNAL(clicked()), this, SLOT(poseSetChangeSize()));
     connect(this->tool_pose_jitter_size_btn, SIGNAL(clicked()), this, SLOT(poseSetJitterSize()));
@@ -805,7 +806,7 @@ void mMainWindow::captureDirSlot() {
     }
 }
 
-void mMainWindow::saveFramesSlot(cv::Mat & frame, std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num) {
+void mMainWindow::saveFramesSlot(cv::Mat & frame, int cur_frame, int cur_num) {
     QString dir_name = this->tool_capture_dir_input->text();
     QFileInfo dir_info(dir_name);
     if (!dir_name.isEmpty() && dir_info.isDir()) {
@@ -823,8 +824,36 @@ void mMainWindow::saveFramesSlot(cv::Mat & frame, std::vector<glm::vec2> labels_
         QString cur_frame_num = QString::number(cur_frame);
         QString img_name = dir_name + "/" + cur_frame_num + "-" + QString::number(cur_num) + "." + this->tool_capture_img_extension_combox->currentText();
         cv::imwrite(img_name.toStdString(), frame);
+    }
+}
+void mMainWindow::saveLabelsSlot(std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num, bool is_raw) {
+    QString dir_name = this->tool_capture_dir_input->text();
+    QFileInfo dir_info(dir_name);
+    if (!dir_name.isEmpty() && dir_info.isDir()) {
+        QDir save_dir;
+        QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
+        QString pose_file_name = cur_index.data().toString();
+        pose_file_name = pose_file_name.split("/").back();
+        pose_file_name = pose_file_name.split(".")[0];
+
+        dir_name = dir_name + "/" + pose_file_name;
+        if (!save_dir.exists(dir_name)) {
+            save_dir.mkdir(dir_name);
+        }
+
+        QString cur_frame_num = QString::number(cur_frame);
+
         // Then save the points
-        QFile label_file(dir_name + "/" + cur_frame_num + "." + "txt");
+        QString label_file_name;
+
+        if (is_raw) {
+            label_file_name = dir_name + "/" + cur_frame_num + "-raw." + "txt";
+        }
+        else {
+            label_file_name = dir_name + "/" + cur_frame_num + "." + "txt";
+        }
+
+        QFile label_file(label_file_name);
         if (label_file.open(QIODevice::Append | QIODevice::WriteOnly)) {
             QTextStream label_file_stream(&label_file);
             label_file_stream << cur_num;

@@ -233,7 +233,7 @@ void mGLWidget::changePoseFile(QString & file_name, int cur_dataset_num) {
         this->is_has_pose = true;
         this->pose_state = 0;
         this->sendProgress(true);
-        this->mocap_data->getOneFrame(this->cur_pose_joints, 0.0);
+        this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0);
     }
     else {
         this->is_has_pose = false;
@@ -263,7 +263,7 @@ void mGLWidget::resetPose() {
         this->mocap_data->resetCounter();
         this->sendProgress(false);
         // Reset to the first frame pose
-        this->mocap_data->getOneFrame(this->cur_pose_joints, 0.0);
+        this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0);
     }
 }
 
@@ -271,7 +271,7 @@ void mGLWidget::setPose(float ratio) {
     int cur_frame_num = this->mocap_data->getTotalFrame() * ratio;
     this->mocap_data->setFramePos(cur_frame_num);
     this->sendProgress(false);
-    this->mocap_data->getOneFrame(this->cur_pose_joints, 0.0);
+    this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0);
 }
 
 void mGLWidget::tempPausePose() {
@@ -298,7 +298,7 @@ void mGLWidget::draw() {
     if (this->pose_state == 1 && this->temp_pose_state == 1) {
         this->sendProgress(false);
         std::vector<glm::vec3> tmp_pose_joints;
-        bool result = this->mocap_data->getOneFrame(tmp_pose_joints, this->pose_change_step);
+        bool result = this->mocap_data->getOneFrame(tmp_pose_joints, this->cur_pose_joints_raw, this->pose_change_step);
         if (!result) {
             // read finished then read the next file
             emit changePoseFileSignal();
@@ -318,13 +318,22 @@ void mGLWidget::draw() {
             std::vector<glm::vec2> labels_2d;
             std::vector<glm::vec3> labels_3d;
 
+            std::vector<glm::vec2> labels_2d_raw;
+            std::vector<glm::vec3> labels_3d_raw;
+
             if (this->cur_capture_type == 0) {
                 this->scene->render(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum]);
                 this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum], labels_2d, labels_3d);
+                if (this->is_ar) {
+                    this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, this->cur_capture_view_mats[this->cur_capture_sum], labels_2d_raw, labels_3d_raw);
+                }
             }
             else if (this->cur_capture_type == 1) {
                 this->scene->render(this->cur_pose_joints, this->cur_capture_view_vecs[this->cur_capture_sum]);
                 this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_view_vecs[this->cur_capture_sum], labels_2d, labels_3d);
+                if (this->is_ar) {
+                    this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, this->cur_capture_view_vecs[this->cur_capture_sum], labels_2d_raw, labels_3d_raw);
+                }
             }
 
             cv::Mat captured_img;
@@ -332,7 +341,11 @@ void mGLWidget::draw() {
             this->scene->captureFrame(captured_img);
 //            mVTools::drawLines(captured_img, labels_2d);
             int cur_frame_num = this->mocap_data->getCurFrame();
-            emit saveCapturedFrameSignal(captured_img, labels_2d, labels_3d, cur_frame_num, this->cur_capture_sum);
+            emit saveCapturedFrameSignal(captured_img, cur_frame_num, this->cur_capture_sum);
+            emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, this->cur_capture_sum, false);
+            if (this->is_ar) {
+                emit saveCapturedLabelSignal(labels_2d_raw, labels_3d_raw, cur_frame_num, this->cur_capture_sum, true);
+            }
             this->cur_capture_sum++;
             return;
         }

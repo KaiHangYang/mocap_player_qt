@@ -28,7 +28,8 @@ public:
         this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length, mPoseDef::bones_length_index, mPoseDef::bones_indices,mPoseDef::bones_cal_rank);
     }
     ~mMoCapData(){}
-    bool getOneFrame(std::vector<glm::vec3> & joints, float pose_change_size=0.f, int index=-1);
+    // joints is the adjusted joints, the raw_joints is the raw_joints
+    bool getOneFrame(std::vector<glm::vec3> &joints, std::vector<glm::vec3> &raw_joints, float pose_change_size=0.f, int index=-1);
 //    bool getOneFrame(std::vector<glm::vec3> & joints, glm::mat4 cam_ex_mat, float pose_change_size=0.f, int index=-1);
     void resetCounter();
     void setFramePos(int frame_num);

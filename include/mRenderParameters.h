@@ -15,8 +15,10 @@
 /******************************************************************/
 
 /********************* Window parameters ***********************/
-static int mWindowWidth = 2048;
-static int mWindowHeight = 2048;
+//static int mWindowWidth = 2048;
+//static int mWindowHeight = 2048;
+static int mWindowWidth = 960;
+static int mWindowHeight = 720;
 /******************************************************************/
 
 
@@ -25,7 +27,7 @@ static int mWindowHeight = 2048;
 
 /*** AR MODE ***/
 //#ifdef M_AR_MODE
-static bool m_is_ar = true;
+//static bool m_is_ar = true;
 //static glm::mat4 m_cam_in_mat = glm::mat4({1500.172, 0, mWindowWidth / 2.f, 0, 0, 1500.837, mWindowHeight / 2.f, 0, 0, 0, 1, 0, 0, 0, 0, 1});
 //static glm::mat4 m_cam_ex_mat = glm::mat4({0.000575281, 0.06160985, -0.9981001, 221.3543, 0.2082146, -0.9762325, -0.06013997, 659.87, -0.978083, -0.2077844, -0.01338968, 3644.688, 0,
 //                              0, 0, 1});
@@ -50,15 +52,15 @@ static bool m_is_ar = true;
 //// camera 8
 //static glm::mat4 m_cam_in_mat = glm::mat4({1500.172, 0, 1017.387, 0, 0, 1500.837, 1043.032, 0, 0, 0, 1, 0, 0, 0, 0, 1});
 //static glm::mat4 m_cam_ex_mat = glm::mat4({0.000575281, 0.06160985, -0.9981001, 221.3543, 0.2082146, -0.9762325, -0.06013997, 659.87, -0.978083, -0.2077844, -0.01338968, 3644.688, 0, 0, 0, 1});
-// camera 9
-static glm::mat4 m_cam_in_mat = glm::mat4({1501.554, 0, 1010.423, 0, 0, 1501.9, 1037.096, 0, 0, 0, 1, 0, 0, 0, 0, 1});
-static glm::mat4 m_cam_ex_mat = glm::mat4({0.04176839, 0.00780962, -0.9990969, 388.6217, 0.5555364, -0.831324, 0.01672664, 137.5452, -0.8304425, -0.5557333, -0.03906159, 4216.635, 0, 0, 0, 1});
+//// camera 9
+//static glm::mat4 m_cam_in_mat = glm::mat4({1501.554, 0, 1010.423, 0, 0, 1501.9, 1037.096, 0, 0, 0, 1, 0, 0, 0, 0, 1});
+//static glm::mat4 m_cam_ex_mat = glm::mat4({0.04176839, 0.00780962, -0.9990969, 388.6217, 0.5555364, -0.831324, 0.01672664, 137.5452, -0.8304425, -0.5557333, -0.03906159, 4216.635, 0, 0, 0, 1});
 /***************/
 //#else
 /*** Normal Mode ***/
-//static bool m_is_ar = false;
-//static glm::mat4 m_cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)mWindowWidth / mWindowHeight, 0.01f, 1000000.f));
-//static glm::mat4 m_cam_ex_mat = glm::transpose(glm::lookAt(glm::vec3(0, 10.f, 300.f), glm::vec3(0, 10.f, 0), glm::vec3(0, 1, 0)));
+static bool m_is_ar = false;
+static glm::mat4 m_cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)mWindowWidth / mWindowHeight, 0.01f, 1000000.f));
+static glm::mat4 m_cam_ex_mat = glm::transpose(glm::lookAt(glm::vec3(0, 10.f, 300.f), glm::vec3(0, 10.f, 0), glm::vec3(0, 1, 0)));
 /*******************/
 //#endif
 /******************************************************************/

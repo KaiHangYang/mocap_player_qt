@@ -56,13 +56,13 @@ void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, 
         }
         // Adjust the bone length
         raw_bone_length[7]; // spin
-        raw_bone_length[0] = 0.3829370249427575 * raw_bone_length[7]; // head
-        raw_bone_length[1] = raw_bone_length[4] = (raw_bone_length[1] + raw_bone_length[4]) / 2.0;
-        raw_bone_length[2] = raw_bone_length[5] = (raw_bone_length[2] + raw_bone_length[5]) / 2.0;
-        raw_bone_length[3] = raw_bone_length[6] = (raw_bone_length[3] + raw_bone_length[6]) / 2.0;
-        raw_bone_length[8] = raw_bone_length[11] = (raw_bone_length[8] + raw_bone_length[11]) / 2.0;
-        raw_bone_length[9] = raw_bone_length[12] = (raw_bone_length[9] + raw_bone_length[12]) / 2.0;
-        raw_bone_length[10] = raw_bone_length[13] = (raw_bone_length[10] + raw_bone_length[13]) / 2.0;
+        raw_bone_length[0] = 0.3829370249427575 * raw_bone_length[7]; // only change the head now
+//        raw_bone_length[1] = raw_bone_length[4] = (raw_bone_length[1] + raw_bone_length[4]) / 2.0;
+//        raw_bone_length[2] = raw_bone_length[5] = (raw_bone_length[2] + raw_bone_length[5]) / 2.0;
+//        raw_bone_length[3] = raw_bone_length[6] = (raw_bone_length[3] + raw_bone_length[6]) / 2.0;
+//        raw_bone_length[8] = raw_bone_length[11] = (raw_bone_length[8] + raw_bone_length[11]) / 2.0;
+//        raw_bone_length[9] = raw_bone_length[12] = (raw_bone_length[9] + raw_bone_length[12]) / 2.0;
+//        raw_bone_length[10] = raw_bone_length[13] = (raw_bone_length[10] + raw_bone_length[13]) / 2.0;
 
         for (int i = 0; i < this->pose_bones_cal_rank.size(); ++i) {
             int cur_bone_index = this->pose_bones_cal_rank[i];

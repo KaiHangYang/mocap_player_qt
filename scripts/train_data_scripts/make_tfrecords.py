@@ -107,7 +107,7 @@ if __name__ == "__main__":
     train_dir_lists = [os.path.join(train_data_path, i) for i in train_dataset_list]
     test_dir_lists = [os.path.join(test_data_path, i) for i in valid_dataset_list]
 
-    reader = data_reader.mDataReader()
+    reader = data_reader.mDataReader(is_ar)
 
     # generate train data
     train_data_sum = 0
@@ -117,15 +117,22 @@ if __name__ == "__main__":
         for cur_camera in range(camera_num):
             reader.reset()
             while reader.cur_frame_index < reader.total_frame_num:
-                is_valid, img_path, labels = reader.getOneData(camera_num = cur_camera)
+                is_valid, img_path, labels, labels_raw = reader.getOneData(camera_num = cur_camera)
                 img = cv2.imread(img_path)
+
+                if is_ar:
+                    labels_2d_raw = labels_raw[0]
+                else:
+                    labels_2d_raw = labels[0]
 
                 labels_2d = labels[0]
                 labels_3d = labels[1]
 
                 # labels_3d[:, 1:3] = -1 * labels_3d[:, 1:3] # TODO This is the temporary
 
-                img, labels_2d, _, _, _ = data_resize_with_cropped(img, labels_2d)
+                img, labels_2d_raw, offset, scale, _ = data_resize_with_cropped(img, labels_2d_raw)
+                labels_2d -= offset[0:2]
+                labels_2d /= scale
 
                 example = tf.train.Example(features=tf.train.Features(
                     feature={
@@ -148,12 +155,20 @@ if __name__ == "__main__":
         for cur_camera in range(camera_num):
             reader.reset()
             while reader.cur_frame_index < reader.total_frame_num:
-                is_valid, img_path, labels = reader.getOneData(camera_num = cur_camera)
+                is_valid, img_path, labels, labels_raw = reader.getOneData(camera_num = cur_camera)
                 img = cv2.imread(img_path)
+
+                if is_ar:
+                    labels_2d_raw = labels_raw[0]
+                else:
+                    labels_2d_raw = labels[0]
 
                 labels_2d = labels[0]
                 labels_3d = labels[1]
-                img, labels_2d, _, _, _ = data_resize_with_cropped(img, labels_2d)
+                img, labels_2d_raw, offset, scale, _ = data_resize_with_cropped(img, labels_2d_raw)
+
+                labels_2d -= offset[0:2]
+                labels_2d /= scale
 
                 example = tf.train.Example(features=tf.train.Features(
                     feature={

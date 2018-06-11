@@ -6,6 +6,9 @@ import struct
 
 ##### Currently I only get the points of camera 8 #####
 
+# 4 is the unive 3d points, 3 is the normal 3d points
+type_3d_points = 3
+
 class MPISelectedTransfer():
     def __init__(self):
         # Currently use the lower neck point as neck point
@@ -43,31 +46,31 @@ class MPISelectedTransfer():
             cur_video_name = "video%d" % camera_num
             cur_video_labels = cur_datas[cur_video_name]
 
-            cur_labels_3du_train = []
+            cur_labels_3d_train = []
             cur_labels_2d_train = []
 
-            cur_labels_3du_valid = []
+            cur_labels_3d_valid = []
             cur_labels_2d_valid = []
 
-            # Now only save the joints_2d and the joints_3du
+            # Now only save the joints_2d and the joints_3d
             for cur_label in cur_video_labels:
                 tmp_label_2d = cur_label[2].copy()
-                tmp_label_3du = []
+                tmp_label_3d = []
 
                 for cur_point_index in range(cur_label[2].shape[0]):
-                    tmp_label_3du.append(np.dot(self.cam_ex_mat_invs[camera_num_index], np.concatenate([cur_label[4][cur_point_index], [1.0]], 0))[0:3])
+                    tmp_label_3d.append(np.dot(self.cam_ex_mat_invs[camera_num_index], np.concatenate([cur_label[type_3d_points][cur_point_index], [1.0]], 0))[0:3])
 
                 if cur_label[0][3]:
                     cur_labels_2d_train.append(tmp_label_2d)
-                    cur_labels_3du_train.append(np.array(tmp_label_3du))
+                    cur_labels_3d_train.append(np.array(tmp_label_3d))
                 else:
                     cur_labels_2d_valid.append(tmp_label_2d)
-                    cur_labels_3du_valid.append(np.array(tmp_label_3du))
+                    cur_labels_3d_valid.append(np.array(tmp_label_3d))
 
-            cur_labels_3du_train = np.array(cur_labels_3du_train, dtype=np.float32)
+            cur_labels_3d_train = np.array(cur_labels_3d_train, dtype=np.float32)
             cur_labels_2d_train = np.array(cur_labels_2d_train, dtype=np.float32)
 
-            cur_labels_3du_valid = np.array(cur_labels_3du_valid, dtype=np.float32)
+            cur_labels_3d_valid = np.array(cur_labels_3d_valid, dtype=np.float32)
             cur_labels_2d_valid = np.array(cur_labels_2d_valid, dtype=np.float32)
 
             f_train = open(save_path_train, "wb")
@@ -75,19 +78,19 @@ class MPISelectedTransfer():
 
 
             # Save the training data
-            total_frame_sum_train = cur_labels_3du_train.shape[0]
+            total_frame_sum_train = cur_labels_3d_train.shape[0]
 
             joints_2d_train = cur_labels_2d_train.flatten().tolist()
-            joints_3d_train = cur_labels_3du_train.flatten().tolist()
+            joints_3d_train = cur_labels_3d_train.flatten().tolist()
             f_train.write(struct.pack("i", total_frame_sum_train))
             f_train.write(struct.pack("%df" % len(joints_2d_train), *joints_2d_train))
             f_train.write(struct.pack("%df" % len(joints_3d_train), *joints_3d_train))
 
             # Save the valid data
-            total_frame_sum_valid = cur_labels_3du_valid.shape[0]
+            total_frame_sum_valid = cur_labels_3d_valid.shape[0]
 
             joints_2d_valid = cur_labels_2d_valid.flatten().tolist()
-            joints_3d_valid = cur_labels_3du_valid.flatten().tolist()
+            joints_3d_valid = cur_labels_3d_valid.flatten().tolist()
             f_valid.write(struct.pack("i", total_frame_sum_valid))
             f_valid.write(struct.pack("%df" % len(joints_2d_valid), *joints_2d_valid))
             f_valid.write(struct.pack("%df" % len(joints_3d_valid), *joints_3d_valid))
@@ -97,11 +100,11 @@ class MPISelectedTransfer():
 
             # Check the train data
             saved_joints2d, saved_joints3d = self.read(save_path_train)
-            assert((saved_joints2d == cur_labels_2d_train).all() and (saved_joints3d == cur_labels_3du_train).all())
+            assert((saved_joints2d == cur_labels_2d_train).all() and (saved_joints3d == cur_labels_3d_train).all())
 
             # Check the valid data
             saved_joints2d, saved_joints3d = self.read(save_path_valid)
-            assert((saved_joints2d == cur_labels_2d_valid).all() and (saved_joints3d == cur_labels_3du_valid).all())
+            assert((saved_joints2d == cur_labels_2d_valid).all() and (saved_joints3d == cur_labels_3d_valid).all())
 
     def read(self, data_path):
         with open(data_path, "rb") as f:

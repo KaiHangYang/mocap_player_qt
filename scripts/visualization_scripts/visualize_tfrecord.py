@@ -81,12 +81,17 @@ def cv_mouse_callback(event, x, y, flags, ustc):
         cv2.imshow("value show", text_show)
         # cv2.waitKey(2)
 
+
+
 if __name__ == "__main__":
 
     input_img_size = 368
     wndWidth = int(input_img_size)
     wndHeight = int(input_img_size)
 
+    total_train_count = 41562
+    total_valid_count = 8364
+    total_frames = total_valid_count
     tfrecord_file = "/home/kaihang/DataSet/sfu_tfrecords/sfu_train.tfrecords"
     # tfrecord_file = "/home/kaihang/DataSet/mpi_tfrecords/mpi_train.tfrecords"
     ################################ Init tfrecord valider ##################################
@@ -114,7 +119,14 @@ if __name__ == "__main__":
     ####################################################################################
 
     frame_count = 0
-    while not app.windowShouldClose():
+    max_x = -100000
+    min_x = 100000
+    max_y = -100000
+    min_y = 100000
+    max_z = -100000
+    min_z = 100000
+
+    while not app.windowShouldClose() and frame_count < total_frames:
         # time.sleep(0.05)
         app.renderStart()
         ###################### handle the rotate event##################
@@ -147,14 +159,42 @@ if __name__ == "__main__":
         if not keep_still:
 
             img, points_2d, points_3d = dataset_reader.get_frame()
+            bones_length = np.zeros([14])
 
-            spin_len = np.linalg.norm(points_3d[1] - points_3d[14])
-            upper_leg_len_1 = np.linalg.norm(points_3d[8] - points_3d[9])
-            upper_leg_len_2 = np.linalg.norm(points_3d[11] - points_3d[12])
-            lower_leg_len_1 = np.linalg.norm(points_3d[9] - points_3d[10])
-            lower_leg_len_2 = np.linalg.norm(points_3d[12] - points_3d[13])
+            bones_length[0] = np.linalg.norm(points_3d[0] - points_3d[1])
 
-            print(spin_len, upper_leg_len_1, upper_leg_len_2, lower_leg_len_1, lower_leg_len_2)
+            bones_length[1] = np.linalg.norm(points_3d[1] - points_3d[2])
+            bones_length[2] = np.linalg.norm(points_3d[2] - points_3d[3])
+            bones_length[3] = np.linalg.norm(points_3d[3] - points_3d[4])
+
+            bones_length[4] = np.linalg.norm(points_3d[1] - points_3d[5])
+            bones_length[5] = np.linalg.norm(points_3d[5] - points_3d[6])
+            bones_length[6] = np.linalg.norm(points_3d[6] - points_3d[7])
+
+            bones_length[7] = np.linalg.norm(points_3d[1] - points_3d[14])
+
+            bones_length[8] = np.linalg.norm(points_3d[14] - points_3d[8])
+            bones_length[9] = np.linalg.norm(points_3d[8] - points_3d[9])
+            bones_length[10] = np.linalg.norm(points_3d[9] - points_3d[10])
+
+            bones_length[11] = np.linalg.norm(points_3d[14] - points_3d[11])
+            bones_length[12] = np.linalg.norm(points_3d[11] - points_3d[12])
+            bones_length[13] = np.linalg.norm(points_3d[12] - points_3d[13])
+
+            print(bones_length)
+
+            # spin_len = np.linalg.norm(points_3d[1] - points_3d[14])
+            min_x = min(np.min(points_3d[:, 0]), min_x)
+            max_x = max(np.max(points_3d[:, 0]), max_x)
+
+            min_y = min(np.min(points_3d[:, 1]), min_y)
+            max_y = max(np.max(points_3d[:, 1]), max_y)
+
+            min_z = min(np.min(points_3d[:, 2]), min_z)
+            max_z = max(np.max(points_3d[:, 2]), max_z)
+
+            print(frame_count, (min_x, max_x), (min_y, max_y), (min_z, max_z))
+            # print(points_3d)
 
             img = display_utils.drawLines(img, points_2d)
             img = display_utils.drawPoints(img, points_2d)
@@ -163,11 +203,11 @@ if __name__ == "__main__":
 
             points_3d += [0, 0, 3000]
         ###################################################################################
+
         mpose_model.draw(points_3d)
         cam_scene.drawFrame(img)
 
         app.renderEnd()
-
         if reset_rotate:
             reset_rotate = False
             mpose_model.rotate(reset=True)

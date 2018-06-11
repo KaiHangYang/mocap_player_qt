@@ -116,6 +116,7 @@ if __name__ == "__main__":
     ####################################################################################
 
     frame_count = 0
+    per_loss = 0
     while not app.windowShouldClose():
         # time.sleep(0.05)
         app.renderStart()
@@ -151,13 +152,18 @@ if __name__ == "__main__":
             mocap_img, mocap_points_2d, mocap_points_3d = mocap_dataset_reader.get_frame()
             real_img, real_points_2d, real_points_3d = real_dataset_reader.get_frame()
 
+            frame_count += 1
+
             mocap_img = display_utils.drawLines(mocap_img, mocap_points_2d)
             mocap_img = display_utils.drawPoints(mocap_img, mocap_points_2d)
 
             real_img = display_utils.drawLines(real_img, real_points_2d)
             real_img = display_utils.drawPoints(real_img, real_points_2d)
 
-            frame_count += 1
+            cur_frame_loss = np.mean(np.abs(mocap_points_2d[1:15] - real_points_2d[1:15]))
+            per_loss = (cur_frame_loss + per_loss * (frame_count - 1)) / frame_count
+            print(frame_count, per_loss, cur_frame_loss)
+
             real_points_3d[:] -= real_points_3d[14]
 
             scale_ratio = mocap_points_3d[0:14] / real_points_3d[0:14]
@@ -168,8 +174,9 @@ if __name__ == "__main__":
             mocap_points_3d += [0, 0, 3000]
             real_points_3d += [0, 0, 3000]
 
-            print("Mocap data:", mocap_points_3d)
-            print("Real data:", real_points_3d)
+
+            # print("Mocap data:", mocap_points_3d)
+            # print("Real data:", real_points_3d)
         ###################################################################################
         mpose_model.draw(real_points_3d - [500, 0, 0])
         mpose_model.draw(mocap_points_3d + [500, 0, 0])

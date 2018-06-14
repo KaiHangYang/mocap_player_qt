@@ -31,6 +31,7 @@ public:
     glm::vec3 getCurFollowVec();
     void setCurFollowVec(glm::vec3 cur_follow_vec);
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
+    void getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras);
     void setFollowDefault();
 
     void getLabelsFromFrame(const std::vector<glm::vec3> &joints, const glm::mat4 &view_mat, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);

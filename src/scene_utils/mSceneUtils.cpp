@@ -345,14 +345,44 @@ void mSceneUtils::setFloor(bool is_with_floor) {
     this->is_with_floor = is_with_floor;
 }
 
+void mSceneUtils::getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras) {
+    splitted_cameras.clear();
+
+    glm::mat4 tmp_ex_r_mat(this->cur_cam_ex_r_mat);
+    glm::mat4 tmp_ex_t_mat(1.0);
+
+    glm::vec3 cur_cam_pos(-this->cur_cam_ex_t_mat[3][0], -this->cur_cam_ex_t_mat[3][1], -this->cur_cam_ex_t_mat[3][2]);
+    glm::vec3 splitted_center(this->person_center_pos.x, cur_cam_pos.y, this->person_center_pos.z);
+    float per_angle = 2 * 3.1415927 / camera_num;
+    glm::vec3 cur_vec = glm::normalize(cur_cam_pos - splitted_center);
+    float cur_r = glm::length(splitted_center - cur_cam_pos);
+    glm::mat4 rotate_mat = glm::rotate(glm::mat4(1.f), per_angle, glm::vec3(0, 1, 0));
+    for (int i = 0; i < camera_num; ++i) {
+        cur_vec = glm::vec3(rotate_mat * glm::vec4(cur_vec, 1.f)); // New camera position
+        glm::vec4 cur_axis_x(tmp_ex_r_mat[0][0], tmp_ex_r_mat[1][0], tmp_ex_r_mat[2][0], 1.0);
+        glm::vec4 cur_axis_y(tmp_ex_r_mat[0][1], tmp_ex_r_mat[1][1], tmp_ex_r_mat[2][1], 1.0);
+        glm::vec4 cur_axis_z(tmp_ex_r_mat[0][2], tmp_ex_r_mat[1][2], tmp_ex_r_mat[2][2], 1.0);
+        cur_axis_x = rotate_mat * cur_axis_x;
+        cur_axis_y = rotate_mat * cur_axis_y;
+        cur_axis_z = rotate_mat * cur_axis_z;
+        tmp_ex_r_mat[0][0] = cur_axis_x.x; tmp_ex_r_mat[1][0] = cur_axis_x.y; tmp_ex_r_mat[2][0] = cur_axis_x.z;
+        tmp_ex_r_mat[0][1] = cur_axis_y.x; tmp_ex_r_mat[1][1] = cur_axis_y.y; tmp_ex_r_mat[2][1] = cur_axis_y.z;
+        tmp_ex_r_mat[0][2] = cur_axis_z.x; tmp_ex_r_mat[1][2] = cur_axis_z.y; tmp_ex_r_mat[2][2] = cur_axis_z.z;
+
+        cur_cam_pos = splitted_center + cur_r * cur_vec;
+        tmp_ex_t_mat[3] = glm::vec4(-cur_cam_pos.x, -cur_cam_pos.y, -cur_cam_pos.z, 1.0);
+        splitted_cameras.push_back(tmp_ex_r_mat * tmp_ex_t_mat);
+    }
+}
+
 void mSceneUtils::getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras) {
     splitted_cameras.clear();
     glm::vec3 cur_cam_pos(-this->cur_cam_ex_t_mat[3][0], -this->cur_cam_ex_t_mat[3][1], -this->cur_cam_ex_t_mat[3][2]);
-    glm::vec3 splitted_center(this->person_center_pos.x, cur_cam_pos.y, this->person_center_pos.z);
+    glm::vec3 splitted_center(this->person_center_pos.x, this->person_center_pos.y, this->person_center_pos.z);
 
     float per_angle = 2*3.1415927 / camera_num;
     glm::vec3 cur_vec = glm::normalize(cur_cam_pos - splitted_center);
-    float cur_r = glm::length(splitted_center - cur_cam_pos);
+    float cmolokaiur_r = glm::length(splitted_center - cur_cam_pos);
     glm::mat4 rotate_mat = glm::rotate(glm::mat4(1.f), per_angle, glm::vec3(0, 1, 0));
     for (int i = 0; i < camera_num; ++i) {
         cur_vec = glm::vec3(rotate_mat * glm::vec4(cur_vec, 1.0));

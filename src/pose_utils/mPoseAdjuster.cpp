@@ -9,6 +9,7 @@
 mPoseAdjuster::mPoseAdjuster(const std::vector<float> & bones_length, const std::vector<unsigned int> & bones_length_index, const std::vector<glm::u32vec2> & bones_indices, const std::vector<unsigned int> bones_cal_rank): pose_bones_length(bones_length), pose_bones_indices(bones_indices), pose_bones_cal_rank(bones_cal_rank), pose_bones_length_index(bones_length_index) {
     this->rand_gen = QRandomGenerator::system();
     this->pose_jitter_bones_length = this->pose_bones_length;
+    this->jitter_range = 0;
 }
 mPoseAdjuster::~mPoseAdjuster() {}
 
@@ -20,17 +21,11 @@ void mPoseAdjuster::setBonesLengthJitters(float jitter_size) {
     }
 }
 
-void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, bool with_jitters) {
+void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, float jitter_range) {
 
     std::vector<glm::vec3> bones_vec_arr(this->pose_bones_indices.size());
     std::vector<float> cur_bones_length;
-
-    if (with_jitters) {
-        cur_bones_length = this->pose_jitter_bones_length;
-    }
-    else {
-        cur_bones_length = this->pose_bones_length;
-    }
+    cur_bones_length = this->pose_bones_length;
 
     // TODO: Waiting for implementation for the adjustor!!!!!!!!!!
     /************************** My way to calculate the bones *****************************/
@@ -55,14 +50,14 @@ void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, 
             raw_bone_length[i] = glm::length(joints[cur_bone.x] - joints[cur_bone.y]);
         }
         // Adjust the bone length
-        raw_bone_length[7]; // spin
-        raw_bone_length[0] = 0.3829370249427575 * raw_bone_length[7]; // only change the head now
-//        raw_bone_length[1] = raw_bone_length[4] = (raw_bone_length[1] + raw_bone_length[4]) / 2.0;
-//        raw_bone_length[2] = raw_bone_length[5] = (raw_bone_length[2] + raw_bone_length[5]) / 2.0;
-//        raw_bone_length[3] = raw_bone_length[6] = (raw_bone_length[3] + raw_bone_length[6]) / 2.0;
-//        raw_bone_length[8] = raw_bone_length[11] = (raw_bone_length[8] + raw_bone_length[11]) / 2.0;
-//        raw_bone_length[9] = raw_bone_length[12] = (raw_bone_length[9] + raw_bone_length[12]) / 2.0;
-//        raw_bone_length[10] = raw_bone_length[13] = (raw_bone_length[10] + raw_bone_length[13]) / 2.0;
+        raw_bone_length[7] = raw_bone_length[7] * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1)); // spin
+        raw_bone_length[0] = (0.3829370249427575 * raw_bone_length[7]) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1)); // only change the head now
+        raw_bone_length[1] = raw_bone_length[4] = ((raw_bone_length[1] + raw_bone_length[4]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
+        raw_bone_length[2] = raw_bone_length[5] = ((raw_bone_length[2] + raw_bone_length[5]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
+        raw_bone_length[3] = raw_bone_length[6] = ((raw_bone_length[3] + raw_bone_length[6]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
+        raw_bone_length[8] = raw_bone_length[11] = ((raw_bone_length[8] + raw_bone_length[11]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
+        raw_bone_length[9] = raw_bone_length[12] = ((raw_bone_length[9] + raw_bone_length[12]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
+        raw_bone_length[10] = raw_bone_length[13] = ((raw_bone_length[10] + raw_bone_length[13]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
 
         for (int i = 0; i < this->pose_bones_cal_rank.size(); ++i) {
             int cur_bone_index = this->pose_bones_cal_rank[i];

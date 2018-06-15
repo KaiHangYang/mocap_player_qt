@@ -36,6 +36,7 @@ public:
     void resetCapture();
     void stopCapture();
     void setPoseChangeStep(float change_step);
+    void setJitter(float jitter_size);
 
 public slots:
     void changePoseFile(QString & file_name, int cur_dataset_num);
@@ -87,6 +88,7 @@ private:
     std::vector<glm::vec3> cur_pose_joints;
     std::vector<glm::vec3> cur_pose_joints_raw;
     float pose_change_step;
+    float pose_jitter_range;
     /************************************************/
 
     /**************** Progress control **************/

@@ -12,7 +12,7 @@ bool mMoCapData::getJoints(std::vector<glm::vec3> &joints, int frame_index) {
     }
 }
 
-bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, std::vector<glm::vec3> &raw_joints, float pose_change_size, int index) {
+bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, std::vector<glm::vec3> &raw_joints, float pose_change_size, float jitter_range, int index) {
 
     if (this->cur_frame_num >= this->total_frame_num) {
         // The data is not valid
@@ -26,14 +26,14 @@ bool mMoCapData::getOneFrame(std::vector<glm::vec3> &joints, std::vector<glm::ve
         frame_index = index;
         this->getJoints(joints, frame_index);
         raw_joints = joints;
-        this->pose_adjuster->adjustAccordingToBoneLength(joints, this->is_use_jitters);
+        this->pose_adjuster->adjustAccordingToBoneLength(joints, jitter_range);
         return true;
     }
     else {
         do {
             this->getJoints(joints, frame_index);
             raw_joints = joints;
-            this->pose_adjuster->adjustAccordingToBoneLength(joints, this->is_use_jitters);
+            this->pose_adjuster->adjustAccordingToBoneLength(joints, jitter_range);
             this->cur_frame_num++;
             frame_index = this->cur_frame_num;
         } while (this->calMaxChange(this->prev_choosed_data, joints) < pose_change_size && this->cur_frame_num < this->total_frame_num);

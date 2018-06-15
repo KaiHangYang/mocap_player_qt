@@ -382,7 +382,7 @@ void mSceneUtils::getSplittedCameras(int camera_num, std::vector<glm::vec3> &spl
 
     float per_angle = 2*3.1415927 / camera_num;
     glm::vec3 cur_vec = glm::normalize(cur_cam_pos - splitted_center);
-    float cmolokaiur_r = glm::length(splitted_center - cur_cam_pos);
+    float cur_r = glm::length(splitted_center - cur_cam_pos);
     glm::mat4 rotate_mat = glm::rotate(glm::mat4(1.f), per_angle, glm::vec3(0, 1, 0));
     for (int i = 0; i < camera_num; ++i) {
         cur_vec = glm::vec3(rotate_mat * glm::vec4(cur_vec, 1.0));

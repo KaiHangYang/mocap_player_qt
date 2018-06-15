@@ -89,10 +89,10 @@ if __name__ == "__main__":
     wndWidth = int(input_img_size)
     wndHeight = int(input_img_size)
 
-    total_train_count = 41562
-    total_valid_count = 8364
-    total_frames = total_valid_count
-    tfrecord_file = "/home/kaihang/DataSet/sfu_tfrecords/sfu_train.tfrecords"
+    total_train_count = 14000
+    total_valid_count = 1400
+    total_frames = total_train_count
+    tfrecord_file = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/tfrecords/train/mpi_train.tfrecords"
     # tfrecord_file = "/home/kaihang/DataSet/mpi_tfrecords/mpi_train.tfrecords"
     ################################ Init tfrecord valider ##################################
     dataset_reader = data_valid.DataValid(tfrecord_file)

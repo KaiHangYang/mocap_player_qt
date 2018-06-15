@@ -1020,6 +1020,7 @@ void mMainWindow::poseSetJitterSize() {
             if (jitter_size == 0) {
                 this->tool_pose_jitter_size_input->setText("0");
             }
+            this->gl_widget->setJitter(jitter_size);
             //
             return;
         }

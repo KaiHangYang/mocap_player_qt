@@ -60,12 +60,22 @@ class MPISelectedTransfer():
                 for cur_point_index in range(cur_label[2].shape[0]):
                     tmp_label_3d.append(np.dot(self.cam_ex_mat_invs[camera_num_index], np.concatenate([cur_label[type_3d_points][cur_point_index], [1.0]], 0))[0:3])
 
-                if cur_label[0][3]:
+                # The code below: train or valid is decided by the flag set in the last stage
+                # if cur_label[0][3]:
+                    # cur_labels_2d_train.append(tmp_label_2d)
+                    # cur_labels_3d_train.append(np.array(tmp_label_3d))
+                # else:
+                    # cur_labels_2d_valid.append(tmp_label_2d)
+                    # cur_labels_3d_valid.append(np.array(tmp_label_3d))
+
+                # The code below: train or valid is decided by the person 
+                if cur_label[0][0] in ["obj3", "obj4", "obj5", "obj6", "obj7", "obj8"]:
                     cur_labels_2d_train.append(tmp_label_2d)
                     cur_labels_3d_train.append(np.array(tmp_label_3d))
                 else:
                     cur_labels_2d_valid.append(tmp_label_2d)
                     cur_labels_3d_valid.append(np.array(tmp_label_3d))
+
 
             cur_labels_3d_train = np.array(cur_labels_3d_train, dtype=np.float32)
             cur_labels_2d_train = np.array(cur_labels_2d_train, dtype=np.float32)
@@ -122,5 +132,5 @@ class MPISelectedTransfer():
 
 if __name__ == "__main__":
     transfer = MPISelectedTransfer()
-    transfer.parse("/home/kaihang/DataSet/cropped_mpi_data/combined.npy", "/home/kaihang/Desktop/test_dir")
+    transfer.parse("/home/kaihang/DataSet/cropped_mpi_data/combined.npy", "/home/kaihang/Desktop/mpi_mocap_data")
     # data_2d, data_3d = transfer.read("/home/kaihang/Desktop/test_dir/3.mpi")

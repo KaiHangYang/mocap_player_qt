@@ -89,11 +89,14 @@ if __name__ == "__main__":
     else:
         camera_num = 6
 
-    train_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/train"
-    test_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/valid"
+    # train_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/train"
+    # test_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/valid"
 
-    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/mpi_mocap/tfrecords/mpi_train.tfrecords")
-    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/mpi_mocap/tfrecords/mpi_test.tfrecords")
+    train_data_path = "/home/kaihang/Desktop/mpi_mocap_result/train"
+    test_data_path = "/home/kaihang/Desktop/mpi_mocap_result/valid"
+
+    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/mpi_mocap/tfrecords/mpi_train-8-0.tfrecords")
+    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/mpi_mocap/tfrecords/mpi_test-8-0.tfrecords")
 
     train_dataset_list = os.listdir(train_data_path)
     valid_dataset_list = os.listdir(test_data_path)

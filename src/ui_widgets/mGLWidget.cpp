@@ -302,7 +302,7 @@ void mGLWidget::draw() {
     if (this->pose_state == 1 && this->temp_pose_state == 1) {
         this->sendProgress(false);
         std::vector<glm::vec3> tmp_pose_joints;
-        bool result = this->mocap_data->getOneFrame(tmp_pose_joints, this->cur_pose_joints_raw, this->pose_change_step);
+        bool result = this->mocap_data->getOneFrame(tmp_pose_joints, this->cur_pose_joints_raw, this->pose_change_step, this->pose_jitter_range);
         if (!result) {
             // read finished then read the next file
             emit changePoseFileSignal();

@@ -24,6 +24,7 @@ class MPISelectedTransfer():
         self.cam_ex_mat_invs.append(np.linalg.inv(np.reshape([0.04176839, 0.00780962, -0.9990969, 388.6217, 0.5555364, -0.831324, 0.01672664, 137.5452, -0.8304425, -0.5557333, -0.03906159, 4216.635, 0, 0, 0, 1], [4, 4])))
 
         self.camera_nums = [0, 1, 2, 3, 4, 7, 8, 9]
+        # self.camera_nums = [8]
         self.cur_joint_num = 15
 
     def parse(self, npy_path, save_dir):
@@ -39,6 +40,9 @@ class MPISelectedTransfer():
 
         for camera_num_index in range(len(self.camera_nums)):
             camera_num = self.camera_nums[camera_num_index]
+
+            if camera_num != 8:
+                continue
 
             save_path_train = os.path.join(save_dir, "%d-train.mpi" % camera_num)
             save_path_valid = os.path.join(save_dir, "%d-valid.mpi" % camera_num)

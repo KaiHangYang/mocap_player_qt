@@ -87,8 +87,8 @@ if __name__ == "__main__":
     wndWidth = int(input_img_size)
     wndHeight = int(input_img_size)
 
-    mocap_tfrecord_file = "/home/kaihang/DataSet/mpi_tfrecords/mpi_train.tfrecords"
-    real_tfrecord_file = "/home/kaihang/DataSet/mpi_inf_tfrecord/train_mpi_part.tfrecord"
+    mocap_tfrecord_file = "/home/kaihang/DataSet_2/MocapData/mpi_features/for_combine/mpi_mocap_train.tfrecord"
+    real_tfrecord_file = "/home/kaihang/DataSet_2/MocapData/mpi_features/for_combine/mpi_real_train.tfrecord"
 
     ################################ Init tfrecord valider ##################################
     mocap_dataset_reader = data_valid.DataValid(mocap_tfrecord_file)

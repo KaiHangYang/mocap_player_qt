@@ -15,10 +15,10 @@
 /******************************************************************/
 
 /********************* Window parameters ***********************/
-//static int mWindowWidth = 2048;
-//static int mWindowHeight = 2048;
-static int mWindowWidth = 960;
-static int mWindowHeight = 720;
+static int mWindowWidth = 2048;
+static int mWindowHeight = 2048;
+//static int mWindowWidth = 960;
+//static int mWindowHeight = 720;
 /******************************************************************/
 
 

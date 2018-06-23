@@ -48,6 +48,7 @@ public:
     void captureFrame(cv::Mat & cur_frame);
 
     void setUseShading(bool use_shading);
+    void setVerticalAngle(float angle);
 
 
     // Just for tmp adjust for normal and vr mode

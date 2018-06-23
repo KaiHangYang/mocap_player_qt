@@ -18,6 +18,7 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->file_dialog_extension = "MoCap Files(*.bvh *.mpi *.h36)";
     this->file_dialog_initial_dir = "/home/kaihang/DataSet/MoCap";
     this->camera_data_file_header = std::vector<QString>({"#M_CAMERA_DATA", "#M_CAMERA_FOLLOW_DATA"});
+    this->split_camera_prefix = "splitted_camera";
 
     this->ui->setupUi(this);
     this->setWindowTitle(title);
@@ -213,11 +214,23 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_camera_removeall_btn = new QPushButton("Remove All", this->camera_box);
     this->tool_camera_type_label = new QLabel("Camera Type: ", this->camera_box);
     this->tool_camera_type_combo = new QComboBox(this->camera_box);
-    this->tool_camera_split_horizon = new QPushButton("Split Camera", this->camera_box);
+
+    this->tool_camera_split_prefix_btn = new QPushButton("Set", this->camera_box);
+    this->tool_camera_split_prefix_input = new QLineEdit(this->camera_box);
+    this->tool_camera_split_prefix_input->setText(this->split_camera_prefix);
+    this->tool_camera_split_prefix_label = new QLabel("Split Prefix:", this->camera_box);
+
+    this->tool_camera_split_label = new QLabel("Split Camera:", this->camera_box);
+    this->tool_camera_split_btn = new QPushButton("Split", this->camera_box);
     this->tool_camera_split_num = new QLineEdit(this->camera_box);
-    this->tool_camera_set_parallel = new QPushButton("Default", this->camera_box);
+
     this->tool_camera_split_num->setPlaceholderText("1~100");
     this->tool_camera_split_num->setValidator(new QIntValidator(1, 100, this->camera_box));
+
+    this->tool_camera_vertical_angle_label = new QLabel("Vertical Angle:", this->camera_box);
+    this->tool_camera_vertical_angle_input = new QLineEdit(this->camera_box);
+    this->tool_camera_vertical_angle_input->setPlaceholderText("-90.0~90.0");
+    this->tool_camera_vertical_angle_btn = new QPushButton("Set", this->camera_box);
 
     this->tool_camera_type_combo->addItem("Global");
     this->tool_camera_type_combo->addItem("Follow");
@@ -258,12 +271,19 @@ void mMainWindow::buildToolBoxTab2() {
     this->camera_box_layout->addWidget(this->tool_camera_follow_btn, 2, 0, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_focuson_btn, 2, 1, 1, 1);
 //    this->camera_box_layout->addWidget(this->tool_camera_removeall_btn, 1, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_split_num, 3, 0, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_split_horizon, 3, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_set_parallel, 3, 2, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_listview, 4, 0, 4, 3);
-    this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 8, 1, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 8, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_split_prefix_label, 3, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_split_prefix_input, 3, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_split_prefix_btn, 3, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_split_label, 4, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_split_num, 4, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_split_btn, 4, 2, 1, 1);
+
+    this->camera_box_layout->addWidget(this->tool_camera_vertical_angle_label, 5, 0, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_vertical_angle_input, 5, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_vertical_angle_btn, 5, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_listview, 6, 0, 4, 3);
+    this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 10, 1, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 10, 2, 1, 1);
 
     //      Box for capture control
     this->capture_box = new QGroupBox("Capture Control:", this->tool_box_2);
@@ -333,6 +353,8 @@ void mMainWindow::bindEvents() {
     connect(this->tool_camera_activate_btn, SIGNAL(clicked()), this, SLOT(cameraActivateSlot()));
     connect(this->tool_camera_follow_btn, SIGNAL(clicked()), this, SLOT(cameraFollowSlot()));
     connect(this->tool_camera_focuson_btn, SIGNAL(clicked()), this, SLOT(cameraFocusSlot()));
+    connect(this->tool_camera_vertical_angle_btn, SIGNAL(clicked()), this, SLOT(cameraSetVerticalAngle()));
+    connect(this->tool_camera_split_prefix_btn, SIGNAL(clicked()), this, SLOT(cameraSetSplitPrefix()));
     connect(this->camera_list_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(cameraEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
     connect(this->camera_list_follow_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(cameraEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
     connect(this->tool_camera_loadfromfile_btn, SIGNAL(clicked()), this, SLOT(cameraLoadFromFileSlot()));
@@ -346,14 +368,14 @@ void mMainWindow::bindEvents() {
     connect(this->tool_camera_type_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraTypeChangeSlot(int)));
     connect(this->tool_render_floor_btn, SIGNAL(clicked()), this, SLOT(sceneFloorSlot()));
 
-    connect(this->tool_camera_split_horizon, SIGNAL(clicked()), this, SLOT(cameraSplitCircleSlot()));
-    connect(this->tool_camera_set_parallel, SIGNAL(clicked()), this, SLOT(cameraSetDefaultSlot()));
+    connect(this->tool_camera_split_btn, SIGNAL(clicked()), this, SLOT(cameraSplitCircleSlot()));
     connect(this->gl_widget, SIGNAL(saveCapturedFrameSignal(cv::Mat&,int,int)), this, SLOT(saveFramesSlot(cv::Mat&,int,int)));
     connect(this->gl_widget, SIGNAL(saveCapturedLabelSignal(std::vector<glm::vec2>,std::vector<glm::vec3>,int,int,bool)), this, SLOT(saveLabelsSlot(std::vector<glm::vec2>,std::vector<glm::vec3>,int,int,bool)));
     connect(this->gl_widget, SIGNAL(changePoseFileSignal()), this, SLOT(changeNextPoseSlot()));
     connect(this->tool_pose_change_step_btn, SIGNAL(clicked()), this, SLOT(poseSetChangeSize()));
     connect(this->tool_pose_jitter_size_btn, SIGNAL(clicked()), this, SLOT(poseSetJitterSize()));
     connect(this->tool_render_type_btn, SIGNAL(clicked()), this, SLOT(renderSetUseShading()));
+
 }
 
 
@@ -682,9 +704,15 @@ void mMainWindow::cameraTypeChangeSlot(int index) {
         this->tool_camera_focuson_btn->show();
         this->tool_camera_listview->setModel(this->camera_list_model);
 
-        this->tool_camera_split_horizon->hide();
+        this->tool_camera_split_label->hide();
+        this->tool_camera_split_btn->hide();
         this->tool_camera_split_num->hide();
-        this->tool_camera_set_parallel->hide();
+        this->tool_camera_split_prefix_btn->hide();
+        this->tool_camera_split_prefix_label->hide();
+        this->tool_camera_split_prefix_input->hide();
+        this->tool_camera_vertical_angle_label->hide();
+        this->tool_camera_vertical_angle_input->hide();
+        this->tool_camera_vertical_angle_btn->hide();
     }
     else if (this->cur_camera_type == 1) {
         if (this->gl_widget->getIsHasPose()) {
@@ -693,9 +721,15 @@ void mMainWindow::cameraTypeChangeSlot(int index) {
             this->tool_camera_focuson_btn->hide();
             this->tool_camera_listview->setModel(this->camera_list_follow_model);
 
-            this->tool_camera_split_horizon->show();
+            this->tool_camera_split_label->show();
+            this->tool_camera_split_btn->show();
             this->tool_camera_split_num->show();
-            this->tool_camera_set_parallel->show();
+            this->tool_camera_split_prefix_btn->show();
+            this->tool_camera_split_prefix_label->show();
+            this->tool_camera_split_prefix_input->show();
+            this->tool_camera_vertical_angle_label->show();
+            this->tool_camera_vertical_angle_input->show();
+            this->tool_camera_vertical_angle_btn->show();
         }
         else {
             QMessageBox::critical(this, "Camera Error", "Need a pose in the scene");
@@ -719,7 +753,7 @@ void mMainWindow::cameraSplitCircleSlot() {
         this->camera_list_follow_model->insertRow(cur_row);
         QModelIndex index = this->camera_list_follow_model->index(cur_row);
 
-        this->camera_list_follow_model->setData(index, "splitted camera " + QString::number(i));
+        this->camera_list_follow_model->setData(index, this->split_camera_prefix + QString::number(i));
 
         this->camera_vec_arr.insert(this->camera_vec_arr.begin(), std::pair<QString, glm::vec3>(index.data().toString(), splited_cameras[i]));
 
@@ -728,10 +762,30 @@ void mMainWindow::cameraSplitCircleSlot() {
     }
 }
 
+/*********** May be discarded ************/
 void mMainWindow::cameraSetDefaultSlot() {
     this->gl_widget->setFollowDefault();
 }
 
+void mMainWindow::cameraSetVerticalAngle() {
+    QString val = this->tool_camera_vertical_angle_input->text();
+    if (!val.isEmpty()) {
+        bool ok = true;
+        float angle = val.toFloat(&ok);
+        if (ok && angle < 90 && angle > -90) {
+            this->gl_widget->setVerticalAngle(angle);
+            return;
+        }
+    }
+
+    QMessageBox::critical(this, "Value Error", "Must be a valid float number(-90 ~ 90)!");
+}
+void mMainWindow::cameraSetSplitPrefix() {
+    QString prefix = this->tool_camera_split_prefix_input->text();
+    if (!prefix.isEmpty()) {
+        this->split_camera_prefix = prefix;
+    }
+}
 void mMainWindow::cameraLoadFromFileSlot() {
     QString read_file_name = QFileDialog::getOpenFileName(this, "Load Cameras Data", this->file_dialog_initial_dir, "*");
     if (!read_file_name.isEmpty()) {
@@ -781,7 +835,7 @@ void mMainWindow::cameraLoadFromFileSlot() {
 
             }
             else {
-                qDebug() << "Not a valid camera data file";
+                QMessageBox::critical(this, "File Error", "Not a valid camera data file!");
             }
         }
     }

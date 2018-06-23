@@ -241,6 +241,9 @@ void mGLWidget::setUseShading(bool use_shading) {
 
     this->scene->setUseShading(use_shading);
 }
+void mGLWidget::setVerticalAngle(float angle) {
+    this->scene->setVerticalAngle(angle);
+}
 /*************** Implementation of slots *****************/
 void mGLWidget::changePoseFile(QString & file_name, int cur_dataset_num) {
     if (this->mocap_reader.parse(file_name, cur_dataset_num, this->mocap_data)) {

@@ -287,7 +287,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
                     cur_joint_color = mJointColors[line[1]];
                 }
                 else {
-                    if ((to_camera_coord * glm::vec4(vertexs[line[0]], 1.f)).z > (to_camera_coord * glm::vec4(vertexs[line[1]], 1.f)).z) {
+                    if (std::abs((to_camera_coord * glm::vec4(vertexs[line[0]], 1.f)).z) > std::abs((to_camera_coord * glm::vec4(vertexs[line[1]], 1.f)).z)) {
                         cur_joint_color = glm::vec3(1.f);
                     }
                     else {

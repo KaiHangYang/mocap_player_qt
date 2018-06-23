@@ -38,6 +38,7 @@ public:
     void setPoseChangeStep(float change_step);
     void setJitter(float jitter_size);
     void setUseShading(bool use_shading);
+    void setVerticalAngle(float angle);
 
 public slots:
     void changePoseFile(QString & file_name, int cur_dataset_num);

@@ -396,6 +396,20 @@ void mSceneUtils::getSplittedCameras(int camera_num, std::vector<glm::vec3> &spl
         splitted_cameras.push_back(cur_vec * cur_r);
     }
 }
+// This funciont can only be used in the follow mode
+void mSceneUtils::setVerticalAngle(float angle) {
+    // TODO: Maybe wrong in the ar mode
+    glm::vec3 cur_cam_pos(-this->cur_cam_ex_t_mat[3][0], -this->cur_cam_ex_t_mat[3][1], -this->cur_cam_ex_t_mat[3][2]);
+    glm::vec3 center_to_cam = glm::normalize(cur_cam_pos - this->person_center_pos);
+    glm::vec3 rotate_axis = glm::normalize(glm::cross(center_to_cam, glm::vec3(0, 1, 0)));
+    glm::vec3 raw_vec = glm::normalize(glm::cross(glm::vec3(0, 1, 0), rotate_axis));
+    float length = glm::length(cur_cam_pos - this->person_center_pos);
+
+
+    glm::mat4 rotate_mat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), rotate_axis);
+    raw_vec = glm::vec3(rotate_mat * glm::vec4(raw_vec, 1.f));
+    this->cur_follow_dert = raw_vec * length;
+}
 void mSceneUtils::setFollowDefault() {
     this->cur_follow_dert = glm::vec3(0.f, 0.f, mPoseDef::bones_length[4] * 6);
 }

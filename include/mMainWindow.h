@@ -69,6 +69,8 @@ public slots:
     void cameraTypeChangeSlot(int index);
     void cameraSplitCircleSlot();
     void cameraSetDefaultSlot();
+    void cameraSetVerticalAngle();
+    void cameraSetSplitPrefix();
     void sceneFloorSlot();
     void saveFramesSlot(cv::Mat & frames, int cur_frame, int cur_num);
     void saveLabelsSlot(std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num, bool is_raw);
@@ -117,6 +119,8 @@ private:
     QIcon icon_play;
     QIcon icon_pause;
     QIcon icon_redo;
+
+    QString split_camera_prefix;
     /******** Main widget ******/
     mProgressBarWidget * progress_bar;
     QWidget * grid_widget;
@@ -183,9 +187,18 @@ private:
 
     QLabel * tool_camera_type_label;
     QComboBox * tool_camera_type_combo;
-    QPushButton * tool_camera_split_horizon;
+
+    QLabel * tool_camera_split_label;
+    QPushButton * tool_camera_split_btn;
     QLineEdit * tool_camera_split_num;
-    QPushButton * tool_camera_set_parallel;
+    QLabel * tool_camera_split_prefix_label;
+    QPushButton * tool_camera_split_prefix_btn;
+    QLineEdit * tool_camera_split_prefix_input;
+
+
+    QLineEdit * tool_camera_vertical_angle_input;
+    QPushButton * tool_camera_vertical_angle_btn;
+    QLabel * tool_camera_vertical_angle_label;
 
     // camera add dialog
     QDialog * tool_camera_dialog;

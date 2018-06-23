@@ -154,10 +154,15 @@ void mMainWindow::buildToolBoxTab1() {
     this->tool_pose_change_step_input->setPlaceholderText("Default is 200.0");
     this->tool_pose_change_step_btn = new QPushButton("Set", this->pose_box);
 
-    this->tool_pose_jitter_size_label = new QLabel("Jitter Size(0~1):", this->pose_box);
+    this->tool_pose_jitter_size_label = new QLabel("Jitter(0~1):", this->pose_box);
     this->tool_pose_jitter_size_input = new QLineEdit(this->pose_box);
     this->tool_pose_jitter_size_input->setPlaceholderText("Default is 0");
     this->tool_pose_jitter_size_btn = new QPushButton("Set", this->pose_box);
+
+    this->tool_pose_angle_jitter_size_label = new QLabel("Angle Jitter(0~1):", this->pose_box);
+    this->tool_pose_angle_jitter_size_input = new QLineEdit(this->pose_box);
+    this->tool_pose_angle_jitter_size_input->setPlaceholderText("Default is 0");
+    this->tool_pose_angle_jitter_size_btn = new QPushButton("Set", this->pose_box);
 
     this->pose_box_layout->addWidget(this->tool_pose_change_step_label, 0, 0, 1, 1);
     this->pose_box_layout->addWidget(this->tool_pose_change_step_input, 0, 1, 1, 1);
@@ -165,6 +170,9 @@ void mMainWindow::buildToolBoxTab1() {
     this->pose_box_layout->addWidget(this->tool_pose_jitter_size_label, 1, 0, 1, 1);
     this->pose_box_layout->addWidget(this->tool_pose_jitter_size_input, 1, 1, 1, 1);
     this->pose_box_layout->addWidget(this->tool_pose_jitter_size_btn, 1, 2, 1, 1);
+    this->pose_box_layout->addWidget(this->tool_pose_angle_jitter_size_label, 2, 0, 1, 1);
+    this->pose_box_layout->addWidget(this->tool_pose_angle_jitter_size_input, 2, 1, 1, 1);
+    this->pose_box_layout->addWidget(this->tool_pose_angle_jitter_size_btn, 2, 2, 1, 1);
 
     // Box for render
     this->render_box = new QGroupBox("Render Control:", this->tool_box);
@@ -374,8 +382,8 @@ void mMainWindow::bindEvents() {
     connect(this->gl_widget, SIGNAL(changePoseFileSignal()), this, SLOT(changeNextPoseSlot()));
     connect(this->tool_pose_change_step_btn, SIGNAL(clicked()), this, SLOT(poseSetChangeSize()));
     connect(this->tool_pose_jitter_size_btn, SIGNAL(clicked()), this, SLOT(poseSetJitterSize()));
+    connect(this->tool_pose_angle_jitter_size_btn, SIGNAL(clicked()), this, SLOT(poseSetAngleJitterSize()));
     connect(this->tool_render_type_btn, SIGNAL(clicked()), this, SLOT(renderSetUseShading()));
-
 }
 
 
@@ -1097,6 +1105,24 @@ void mMainWindow::poseSetJitterSize() {
     }
 
     QMessageBox::critical(this, "Value Error", "Jitter size must be a float (0~1)!");
+
+}
+void mMainWindow::poseSetAngleJitterSize() {
+    QString jitter_size_str = this->tool_pose_angle_jitter_size_input->text();
+    float jitter_size;
+    if (!jitter_size_str.isEmpty()) {
+        jitter_size = jitter_size_str.toFloat();
+        if (jitter_size >= 0 && jitter_size <= 1) {
+            if (jitter_size == 0) {
+                this->tool_pose_angle_jitter_size_input->setText("0");
+            }
+            this->gl_widget->setAngleJitter(jitter_size);
+            //
+            return;
+        }
+    }
+
+    QMessageBox::critical(this, "Value Error", "Angle Jitter size must be a float (0~1)!");
 
 }
 void mMainWindow::renderSetUseShading() {

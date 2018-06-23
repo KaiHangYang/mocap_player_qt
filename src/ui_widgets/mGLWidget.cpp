@@ -28,6 +28,7 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->cur_pose_joints = std::vector<glm::vec3>();
     this->pose_change_step = 200;
     this->pose_jitter_range = 0;
+    this->pose_angle_jitter_range = 0;
 
     this->is_ar = m_is_ar;
     this->cam_in_mat = m_cam_in_mat;
@@ -231,6 +232,9 @@ void mGLWidget::setUseFloor(bool is_with_floor) {
 void mGLWidget::setJitter(float jitter_size) {
     this->pose_jitter_range = jitter_size;
 }
+void mGLWidget::setAngleJitter(float jitter_size) {
+    this->pose_angle_jitter_range = jitter_size;
+}
 void mGLWidget::setUseShading(bool use_shading) {
     if (use_shading) {
         glEnable(GL_DEPTH_TEST);
@@ -251,7 +255,7 @@ void mGLWidget::changePoseFile(QString & file_name, int cur_dataset_num) {
         this->is_has_pose = true;
         this->pose_state = 0;
         this->sendProgress(true);
-        this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0, this->pose_jitter_range);
+        this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0, this->pose_jitter_range, this->pose_angle_jitter_range);
     }
     else {
         this->is_has_pose = false;
@@ -281,7 +285,7 @@ void mGLWidget::resetPose() {
         this->mocap_data->resetCounter();
         this->sendProgress(false);
         // Reset to the first frame pose
-        this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0, this->pose_jitter_range);
+        this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0, this->pose_jitter_range, this->pose_angle_jitter_range);
     }
 }
 
@@ -289,7 +293,7 @@ void mGLWidget::setPose(float ratio) {
     int cur_frame_num = this->mocap_data->getTotalFrame() * ratio;
     this->mocap_data->setFramePos(cur_frame_num);
     this->sendProgress(false);
-    this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0, this->pose_jitter_range);
+    this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0, this->pose_jitter_range, this->pose_angle_jitter_range);
 }
 
 void mGLWidget::tempPausePose() {
@@ -316,7 +320,7 @@ void mGLWidget::draw() {
     if (this->pose_state == 1 && this->temp_pose_state == 1) {
         this->sendProgress(false);
         std::vector<glm::vec3> tmp_pose_joints;
-        bool result = this->mocap_data->getOneFrame(tmp_pose_joints, this->cur_pose_joints_raw, this->pose_change_step, this->pose_jitter_range);
+        bool result = this->mocap_data->getOneFrame(tmp_pose_joints, this->cur_pose_joints_raw, this->pose_change_step, this->pose_jitter_range, this->pose_angle_jitter_range);
         if (!result) {
             // read finished then read the next file
             emit changePoseFileSignal();

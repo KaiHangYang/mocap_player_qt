@@ -12,10 +12,11 @@ public:
     mPoseAdjuster(const std::vector<float> & bones_length, const std::vector<unsigned int> & bones_length_index, const std::vector<glm::u32vec2> & bones_indices, const std::vector<unsigned int> bones_cal_rank);
     ~mPoseAdjuster();
 
-    void adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, float jitter_range=0);
+    void adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, float jitter_range=0, float angle_jitter_range=0);
     void calBonesLength(const std::vector<glm::vec3> & joints, std::vector<float> & bones_length);
     void printBonesLength(const std::vector<float> & bones_length);
     void setBonesLengthJitters(float jitter_size = 0.1);
+    glm::vec3 jitterParams(std::vector<double> &params, float angle_jitter_range);
 
 private:
     std::vector<float> pose_jitter_bones_length;

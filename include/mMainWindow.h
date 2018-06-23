@@ -77,6 +77,7 @@ public slots:
     void changeNextPoseSlot();
     void poseSetChangeSize();
     void poseSetJitterSize();
+    void poseSetAngleJitterSize();
     void renderSetUseShading();
 private:
     /************** Functions for build the GUI *************/
@@ -171,6 +172,10 @@ private:
     QLabel * tool_pose_jitter_size_label;
     QLineEdit * tool_pose_jitter_size_input;
     QPushButton * tool_pose_jitter_size_btn;
+
+    QLabel * tool_pose_angle_jitter_size_label;
+    QLineEdit * tool_pose_angle_jitter_size_input;
+    QPushButton * tool_pose_angle_jitter_size_btn;
 
     QPushButton * tool_video_toggle_btn;
     QPushButton * tool_video_reset_btn;

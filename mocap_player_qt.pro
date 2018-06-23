@@ -40,7 +40,8 @@ SOURCES += \
     src/ui_widgets/mLineEditWidget.cpp \
     src/pose_utils/mPoseAdjuster.cpp \
     src/visual_utils/mVisual.cpp \
-    src/optimize_utils/mOurOpt.cpp
+    src/optimize_utils/mOurOpt.cpp \
+    src/optimize_utils/mIKOpt.cpp
 
 
 HEADERS += \
@@ -62,7 +63,8 @@ HEADERS += \
     include/mLineEditWidget.h \
     include/mPoseAdjuster.h \
     include/mVisual.h \
-    include/mOurOpt.h
+    include/mOurOpt.h \
+    include/mIKOpt.h
 
 
 INCLUDEPATH += ./include/ \

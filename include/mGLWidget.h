@@ -37,6 +37,7 @@ public:
     void stopCapture();
     void setPoseChangeStep(float change_step);
     void setJitter(float jitter_size);
+    void setAngleJitter(float jitter_size);
     void setUseShading(bool use_shading);
     void setVerticalAngle(float angle);
 
@@ -91,6 +92,7 @@ private:
     std::vector<glm::vec3> cur_pose_joints_raw;
     float pose_change_step;
     float pose_jitter_range;
+    float pose_angle_jitter_range;
     /************************************************/
 
     /**************** Progress control **************/

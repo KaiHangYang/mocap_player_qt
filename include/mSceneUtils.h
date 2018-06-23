@@ -47,6 +47,8 @@ public:
     bool getFocusOnCenter();
     void captureFrame(cv::Mat & cur_frame);
 
+    void setUseShading(bool use_shading);
+
 
     // Just for tmp adjust for normal and vr mode
     float m_move_dir[3];
@@ -104,9 +106,7 @@ private:
 
     mPoseModel * pose_model;
     bool is_ar;
-
-
-
+    bool use_shading;
 
 };
 

@@ -56,6 +56,7 @@ void mGLWidget::initializeGL() {
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+
     this->timer_for_update->start(20);
 }
 
@@ -229,6 +230,16 @@ void mGLWidget::setUseFloor(bool is_with_floor) {
 }
 void mGLWidget::setJitter(float jitter_size) {
     this->pose_jitter_range = jitter_size;
+}
+void mGLWidget::setUseShading(bool use_shading) {
+    if (use_shading) {
+        glEnable(GL_DEPTH_TEST);
+    }
+    else {
+        glDisable(GL_DEPTH_TEST);
+    }
+
+    this->scene->setUseShading(use_shading);
 }
 /*************** Implementation of slots *****************/
 void mGLWidget::changePoseFile(QString & file_name, int cur_dataset_num) {

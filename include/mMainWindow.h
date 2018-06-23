@@ -75,6 +75,7 @@ public slots:
     void changeNextPoseSlot();
     void poseSetChangeSize();
     void poseSetJitterSize();
+    void renderSetUseShading();
 private:
     /************** Functions for build the GUI *************/
     void buildGLView();
@@ -128,6 +129,7 @@ private:
     QWidget * tool_box_2;
     QGroupBox * file_box;
     QGroupBox * pose_box;
+    QGroupBox * render_box;
     QWidget * video_box;
     QGroupBox * camera_box;
 
@@ -135,6 +137,7 @@ private:
     QGridLayout * tool_box_2_layout;
     QGridLayout * file_box_layout;
     QGridLayout * pose_box_layout;
+    QGridLayout * render_box_layout;
     QGridLayout * video_box_layout;
     QGridLayout * camera_box_layout;
 
@@ -155,6 +158,11 @@ private:
     QLabel * tool_pose_change_step_label;
     QLineEdit * tool_pose_change_step_input;
     QPushButton * tool_pose_change_step_btn;
+
+    QLabel * tool_render_type_label;
+    QPushButton * tool_render_type_btn;
+    QLabel * tool_render_floor_label;
+    QPushButton * tool_render_floor_btn;
 
     QLabel * tool_pose_jitter_size_label;
     QLineEdit * tool_pose_jitter_size_input;
@@ -203,7 +211,7 @@ private:
 
     QLabel * tool_capture_img_extension_label;
     QComboBox * tool_capture_img_extension_combox;
-    QPushButton * tool_capture_floor_btn;
+
     /**************************/
 
     // OpenGL widgets

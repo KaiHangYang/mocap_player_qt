@@ -26,6 +26,8 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->cur_follow_dert = glm::vec3(0.f);
     this->prev_mouse_pos = glm::vec2(-1.f);
 
+    this->use_shading = true;
+
     // The parameter maybe changed as reality make sure the ground_col and ground_row is even
     this->ground_col = 100;
     this->ground_row = 100;
@@ -52,7 +54,7 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->scene_shader = new mShader(mPoseShaderFiles[0], mPoseShaderFiles[1]);
     this->depth_shader = new mShader(mDepthShaderFiles[0], mDepthShaderFiles[1], mDepthShaderFiles[2]);
 
-    this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, this->cam_proj_mat, target_model_size, is_ar, pose_type);
+    this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, this->cam_proj_mat, target_model_size, is_ar, this->use_shading, pose_type);
 
     // Use the same vao for rendering the shading
     this->VAO->bind();
@@ -345,6 +347,11 @@ void mSceneUtils::setFloor(bool is_with_floor) {
     this->is_with_floor = is_with_floor;
 }
 
+void mSceneUtils::setUseShading(bool use_shading) {
+    this->use_shading = use_shading;
+    this->pose_model->setUseShading(this->use_shading);
+}
+
 void mSceneUtils::getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras) {
     splitted_cameras.clear();
 
@@ -556,6 +563,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
     this->scene_shader->use();
     glm::mat4 view_r_mat = glm::mat4(glm::mat3(cur_cam_ex_mat));
     glm::mat4 view_t_mat = glm::inverse(view_r_mat) * cur_cam_ex_mat;
+    this->scene_shader->setVal("use_shading", this->use_shading);
     this->scene_shader->setVal("renderType", 1);
     this->scene_shader->setVal("use_shadow", mShadowUseShadow);
     this->scene_shader->setVal("viewPos", glm::vec3(view_t_mat[3][0], view_t_mat[3][1], view_t_mat[3][2]));

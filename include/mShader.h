@@ -21,6 +21,7 @@ public:
     void setVal(const char * val_name, float val);
     void setVal(const char * val_name, unsigned int val);
     void setVal(const char * val_name, int val);
+    void setVal(const char * val_name, bool val);
 
 private:
     QOpenGLShaderProgram * program;

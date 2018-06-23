@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
-    mMainWindow w(NULL, mWindowWidth, mWindowHeight);
+    mMainWindow w(NULL, mWindowWidth, mWindowHeight, "Mocap Data Generator");
     w.show();
     return a.exec();
 }

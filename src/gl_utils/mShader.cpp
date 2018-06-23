@@ -102,3 +102,6 @@ void mShader::setVal(const char * val_name, glm::vec3 val) {
     QVector3D q_val(val[0], val[1], val[2]);
     this->program->setUniformValue(val_name, q_val);
 }
+void mShader::setVal(const char * val_name, bool val) {
+    this->program->setUniformValue(val_name, val);
+}

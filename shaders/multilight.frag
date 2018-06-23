@@ -21,6 +21,7 @@ uniform vec3 viewPos;
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform samplerCube depth_cube[NR_POINT_LIGHTS];
 
+uniform bool use_shading;
 uniform float far_plane;
 uniform int use_shadow;
 uniform float shadow_bias;
@@ -44,7 +45,12 @@ void main() {
         result += 1.f / NR_POINT_LIGHTS * CalcPointLight(pointLights[i], norm, FragPos, viewDir, i);
     }
 
-    color = vec4(result, 1.0);
+    if (use_shading) {
+        color = vec4(result, 1.0);
+    }
+    else {
+        color = vec4(fColor, 1.0);
+    }
 }
 
 float shadowCalculation(vec3 fragPos, int light_index) {

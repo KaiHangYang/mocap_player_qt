@@ -165,8 +165,24 @@ void mMainWindow::buildToolBoxTab1() {
     this->pose_box_layout->addWidget(this->tool_pose_jitter_size_input, 1, 1, 1, 1);
     this->pose_box_layout->addWidget(this->tool_pose_jitter_size_btn, 1, 2, 1, 1);
 
-    this->tool_box_layout->addWidget(this->file_box, 0, 0, 3, 1);
-    this->tool_box_layout->addWidget(this->pose_box, 3, 0, 1, 1);
+    // Box for render
+    this->render_box = new QGroupBox("Render Control:", this->tool_box);
+    this->render_box_layout = new QGridLayout;
+    this->render_box->setLayout(this->render_box_layout);
+    this->tool_render_type_label = new QLabel("Use Shading:", this->render_box);
+    this->tool_render_type_btn = new QPushButton("True", this->render_box);
+
+    this->tool_render_floor_label = new QLabel("Use floor:", this->render_box);
+    this->tool_render_floor_btn = new QPushButton("True", this->render_box);
+
+    this->render_box_layout->addWidget(this->tool_render_type_label, 0, 0, 1, 1);
+    this->render_box_layout->addWidget(this->tool_render_type_btn, 0, 1, 1, 1);
+    this->render_box_layout->addWidget(this->tool_render_floor_label, 1, 0, 1, 1);
+    this->render_box_layout->addWidget(this->tool_render_floor_btn, 1, 1, 1, 1);
+
+    this->tool_box_layout->addWidget(this->file_box, 0, 0, 2, 1);
+    this->tool_box_layout->addWidget(this->pose_box, 2, 0, 1, 1);
+    this->tool_box_layout->addWidget(this->render_box, 3, 0, 1, 1);
 
     // Disable some button
     this->tool_file_removeall_btn->setDisabled(true);
@@ -267,7 +283,7 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_capture_img_extension_combox = new QComboBox(this->capture_box);
     this->tool_capture_img_extension_combox->addItem("jpg");
     this->tool_capture_img_extension_combox->addItem("png");
-    this->tool_capture_floor_btn = new QPushButton("No Floor", this->capture_box);
+
 
     this->capture_box_layout->addWidget(this->tool_capture_dir_label, 0, 0, 1, 1);
     this->capture_box_layout->addWidget(this->tool_capture_dir_input, 0, 1, 1, 3);
@@ -278,7 +294,6 @@ void mMainWindow::buildToolBoxTab2() {
     this->capture_box_layout->addWidget(this->tool_capture_capture_one, 2, 0, 1, 2);
     this->capture_box_layout->addWidget(this->tool_capture_capture_interval, 2, 2, 1, 2);
     this->capture_box_layout->addWidget(this->tool_capture_capture_currentall, 3, 0, 1, 3);
-    this->capture_box_layout->addWidget(this->tool_capture_floor_btn, 3, 3, 1, 1);
 
     this->tool_box_2_layout->addWidget(this->camera_box, 0, 0, 1, 1);
     this->tool_box_2_layout->addWidget(this->capture_box, 1, 0, 1, 1);
@@ -329,7 +344,7 @@ void mMainWindow::bindEvents() {
     connect(this->tool_capture_capture_video, SIGNAL(clicked()), this, SLOT(captureVideo()));
     connect(this->tool_capture_capture_currentall, SIGNAL(clicked()), this, SLOT(captureCurrentAll()));
     connect(this->tool_camera_type_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraTypeChangeSlot(int)));
-    connect(this->tool_capture_floor_btn, SIGNAL(clicked()), this, SLOT(sceneFloorSlot()));
+    connect(this->tool_render_floor_btn, SIGNAL(clicked()), this, SLOT(sceneFloorSlot()));
 
     connect(this->tool_camera_split_horizon, SIGNAL(clicked()), this, SLOT(cameraSplitCircleSlot()));
     connect(this->tool_camera_set_parallel, SIGNAL(clicked()), this, SLOT(cameraSetDefaultSlot()));
@@ -338,6 +353,7 @@ void mMainWindow::bindEvents() {
     connect(this->gl_widget, SIGNAL(changePoseFileSignal()), this, SLOT(changeNextPoseSlot()));
     connect(this->tool_pose_change_step_btn, SIGNAL(clicked()), this, SLOT(poseSetChangeSize()));
     connect(this->tool_pose_jitter_size_btn, SIGNAL(clicked()), this, SLOT(poseSetJitterSize()));
+    connect(this->tool_render_type_btn, SIGNAL(clicked()), this, SLOT(renderSetUseShading()));
 }
 
 
@@ -973,14 +989,14 @@ void mMainWindow::captureVideo() {
 }
 
 void mMainWindow::sceneFloorSlot() {
-    bool is_has_floor = this->tool_capture_floor_btn->text() == "Use Floor";
-    if (is_has_floor) {
-        this->tool_capture_floor_btn->setText("No Floor");
+    bool is_use_floor = this->tool_render_floor_btn->text() == "True";
+    if (is_use_floor) {
+        this->tool_render_floor_btn->setText("False");
     }
     else {
-        this->tool_capture_floor_btn->setText("Use Floor");
+        this->tool_render_floor_btn->setText("True");
     }
-    this->gl_widget->setUseFloor(is_has_floor);
+    this->gl_widget->setUseFloor(!is_use_floor);
 }
 
 void mMainWindow::changeNextPoseSlot() {
@@ -1028,4 +1044,15 @@ void mMainWindow::poseSetJitterSize() {
 
     QMessageBox::critical(this, "Value Error", "Jitter size must be a float (0~1)!");
 
+}
+void mMainWindow::renderSetUseShading() {
+    QString current_type = this->tool_render_type_btn->text();
+    if (current_type == "True") {
+        this->tool_render_type_btn->setText("False");
+        this->gl_widget->setUseShading(false);
+    }
+    else {
+        this->tool_render_type_btn->setText("True");
+        this->gl_widget->setUseShading(true);
+    }
 }

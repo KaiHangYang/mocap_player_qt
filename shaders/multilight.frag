@@ -30,22 +30,21 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, i
 float shadowCalculation(vec3 fragPos, int light_index);
 
 void main() {    
-    // Properties
-
-//    if (!gl_FrontFacing) {
-//        color = vec4(0.3, 0.3, 0.3, 1.0);
-//        return;
-//    }
-    vec3 norm = normalize(Normal);
-    vec3 viewDir = normalize(viewPos - FragPos);
-
-    vec3 result = vec3(0.0f, 0.0f, 0.0f);
-
-    for(int i = 0; i < NR_POINT_LIGHTS; i++) {
-        result += 1.f / NR_POINT_LIGHTS * CalcPointLight(pointLights[i], norm, FragPos, viewDir, i);
-    }
-
     if (use_shading) {
+        // Properties
+
+    //    if (!gl_FrontFacing) {
+    //        color = vec4(0.3, 0.3, 0.3, 1.0);
+    //        return;
+    //    }
+        vec3 norm = normalize(Normal);
+        vec3 viewDir = normalize(viewPos - FragPos);
+
+        vec3 result = vec3(0.0f, 0.0f, 0.0f);
+
+        for(int i = 0; i < NR_POINT_LIGHTS; i++) {
+            result += 1.f / NR_POINT_LIGHTS * CalcPointLight(pointLights[i], norm, FragPos, viewDir, i);
+        }
         color = vec4(result, 1.0);
     }
     else {

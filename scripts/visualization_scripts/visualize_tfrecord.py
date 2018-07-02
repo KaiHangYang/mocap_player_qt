@@ -92,7 +92,7 @@ if __name__ == "__main__":
     total_train_count = 14000
     total_valid_count = 1400
     total_frames = total_train_count
-    tfrecord_file = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/tfrecords/train/mpi_train.tfrecords"
+    tfrecord_file = "/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_train.tfrecord"
     # tfrecord_file = "/home/kaihang/DataSet/mpi_tfrecords/mpi_train.tfrecords"
     ################################ Init tfrecord valider ##################################
     dataset_reader = data_valid.DataValid(tfrecord_file)
@@ -159,41 +159,42 @@ if __name__ == "__main__":
         if not keep_still:
 
             img, points_2d, points_3d = dataset_reader.get_frame()
-            bones_length = np.zeros([14])
+            print(points_2d)
+            # bones_length = np.zeros([14])
 
-            bones_length[0] = np.linalg.norm(points_3d[0] - points_3d[1])
+            # bones_length[0] = np.linalg.norm(points_3d[0] - points_3d[1])
 
-            bones_length[1] = np.linalg.norm(points_3d[1] - points_3d[2])
-            bones_length[2] = np.linalg.norm(points_3d[2] - points_3d[3])
-            bones_length[3] = np.linalg.norm(points_3d[3] - points_3d[4])
+            # bones_length[1] = np.linalg.norm(points_3d[1] - points_3d[2])
+            # bones_length[2] = np.linalg.norm(points_3d[2] - points_3d[3])
+            # bones_length[3] = np.linalg.norm(points_3d[3] - points_3d[4])
 
-            bones_length[4] = np.linalg.norm(points_3d[1] - points_3d[5])
-            bones_length[5] = np.linalg.norm(points_3d[5] - points_3d[6])
-            bones_length[6] = np.linalg.norm(points_3d[6] - points_3d[7])
+            # bones_length[4] = np.linalg.norm(points_3d[1] - points_3d[5])
+            # bones_length[5] = np.linalg.norm(points_3d[5] - points_3d[6])
+            # bones_length[6] = np.linalg.norm(points_3d[6] - points_3d[7])
 
-            bones_length[7] = np.linalg.norm(points_3d[1] - points_3d[14])
+            # bones_length[7] = np.linalg.norm(points_3d[1] - points_3d[14])
 
-            bones_length[8] = np.linalg.norm(points_3d[14] - points_3d[8])
-            bones_length[9] = np.linalg.norm(points_3d[8] - points_3d[9])
-            bones_length[10] = np.linalg.norm(points_3d[9] - points_3d[10])
+            # bones_length[8] = np.linalg.norm(points_3d[14] - points_3d[8])
+            # bones_length[9] = np.linalg.norm(points_3d[8] - points_3d[9])
+            # bones_length[10] = np.linalg.norm(points_3d[9] - points_3d[10])
 
-            bones_length[11] = np.linalg.norm(points_3d[14] - points_3d[11])
-            bones_length[12] = np.linalg.norm(points_3d[11] - points_3d[12])
-            bones_length[13] = np.linalg.norm(points_3d[12] - points_3d[13])
+            # bones_length[11] = np.linalg.norm(points_3d[14] - points_3d[11])
+            # bones_length[12] = np.linalg.norm(points_3d[11] - points_3d[12])
+            # bones_length[13] = np.linalg.norm(points_3d[12] - points_3d[13])
 
-            print(bones_length)
+            # print(bones_length)
 
             # spin_len = np.linalg.norm(points_3d[1] - points_3d[14])
-            min_x = min(np.min(points_3d[:, 0]), min_x)
-            max_x = max(np.max(points_3d[:, 0]), max_x)
+            # min_x = min(np.min(points_3d[:, 0]), min_x)
+            # max_x = max(np.max(points_3d[:, 0]), max_x)
 
-            min_y = min(np.min(points_3d[:, 1]), min_y)
-            max_y = max(np.max(points_3d[:, 1]), max_y)
+            # min_y = min(np.min(points_3d[:, 1]), min_y)
+            # max_y = max(np.max(points_3d[:, 1]), max_y)
 
-            min_z = min(np.min(points_3d[:, 2]), min_z)
-            max_z = max(np.max(points_3d[:, 2]), max_z)
+            # min_z = min(np.min(points_3d[:, 2]), min_z)
+            # max_z = max(np.max(points_3d[:, 2]), max_z)
 
-            print(frame_count, (min_x, max_x), (min_y, max_y), (min_z, max_z))
+            # print(frame_count, (min_x, max_x), (min_y, max_y), (min_z, max_z))
             # print(points_3d)
 
             img = display_utils.drawLines(img, points_2d)

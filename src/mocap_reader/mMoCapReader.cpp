@@ -138,9 +138,9 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
             frame_datas[i] = bvh_joints[cur_valid_joints_arr[i]]->pos();
         }
 
-        std::vector<glm::vec3> neck_up_joints = bvh_joints[this->statistic_joints_arrs[dataset][0]]->pos();
-        std::vector<glm::vec3> neck_down_joints = bvh_joints[this->statistic_joints_arrs[dataset][1]]->pos();
-        std::vector<glm::vec3> spin_joints = bvh_joints[this->statistic_joints_arrs[dataset][2]]->pos();
+//        std::vector<glm::vec3> neck_up_joints = bvh_joints[this->statistic_joints_arrs[dataset][0]]->pos();
+//        std::vector<glm::vec3> neck_down_joints = bvh_joints[this->statistic_joints_arrs[dataset][1]]->pos();
+//        std::vector<glm::vec3> spin_joints = bvh_joints[this->statistic_joints_arrs[dataset][2]]->pos();
 
         /********** Here I can statistic the ratio of up neck and lower neck ***********/
 //        QFile file("/home/kaihang/Desktop/statistic.txt");

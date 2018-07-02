@@ -82,21 +82,27 @@ def data_resize_with_cropped(img, joints2d, num_of_joints=15):
 if __name__ == "__main__":
 
     # Then write the tfrecords
-    is_ar = True
+    is_ar = False
 
     if is_ar:
         camera_num = 1
     else:
-        camera_num = 6
+        camera_num = 36
 
     # train_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/train"
     # test_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/valid"
 
-    train_data_path = "/home/kaihang/Desktop/mpi_mocap_result/train"
-    test_data_path = "/home/kaihang/Desktop/mpi_mocap_result/valid"
+    train_data_path = "/home/kaihang/DataSet_2/MocapData/cmu_mocap/raw_datas/train/"
+    test_data_path = "/home/kaihang/DataSet_2/MocapData/cmu_mocap/raw_datas/valid/"
 
-    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/mpi_mocap/tfrecords/mpi_train-8-0.tfrecords")
-    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/mpi_mocap/tfrecords/mpi_test-8-0.tfrecords")
+    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_train.tfrecord")
+    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_valid.tfrecord")
+
+    # train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/train/"
+    # test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/valid/"
+
+    # train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/sfu_train.tfrecord")
+    # test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/sfu_valid.tfrecord")
 
     train_dataset_list = os.listdir(train_data_path)
     valid_dataset_list = os.listdir(test_data_path)
@@ -124,12 +130,12 @@ if __name__ == "__main__":
                 img = cv2.imread(img_path)
 
                 if is_ar:
-                    labels_2d_raw = labels_raw[0]
+                    labels_2d_raw = labels_raw[0].copy()
                 else:
-                    labels_2d_raw = labels[0]
+                    labels_2d_raw = labels[0].copy()
 
-                labels_2d = labels[0]
-                labels_3d = labels[1]
+                labels_2d = labels[0].copy()
+                labels_3d = labels[1].copy()
 
                 # labels_3d[:, 1:3] = -1 * labels_3d[:, 1:3] # TODO This is the temporary
 
@@ -162,12 +168,12 @@ if __name__ == "__main__":
                 img = cv2.imread(img_path)
 
                 if is_ar:
-                    labels_2d_raw = labels_raw[0]
+                    labels_2d_raw = labels_raw[0].copy()
                 else:
-                    labels_2d_raw = labels[0]
+                    labels_2d_raw = labels[0].copy()
 
-                labels_2d = labels[0]
-                labels_3d = labels[1]
+                labels_2d = labels[0].copy()
+                labels_3d = labels[1].copy()
                 img, labels_2d_raw, offset, scale, _ = data_resize_with_cropped(img, labels_2d_raw)
 
                 labels_2d -= offset[0:2]

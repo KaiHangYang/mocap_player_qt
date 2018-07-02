@@ -56,7 +56,8 @@ void mGLWidget::initializeGL() {
     glViewport(0, 0, this->wnd_width, this->wnd_height);
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GL_LEQUAL);
+    // Use the anti-alias
 
     this->timer_for_update->start(20);
 }
@@ -236,12 +237,12 @@ void mGLWidget::setAngleJitter(float jitter_size) {
     this->pose_angle_jitter_range = jitter_size;
 }
 void mGLWidget::setUseShading(bool use_shading) {
-    if (use_shading) {
-        glEnable(GL_DEPTH_TEST);
-    }
-    else {
-        glDisable(GL_DEPTH_TEST);
-    }
+//    if (use_shading) {
+//        glEnable(GL_DEPTH_TEST);
+//    }
+//    else {
+//        glDisable(GL_DEPTH_TEST);
+//    }
 
     this->scene->setUseShading(use_shading);
 }

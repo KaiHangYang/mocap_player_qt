@@ -247,6 +247,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
         this->mesh_reader->render(skeleton_style[2*i]);
     }
     // Then draw the joints
+
     /*********************** Draw the root first ***************************/
     indices_ptr = &this->bone_indices[0];
     // Draw the root first

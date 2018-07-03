@@ -120,7 +120,7 @@ static glm::vec3 mBoneColors[] = {
 //    glm::vec3(0.7, 0.7, 0.7) // right feet
 //};
 
-static glm::vec3 mJointColors[] = {
+static std::vector<glm::vec3> mJointColors({
     glm::vec3(0, 1, 0), // head
     glm::vec3(0, 1, 0), // neck
 
@@ -142,7 +142,7 @@ static glm::vec3 mJointColors[] = {
 
     glm::vec3(1, 0, 0), // left feet,
     glm::vec3(0, 0.6, 1) // right feet
-};
+});
 
 mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, bool use_shading, int pose_type) {
 
@@ -182,11 +182,21 @@ void mPoseModel::setUseShading(bool use_shading) {
     this->use_shading = use_shading;
 }
 
+bool joint_z_cmp(std::pair<glm::vec3, int> a, std::pair<glm::vec3, int> b) {
+    if (std::abs(a.first.z) < std::abs(b.first.z)) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
 void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat, int render_type) {
 
     this->VAO->bind();
     unsigned int vertexNum = vertexs.size();
     unsigned int lineNum = this->bone_indices.size();
+    std::vector<std::pair<glm::vec3, int>> camera_coord_vertexs(vertexs.size(), std::pair<glm::vec3, int>(glm::vec3(0), 0));
 
     std::vector<bool> vertexFlags(vertexNum, false);
     glm::mat4 view_r_mat = glm::mat4(glm::mat3(view_mat));
@@ -215,6 +225,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
     glm::mat4 trans;
     glm::mat4 curmodel;
 
+    this->core_func->glEnable(GL_DEPTH_TEST);
     // Draw the bones first
     for (unsigned int i = 0; i < lineNum; ++i) {
         unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
@@ -249,59 +260,61 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
     // Then draw the joints
 
     /*********************** Draw the root first ***************************/
-    indices_ptr = &this->bone_indices[0];
-    // Draw the root first
-    curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.3, 1.3, 1.3));
-    curmodel = glm::translate(glm::mat4(1.0f), vertexs[14]) * curmodel;
-    shader->setVal("model", curmodel);
-    glm::mat4 to_camera_coord = view_mat * curmodel;
-
-    if (render_type == 0) {
-        glm::vec3 cur_joint_color;
-        if (this->use_shading) {
-            cur_joint_color = mJointColors[14];
-        }
-        else {
-            cur_joint_color = glm::vec3(1.0f);
-        }
-        shader->setVal("fragColor", cur_joint_color);
-        shader->setVal("normMat", glm::transpose(glm::inverse(curmodel)));
+    if (!this->use_shading) {
+        this->core_func->glDisable(GL_DEPTH_TEST);
     }
-    mesh_reader->render(0);
-    /************************************************************************/
-    for (unsigned int i = 0; i < lineNum; ++i) {
-        unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
-        indices_ptr ++;
-        // Draw the points first
-        if (!vertexFlags[line[1]]) {
-            vertexFlags[line[1]] = true;
 
-            curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.3, 1.3, 1.3));
-            curmodel = glm::translate(glm::mat4(1.0f), vertexs[line[1]]) * curmodel;
+    std::vector<glm::vec3> tmpJointColors = mJointColors;
+    indices_ptr = &this->bone_indices[0];
+    if (!this->use_shading) {
+        tmpJointColors[14] = glm::vec3(1.f);
+        for (unsigned int i = 0; i < lineNum; ++i) {
+            unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
+            indices_ptr ++;
+            if (!vertexFlags[line[1]]) {
+                vertexFlags[line[1]] = true;
+                curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.3, 1.3, 1.3));
+                glm::mat4 trans_mat = glm::translate(glm::mat4(1.0f), vertexs[line[1]]);
+                curmodel = trans_mat * curmodel;
+                glm::mat4 to_camera_coord = view_mat;
 
-            shader->setVal("model", curmodel);
-            glm::mat4 to_camera_coord = view_mat * curmodel;
+                if (render_type == 0) {
+                    // the vertex is in the global coordinate, so I only need to use the view_mat
+                    camera_coord_vertexs[line[0]].first = to_camera_coord * glm::vec4(vertexs[line[0]], 1.f);
+                    camera_coord_vertexs[line[0]].second = line[0];
+                    camera_coord_vertexs[line[1]].first = to_camera_coord * glm::vec4(vertexs[line[1]], 1.f);
+                    camera_coord_vertexs[line[1]].second = line[1];
 
-            if (render_type == 0) {
-                glm::vec3 cur_joint_color;
-                if (this->use_shading) {
-                    cur_joint_color = mJointColors[line[1]];
-                }
-                else {
-                    if (std::abs((to_camera_coord * glm::vec4(vertexs[line[0]], 1.f)).z) > std::abs((to_camera_coord * glm::vec4(vertexs[line[1]], 1.f)).z)) {
-                        cur_joint_color = glm::vec3(1.f);
+                    if (std::abs((camera_coord_vertexs[line[0]].first).z) > std::abs((camera_coord_vertexs[line[1]].first).z)) {
+                        tmpJointColors[line[1]] = glm::vec3(1.f);
                     }
                     else {
-                        cur_joint_color = glm::vec3(0.f);
+                        tmpJointColors[line[1]] = glm::vec3(0.f);
                     }
                 }
-
-                shader->setVal("fragColor", cur_joint_color);
-                shader->setVal("normMat", glm::transpose(glm::inverse(curmodel)));
             }
-            mesh_reader->render(0);
         }
     }
+    std::sort(camera_coord_vertexs.begin(), camera_coord_vertexs.end(), joint_z_cmp);
+    for (unsigned int i = 0; i < vertexNum; ++i) {
+        int cur_vertex_num;
+        if (!this->use_shading) {
+            cur_vertex_num = camera_coord_vertexs[i].second;
+        }
+        else {
+            cur_vertex_num = i;
+        }
+
+        curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.3, 1.3, 1.3));
+        curmodel = glm::translate(glm::mat4(1.0f), vertexs[cur_vertex_num]) * curmodel;
+        shader->setVal("model", curmodel);
+        if (render_type == 0) {
+            shader->setVal("fragColor", tmpJointColors[cur_vertex_num]);
+            shader->setVal("normMat", glm::transpose(glm::inverse(curmodel)));
+        }
+        mesh_reader->render(0);
+    }
+
 }
 
 void mPoseModel::draw(std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, int render_type) {

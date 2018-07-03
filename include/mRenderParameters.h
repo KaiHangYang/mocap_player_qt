@@ -59,7 +59,8 @@ static int mWindowHeight = 1024;
 //#else
 /*** Normal Mode ***/
 static bool m_is_ar = false;
-static glm::mat4 m_cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)mWindowWidth / mWindowHeight, 0.01f, 1000000.f));
+//static glm::mat4 m_cam_in_mat = glm::transpose(glm::perspective(glm::radians(45.f), (float)mWindowWidth / mWindowHeight, 0.01f, 1000000.f));
+static glm::mat4 m_cam_in_mat = glm::transpose(glm::ortho(-mWindowWidth / 17.0f, mWindowWidth / 17.0f, -mWindowHeight / 17.0f, mWindowHeight / 17.0f, -1000.f, 1000.f));
 static glm::mat4 m_cam_ex_mat = glm::transpose(glm::lookAt(glm::vec3(0, 10.f, 300.f), glm::vec3(0, 10.f, 0), glm::vec3(0, 1, 0)));
 /*******************/
 //#endif

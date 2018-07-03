@@ -4,11 +4,11 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <QMouseEvent>
-
+#include "mRenderParameters.h"
 
 class mCamera {
 public:
-    mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int wnd_width, int wnd_height, int id, bool is_ar = false);
+    mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int wnd_width=mWindowWidth, int wnd_height=mWindowHeight, bool is_ar = m_is_ar);
     ~mCamera();
 
     glm::mat4 getProjMat();
@@ -33,14 +33,11 @@ public:
     void getSplittedCameras(int camera_num, glm::vec3 pose_center, std::vector<glm::mat4> &splitted_cameras);
     void getSplittedCameras(int camera_num, glm::vec3 pose_center, std::vector<glm::vec3> &splitted_cameras);
 
-
-
 private:
     glm::vec3 follow_dert;
     bool is_follow;
     bool is_focus;
 
-    int id;
     bool is_ar;
     glm::mat4 proj_mat;
 

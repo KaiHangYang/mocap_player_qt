@@ -3,10 +3,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 // suppose the inputed camera matrix is row major
-mCamera::mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int wnd_width, int wnd_height, int id, bool is_ar) {
+mCamera::mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int wnd_width, int wnd_height, bool is_ar) {
     this->wnd_height = wnd_height;
     this->wnd_width = wnd_width;
-    this->id = id;
     this->is_ar = is_ar;
     this->is_focus = false;
     this->is_focus = false;
@@ -25,7 +24,7 @@ mCamera::mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int wnd_width, int wnd_
     else {
         this->proj_mat = glm::transpose(proj_mat);
     }
-
+    view_mat = glm::transpose(view_mat);
     this->setViewMat(view_mat);
 }
 
@@ -46,7 +45,6 @@ glm::mat4 mCamera::getProjMat() {
 void mCamera::setViewMat(glm::mat4 view_mat) {
     // Then set the extrinsic matrix of the camera.
     // Here I get r and t matrix from the view matrix
-    view_mat = glm::transpose(view_mat);
     this->view_r_mat = glm::mat4(glm::mat3(view_mat));
     this->view_t_mat = glm::inverse(this->view_r_mat) * view_mat;
     this->view_t_mat[0][1] = this->view_t_mat[0][2] = this->view_t_mat[1][0] = this->view_t_mat[1][2] = this->view_t_mat[2][0]= this->view_t_mat[2][1] = 0;

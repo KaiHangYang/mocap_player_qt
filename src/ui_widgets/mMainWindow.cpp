@@ -248,6 +248,7 @@ void mMainWindow::buildToolBoxTab2() {
 
     this->tool_camera_loadfromfile_btn = new QPushButton("Load", this->camera_box);
     this->tool_camera_savetofile_btn = new QPushButton("Save", this->camera_box);
+    this->tool_camera_visualize_btn = new QPushButton("Visualize", this->camera_box);
     //    this->tool_camera_dialog = new QDialog(this);
     //    this->tool_camera_dialog->setWindowTitle("Add new camera");
     //    this->camera_dialog_layout = new QGridLayout;
@@ -292,6 +293,7 @@ void mMainWindow::buildToolBoxTab2() {
     this->camera_box_layout->addWidget(this->tool_camera_listview, 6, 0, 4, 3);
     this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 10, 1, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 10, 2, 1, 1);
+    this->camera_box_layout->addWidget(this->tool_camera_visualize_btn, 10, 0, 1, 1);
 
     //      Box for capture control
     this->capture_box = new QGroupBox("Capture Control:", this->tool_box_2);

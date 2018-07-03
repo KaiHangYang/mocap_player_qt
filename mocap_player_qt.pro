@@ -41,7 +41,8 @@ SOURCES += \
     src/pose_utils/mPoseAdjuster.cpp \
     src/visual_utils/mVisual.cpp \
     src/optimize_utils/mOurOpt.cpp \
-    src/optimize_utils/mIKOpt.cpp
+    src/optimize_utils/mIKOpt.cpp \
+    src/scene_utils/mCamera.cpp
 
 
 HEADERS += \
@@ -64,7 +65,8 @@ HEADERS += \
     include/mPoseAdjuster.h \
     include/mVisual.h \
     include/mOurOpt.h \
-    include/mIKOpt.h
+    include/mIKOpt.h \
+    include/mCamera.h
 
 
 INCLUDEPATH += ./include/ \

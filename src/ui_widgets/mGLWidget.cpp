@@ -158,7 +158,7 @@ void mGLWidget::getSplittedCameras(int camera_num, std::vector<glm::vec3> &split
     this->scene->getSplittedCameras(camera_num, splitted_cameras);
 }
 void mGLWidget::setFollowDefault() {
-    this->scene->setFollowDefault();
+//    this->scene->setFollowDefault();
 }
 
 void mGLWidget::captureFrame(const std::vector<glm::vec3> & view_vecs) {
@@ -316,7 +316,7 @@ void mGLWidget::draw() {
     glm::mat4 cur_ex_r_mat, cur_ex_t_mat, cur_rotate_mat;
     this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
     cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat, this->scene->m_rotate_dir);
-    this->scene->rotateCamrea(cur_rotate_mat);
+    this->scene->rotateCamera(cur_rotate_mat);
 
     if (this->pose_state == 1 && this->temp_pose_state == 1) {
         this->sendProgress(false);

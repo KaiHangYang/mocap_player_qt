@@ -182,6 +182,7 @@ private:
 
     QPushButton * tool_camera_loadfromfile_btn;
     QPushButton * tool_camera_savetofile_btn;
+    QPushButton * tool_camera_visualize_btn;
     QPushButton * tool_camera_add_btn;
     QPushButton * tool_camera_addcurr_btn;
     QPushButton * tool_camera_activate_btn;

@@ -9,6 +9,7 @@
 
 #include "mPoseModel.h"
 #include "mShader.h"
+#include "mCamera.h"
 
 #include <opencv2/core/core.hpp>
 
@@ -20,25 +21,21 @@ public:
     void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), glm::mat4 cam_ex_mat = glm::mat4(0.f));
     void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), glm::vec3 cam_ex_vec = glm::vec3(0.f));
 
-    void setExMat(glm::mat4 & cam_ex_mat);
-    void setInMat(glm::mat4 & cam_in_mat);
-
     void setCurExMat(glm::mat4 cur_ex_mat);
-
-    void getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat);
     glm::mat4 getCurExMat();
-    glm::mat4 getRawExMat();
-    glm::vec3 getCurFollowVec();
+    glm::mat4 getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat);
+
     void setCurFollowVec(glm::vec3 cur_follow_vec);
+    glm::vec3 getCurFollowVec();
+
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
     void getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras);
-    void setFollowDefault();
 
     void getLabelsFromFrame(const std::vector<glm::vec3> &joints, const glm::mat4 &view_mat, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
     void getLabelsFromFrame(const std::vector<glm::vec3> &joints, const glm::vec3 &view_vec, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
 
     void moveCamera(int move_type, QMouseEvent * event = NULL);
-    void rotateCamrea(const glm::mat4 & rotate_mat);
+    void rotateCamera(glm::mat4 rotate_mat);
     void setFloor(bool is_with_floor=true);
 
     void setFollowPerson(bool is_follow);
@@ -56,6 +53,7 @@ public:
     float m_rotate_dir[2];
 
 private:
+    void initScene();
     std::vector<GLfloat> getGroundVertexs();
     std::vector<GLfloat> getGroundColor();
 
@@ -71,9 +69,9 @@ private:
     int array_size;
     float ground_size;
     float move_step_scale;
-    bool is_follow_person;
-    bool is_focus_on_center;
     bool is_with_floor;
+    bool is_ar;
+    bool use_shading;
 
     QOpenGLVertexArrayObject * VAO;
 
@@ -86,18 +84,7 @@ private:
 
     QOpenGLFunctions_3_3_Core * core_func;
 
-    glm::mat4 cam_proj_mat;
-    glm::mat4 cam_ex_mat;
-    glm::mat4 cam_ex_mat_inverse;
-    glm::mat4 cam_in_mat;
     glm::mat4 rotate_mat;
-    glm::mat4 cam_ex_t_mat;
-    glm::mat4 cam_ex_r_mat;
-
-    glm::mat4 cur_cam_ex_r_mat;
-    glm::mat4 cur_cam_ex_t_mat;
-
-    glm::vec3 cur_follow_dert;
     glm::vec3 person_center_pos;
 
     glm::vec2 prev_mouse_pos;
@@ -106,8 +93,7 @@ private:
     mShader * depth_shader;
 
     mPoseModel * pose_model;
-    bool is_ar;
-    bool use_shading;
+    mCamera * cur_camera;
 
 };
 

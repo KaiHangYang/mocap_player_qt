@@ -19,11 +19,8 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->is_ar = is_ar;
     this->VAO = vao;
     this->core_func = core_func;
-    this->is_follow_person = false;
-    this->is_focus_on_center = false;
     this->is_with_floor = true;
     this->person_center_pos = glm::vec3(0.f);
-    this->cur_follow_dert = glm::vec3(0.f);
     this->prev_mouse_pos = glm::vec2(-1.f);
 
     this->use_shading = true;
@@ -31,9 +28,6 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     // The parameter maybe changed as reality make sure the ground_col and ground_row is even
     this->ground_col = 100;
     this->ground_row = 100;
-
-    this->setExMat(cam_ex_mat);
-    this->setInMat(cam_in_mat);
 
     float target_model_size;
     if (is_ar) {
@@ -54,8 +48,20 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->scene_shader = new mShader(mPoseShaderFiles[0], mPoseShaderFiles[1]);
     this->depth_shader = new mShader(mDepthShaderFiles[0], mDepthShaderFiles[1], mDepthShaderFiles[2]);
 
-    this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, this->cam_proj_mat, target_model_size, is_ar, this->use_shading, pose_type);
+    this->cur_camera = new mCamera(cam_in_mat, cam_ex_mat, this->wnd_width, this->wnd_height, 0, this->is_ar);
+    this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, this->cur_camera->getProjMat(), target_model_size, is_ar, this->use_shading, pose_type);
 
+    this->initScene();
+
+}
+mSceneUtils::~mSceneUtils() {
+    this->pose_model->~mPoseModel();
+    this->scene_shader->~mShader();
+    this->depth_shader->~mShader();
+    this->cur_camera->~mCamera();
+}
+
+void mSceneUtils::initScene() {
     // Use the same vao for rendering the shading
     this->VAO->bind();
 
@@ -109,53 +115,6 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     /*******************************************************************************/
     this->VAO->release();
 }
-mSceneUtils::~mSceneUtils() {
-    this->pose_model->~mPoseModel();
-    this->scene_shader->~mShader();
-    this->depth_shader->~mShader();
-}
-void mSceneUtils::setCurExMat(glm::mat4 cur_ex_mat) {
-    this->cur_cam_ex_r_mat = glm::mat4(glm::mat3(cur_ex_mat));
-    this->cur_cam_ex_t_mat = glm::inverse(this->cur_cam_ex_r_mat) * cur_ex_mat;
-    this->cur_cam_ex_t_mat[0][1] = 0;this->cur_cam_ex_t_mat[0][2] = 0;this->cur_cam_ex_t_mat[1][0] = 0;this->cur_cam_ex_t_mat[1][2] = 0;this->cur_cam_ex_t_mat[2][0]= 0;this->cur_cam_ex_t_mat[2][1] = 0;
-}
-void mSceneUtils::setExMat(glm::mat4 & cam_ex_mat) {
-
-    this->cam_ex_mat = glm::transpose(cam_ex_mat);
-    this->cam_ex_mat_inverse = glm::inverse(this->cam_ex_mat);
-
-    this->cam_ex_r_mat = glm::mat4(glm::mat3(this->cam_ex_mat));
-    this->cam_ex_t_mat = glm::inverse(this->cam_ex_r_mat) * this->cam_ex_mat;
-    this->cam_ex_t_mat[0][1] = 0;this->cam_ex_t_mat[0][2] = 0;this->cam_ex_t_mat[1][0] = 0;this->cam_ex_t_mat[1][2] = 0;this->cam_ex_t_mat[2][0]= 0;this->cam_ex_t_mat[2][1] = 0;
-
-    this->cur_cam_ex_r_mat = this->cam_ex_r_mat;
-    this->cur_cam_ex_t_mat = this->cam_ex_t_mat;
-}
-
-void mSceneUtils::setInMat(glm::mat4 & cam_in_mat) {
-    this->cam_in_mat = cam_in_mat;
-    if (this->is_ar) {
-//        this->cam_proj_mat = glm::transpose(glm::mat4({
-//            2.0*this->cam_in_mat[0][0] / wnd_width, 0, -1 + 2.0*this->cam_in_mat[0][2] / wnd_width, 0.0,
-//            0, -2.0*this->cam_in_mat[1][1]/wnd_height, 1 - 2.0*this->cam_in_mat[1][2] / wnd_height, 0.0,
-//            0, 0, 1, -2 * this->cam_in_mat[0][0],
-//            0, 0, 1, 0}));
-
-        // Currently, the below code works, Now I will make sure from the procedure of calculation
-        // The new z projected is only used for clip, so I can assume the near plane 1 and far plane inf. without change the new image(x and y);
-        // See http://www.songho.ca/opengl/gl_projectionmatrix.html
-        this->cam_proj_mat = glm::transpose(glm::mat4({
-            2.0*this->cam_in_mat[0][0] / wnd_width, 0, -1 + 2.0*this->cam_in_mat[0][2] / wnd_width, 0.0,
-            0, -2.0*this->cam_in_mat[1][1]/wnd_height, 1 - 2.0*this->cam_in_mat[1][2] / wnd_height, 0.0,
-            0, 0, 1, -2 * 1,
-            0, 0, 1, 0}));
-    }
-    else {
-        this->cam_proj_mat = glm::transpose(this->cam_in_mat);
-    }
-}
-
-
 std::vector<GLfloat> mSceneUtils::getGroundColor() {
     std::vector<GLfloat> result_gd(this->ground_col * this->ground_row * 18, 0);
     GLfloat * r_ptr = &result_gd[0];
@@ -201,7 +160,6 @@ std::vector<GLfloat> mSceneUtils::getGroundColor() {
 
     return result_gd;
 }
-
 std::vector<GLfloat> mSceneUtils::getGroundVertexs() {
     std::vector<GLfloat> result_gd(this->ground_col*this->ground_row * 18, 0);
     
@@ -246,93 +204,56 @@ std::vector<GLfloat> mSceneUtils::getGroundVertexs() {
 }
 
 void mSceneUtils::moveCamera(int move_type, QMouseEvent * event) {
+    glm::vec3 total_move_step(0.f);
     if (std::abs(move_type) == 1 && event->buttons() & Qt::MiddleButton) {
         // set the prev_mouse_pos
         this->prev_mouse_pos = glm::vec2(event->pos().x(), event->pos().y());
     }
     else if (std::abs(move_type) == 2 && event->buttons() & Qt::MiddleButton) {
-        glm::vec3 dir_x(this->cur_cam_ex_r_mat[0][0], this->cur_cam_ex_r_mat[1][0], this->cur_cam_ex_r_mat[2][0]);
-        glm::vec3 dir_y(this->cur_cam_ex_r_mat[0][1], this->cur_cam_ex_r_mat[1][1], this->cur_cam_ex_r_mat[2][1]);
-
         glm::vec2 cur_mouse_pos = glm::vec2(event->pos().x(), event->pos().y());
         glm::vec2 move_dert = (cur_mouse_pos - this->prev_mouse_pos);
-
-        this->cur_cam_ex_t_mat = glm::translate(glm::translate(this->cur_cam_ex_t_mat, -move_dert.x * this->move_step_scale * 33.3333f * dir_x * this->m_move_dir[0]), move_dert.y * this->move_step_scale * 33.3333f * dir_y * m_move_dir[1]);
+        total_move_step.x = -move_dert.x * this->move_step_scale * 33.3333f * this->m_move_dir[0];
+        total_move_step.y = move_dert.y * this->move_step_scale * 33.3333f * this->m_move_dir[1];
 
         this->prev_mouse_pos = cur_mouse_pos;
     }
     else if (std::abs(move_type) == 3) {
-        glm::vec3 dir_z(-this->cur_cam_ex_r_mat[0][2], -this->cur_cam_ex_r_mat[1][2], -this->cur_cam_ex_r_mat[2][2]);
         float sign = move_type > 0?1.f:-1.f;
-        this->cur_cam_ex_t_mat = glm::translate(this->cur_cam_ex_t_mat, sign * move_step * dir_z * this->move_step_scale * 4.f * this->m_move_dir[2]);
+        total_move_step.z = sign * move_step * this->move_step_scale * 4.f * this->m_move_dir[2];
     }
-
-    if (std::abs(move_type) == 0 || this->is_follow_person) {
-        // the cam_ex_t_mat is -(camera pos)
-//        if (this->cur_follow_dert == glm::vec3(0.f)) {
-//            // set the default pose
-//            this->setFollowDefault();
-//        }
-//        else {
-            this->cur_follow_dert = glm::vec3(-this->cur_cam_ex_t_mat[3][0] - this->person_center_pos[0], -this->cur_cam_ex_t_mat[3][1] - this->person_center_pos[1], -this->cur_cam_ex_t_mat[3][2] - this->person_center_pos[2]);
-//        }
-    }
+    this->cur_camera->moveCamera(total_move_step, this->person_center_pos);
 }
-void mSceneUtils::rotateCamrea(const glm::mat4 &rotate_mat) {
-    this->cur_cam_ex_r_mat = this->cur_cam_ex_r_mat * rotate_mat;
+void mSceneUtils::rotateCamera(glm::mat4 rotate_mat) {
+    this->cur_camera->rotateCamera(rotate_mat);
 }
-void mSceneUtils::getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat) {
-    if (this->is_follow_person) {
-        // the cam_ex_t_mat is -(camera pos)
-        // only update the cur_follow_dert
-        this->cur_cam_ex_t_mat[3][0] = -(this->cur_follow_dert[0] + this->person_center_pos[0]);
-        this->cur_cam_ex_t_mat[3][1] = -(this->cur_follow_dert[1] + this->person_center_pos[1]);
-        this->cur_cam_ex_t_mat[3][2] = -(this->cur_follow_dert[2] + this->person_center_pos[2]);
-    }
-
-    if (this->is_focus_on_center) {
-        glm::vec3 camera_pos(-this->cur_cam_ex_t_mat[3][0], -this->cur_cam_ex_t_mat[3][1], -this->cur_cam_ex_t_mat[3][2]);
-        glm::vec3 z_axis = glm::normalize(camera_pos - this->person_center_pos);
-        glm::vec3 x_axis = glm::normalize(glm::cross(glm::vec3(0, 1, 0), z_axis));
-        glm::vec3 y_axis = glm::normalize(glm::cross(z_axis, x_axis));
-        this->cur_cam_ex_r_mat[0][0] = x_axis.x;this->cur_cam_ex_r_mat[0][1] = y_axis.x;this->cur_cam_ex_r_mat[0][2] = z_axis.x;
-        this->cur_cam_ex_r_mat[1][0] = x_axis.y;this->cur_cam_ex_r_mat[1][1] = y_axis.y;this->cur_cam_ex_r_mat[1][2] = z_axis.y;
-        this->cur_cam_ex_r_mat[2][0] = x_axis.z;this->cur_cam_ex_r_mat[2][1] = y_axis.z;this->cur_cam_ex_r_mat[2][2] = z_axis.z;
-    }
-    cam_ex_r_mat = this->cur_cam_ex_r_mat;
-    cam_ex_t_mat = this->cur_cam_ex_t_mat;
+void mSceneUtils::setCurExMat(glm::mat4 cur_ex_mat) {
+    this->cur_camera->setViewMat(cur_ex_mat);
+}
+glm::mat4 mSceneUtils::getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat) {
+    return this->cur_camera->getViewMat(this->person_center_pos, cam_ex_r_mat, cam_ex_t_mat);
 }
 glm::mat4 mSceneUtils::getCurExMat() {
-    glm::mat4 cur_r_mat, cur_t_mat;
-    this->getCurExMat(cur_r_mat, cur_t_mat);
-    return cur_r_mat * cur_t_mat;
-}
-glm::mat4 mSceneUtils::getRawExMat() {
-    return this->cam_ex_mat;
+    return this->cur_camera->getViewMat(this->person_center_pos);
 }
 
 glm::vec3 mSceneUtils::getCurFollowVec() {
-    this->cur_follow_dert = glm::vec3(-this->cur_cam_ex_t_mat[3][0] - this->person_center_pos[0], -this->cur_cam_ex_t_mat[3][1] - this->person_center_pos[1], -this->cur_cam_ex_t_mat[3][2] - this->person_center_pos[2]);
-    return this->cur_follow_dert;
+    return this->cur_camera->getViewVec(this->person_center_pos);
 }
 void mSceneUtils::setCurFollowVec(glm::vec3 cur_follow_vec) {
-    this->cur_follow_dert = cur_follow_vec;
+    this->cur_camera->setViewVec(cur_follow_vec);
 }
 void mSceneUtils::setFollowPerson(bool is_follow) {
-    this->is_follow_person = is_follow;
-    if (is_follow) {
-        this->moveCamera(0);
-    }
+    this->cur_camera->setFollow(is_follow, this->person_center_pos);
 }
 void mSceneUtils::setFocusOnCenter(bool is_focus_on_center) {
-    this->is_focus_on_center = is_focus_on_center;
+    this->cur_camera->setFocus(is_focus_on_center);
 }
 
 bool mSceneUtils::getFollowPerson() {
-    return this->is_follow_person;
+    return this->cur_camera->getFollow();
 }
 bool mSceneUtils::getFocusOnCenter() {
-    return this->is_focus_on_center;
+    return this->cur_camera->getFocus();
 }
 
 void mSceneUtils::captureFrame(cv::Mat & cur_frame) {
@@ -353,65 +274,14 @@ void mSceneUtils::setUseShading(bool use_shading) {
 }
 
 void mSceneUtils::getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras) {
-    splitted_cameras.clear();
-
-    glm::mat4 tmp_ex_r_mat(this->cur_cam_ex_r_mat);
-    glm::mat4 tmp_ex_t_mat(1.0);
-
-    glm::vec3 cur_cam_pos(-this->cur_cam_ex_t_mat[3][0], -this->cur_cam_ex_t_mat[3][1], -this->cur_cam_ex_t_mat[3][2]);
-    glm::vec3 splitted_center(this->person_center_pos.x, cur_cam_pos.y, this->person_center_pos.z);
-    float per_angle = 2 * 3.1415927 / camera_num;
-    glm::vec3 cur_vec = glm::normalize(cur_cam_pos - splitted_center);
-    float cur_r = glm::length(splitted_center - cur_cam_pos);
-    glm::mat4 rotate_mat = glm::rotate(glm::mat4(1.f), per_angle, glm::vec3(0, 1, 0));
-    for (int i = 0; i < camera_num; ++i) {
-        cur_vec = glm::vec3(rotate_mat * glm::vec4(cur_vec, 1.f)); // New camera position
-        glm::vec4 cur_axis_x(tmp_ex_r_mat[0][0], tmp_ex_r_mat[1][0], tmp_ex_r_mat[2][0], 1.0);
-        glm::vec4 cur_axis_y(tmp_ex_r_mat[0][1], tmp_ex_r_mat[1][1], tmp_ex_r_mat[2][1], 1.0);
-        glm::vec4 cur_axis_z(tmp_ex_r_mat[0][2], tmp_ex_r_mat[1][2], tmp_ex_r_mat[2][2], 1.0);
-        cur_axis_x = rotate_mat * cur_axis_x;
-        cur_axis_y = rotate_mat * cur_axis_y;
-        cur_axis_z = rotate_mat * cur_axis_z;
-        tmp_ex_r_mat[0][0] = cur_axis_x.x; tmp_ex_r_mat[1][0] = cur_axis_x.y; tmp_ex_r_mat[2][0] = cur_axis_x.z;
-        tmp_ex_r_mat[0][1] = cur_axis_y.x; tmp_ex_r_mat[1][1] = cur_axis_y.y; tmp_ex_r_mat[2][1] = cur_axis_y.z;
-        tmp_ex_r_mat[0][2] = cur_axis_z.x; tmp_ex_r_mat[1][2] = cur_axis_z.y; tmp_ex_r_mat[2][2] = cur_axis_z.z;
-
-        cur_cam_pos = splitted_center + cur_r * cur_vec;
-        tmp_ex_t_mat[3] = glm::vec4(-cur_cam_pos.x, -cur_cam_pos.y, -cur_cam_pos.z, 1.0);
-        splitted_cameras.push_back(tmp_ex_r_mat * tmp_ex_t_mat);
-    }
+    this->cur_camera->getSplittedCameras(camera_num, this->person_center_pos, splitted_cameras);
 }
-
 void mSceneUtils::getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras) {
-    splitted_cameras.clear();
-    glm::vec3 cur_cam_pos(-this->cur_cam_ex_t_mat[3][0], -this->cur_cam_ex_t_mat[3][1], -this->cur_cam_ex_t_mat[3][2]);
-    glm::vec3 splitted_center(this->person_center_pos.x, this->person_center_pos.y, this->person_center_pos.z);
-
-    float per_angle = 2*3.1415927 / camera_num;
-    glm::vec3 cur_vec = glm::normalize(cur_cam_pos - splitted_center);
-    float cur_r = glm::length(splitted_center - cur_cam_pos);
-    glm::mat4 rotate_mat = glm::rotate(glm::mat4(1.f), per_angle, glm::vec3(0, 1, 0));
-    for (int i = 0; i < camera_num; ++i) {
-        cur_vec = glm::vec3(rotate_mat * glm::vec4(cur_vec, 1.0));
-        splitted_cameras.push_back(cur_vec * cur_r);
-    }
+    this->cur_camera->getSplittedCameras(camera_num, this->person_center_pos, splitted_cameras);
 }
 // This funciont can only be used in the follow mode
 void mSceneUtils::setVerticalAngle(float angle) {
-    // TODO: Maybe wrong in the ar mode
-    glm::vec3 cur_cam_pos(-this->cur_cam_ex_t_mat[3][0], -this->cur_cam_ex_t_mat[3][1], -this->cur_cam_ex_t_mat[3][2]);
-    glm::vec3 center_to_cam = glm::normalize(cur_cam_pos - this->person_center_pos);
-    glm::vec3 rotate_axis = glm::normalize(glm::cross(center_to_cam, glm::vec3(0, 1, 0)));
-    glm::vec3 raw_vec = glm::normalize(glm::cross(glm::vec3(0, 1, 0), rotate_axis));
-    float length = glm::length(cur_cam_pos - this->person_center_pos);
-
-
-    glm::mat4 rotate_mat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), rotate_axis);
-    raw_vec = glm::vec3(rotate_mat * glm::vec4(raw_vec, 1.f));
-    this->cur_follow_dert = raw_vec * length;
-}
-void mSceneUtils::setFollowDefault() {
-    this->cur_follow_dert = glm::vec3(0.f, 0.f, mPoseDef::bones_length[4] * 6);
+    this->cur_camera->setVerticalAngle(angle, this->person_center_pos);
 }
 
 glm::mat4 mSceneUtils::convertVec2Mat(const glm::vec3 & follow_vec, glm::vec3 person_center_pos) {
@@ -449,9 +319,9 @@ void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, con
             cur_view_mat = this->getCurExMat();
         }
         glm::vec3 root_joint = glm::vec3(cur_view_mat * glm::vec4(joints[joints.size() - 1], 1.f));
-
+        glm::mat4 cam_proj_mat = this->cur_camera->getProjMat();
         for (int i = 0; i < joints.size(); ++i) {
-            glm::vec4 cur_2d = this->cam_proj_mat * cur_view_mat * glm::vec4(joints[i], 1.0);
+            glm::vec4 cur_2d = cam_proj_mat * cur_view_mat * glm::vec4(joints[i], 1.0);
             cur_2d /= cur_2d.w;
             labels_2d[i] = glm::vec2(this->wnd_width * (cur_2d.x + 1.f) / 2.f , this->wnd_height * (1.f - cur_2d.y) / 2.f);
             labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints[i], 1.f)) - root_joint;
@@ -483,15 +353,6 @@ void mSceneUtils::_beforeRender(const std::vector<glm::vec3> & points_3d) {
     if (points_3d.size() == this->pose_model->num_of_joints) {
         this->person_center_pos = points_3d[points_3d.size()-1];
     }
-
-//    // correct the x direction
-//    glm::vec3 dir_z(this->cur_cam_ex_r_mat[0][2], this->cur_cam_ex_r_mat[1][2], this->cur_cam_ex_r_mat[2][2]);
-//    // The default head position
-//    glm::vec3 dir_y(0, 1, 0);
-//    glm::vec3 dir_x = glm::normalize(glm::cross(dir_y, dir_z));
-//    this->cur_cam_ex_r_mat[0][0] = dir_x.x;
-//    this->cur_cam_ex_r_mat[1][0] = dir_x.y;
-//    this->cur_cam_ex_r_mat[2][0] = dir_x.z;
 }
 
 void mSceneUtils::render(std::vector<glm::vec3> points_3d, glm::mat4 cam_ex_mat) {
@@ -581,7 +442,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
     this->scene_shader->setVal("renderType", 1);
     this->scene_shader->setVal("use_shadow", mShadowUseShadow);
     this->scene_shader->setVal("viewPos", glm::vec3(view_t_mat[3][0], view_t_mat[3][1], view_t_mat[3][2]));
-    this->scene_shader->setVal("projection", this->cam_proj_mat);
+    this->scene_shader->setVal("projection", this->cur_camera->getProjMat());
     this->scene_shader->setVal("view", cur_cam_ex_mat);
     this->scene_shader->setVal("model", glm::mat4(1.f));
     this->scene_shader->setVal("normMat", glm::transpose(glm::inverse(glm::mat4(1.f))));

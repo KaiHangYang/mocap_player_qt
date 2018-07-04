@@ -184,10 +184,15 @@ void mMainWindow::buildToolBoxTab1() {
     this->tool_render_floor_label = new QLabel("Use floor:", this->render_box);
     this->tool_render_floor_btn = new QPushButton("True", this->render_box);
 
+    this->tool_camera_visualize_lbl = new QLabel("Visualize cameras:", this->render_box);
+    this->tool_camera_visualize_btn = new QPushButton("Show", this->render_box);
+
     this->render_box_layout->addWidget(this->tool_render_type_label, 0, 0, 1, 1);
     this->render_box_layout->addWidget(this->tool_render_type_btn, 0, 1, 1, 1);
     this->render_box_layout->addWidget(this->tool_render_floor_label, 1, 0, 1, 1);
     this->render_box_layout->addWidget(this->tool_render_floor_btn, 1, 1, 1, 1);
+    this->render_box_layout->addWidget(this->tool_camera_visualize_lbl, 2, 0, 1, 1);
+    this->render_box_layout->addWidget(this->tool_camera_visualize_btn, 2, 1, 1, 1);
 
     this->tool_box_layout->addWidget(this->file_box, 0, 0, 2, 1);
     this->tool_box_layout->addWidget(this->pose_box, 2, 0, 1, 1);
@@ -248,7 +253,6 @@ void mMainWindow::buildToolBoxTab2() {
 
     this->tool_camera_loadfromfile_btn = new QPushButton("Load", this->camera_box);
     this->tool_camera_savetofile_btn = new QPushButton("Save", this->camera_box);
-    this->tool_camera_visualize_btn = new QPushButton("Visualize", this->camera_box);
     //    this->tool_camera_dialog = new QDialog(this);
     //    this->tool_camera_dialog->setWindowTitle("Add new camera");
     //    this->camera_dialog_layout = new QGridLayout;
@@ -293,7 +297,7 @@ void mMainWindow::buildToolBoxTab2() {
     this->camera_box_layout->addWidget(this->tool_camera_listview, 6, 0, 4, 3);
     this->camera_box_layout->addWidget(this->tool_camera_loadfromfile_btn, 10, 1, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_savetofile_btn, 10, 2, 1, 1);
-    this->camera_box_layout->addWidget(this->tool_camera_visualize_btn, 10, 0, 1, 1);
+
 
     //      Box for capture control
     this->capture_box = new QGroupBox("Capture Control:", this->tool_box_2);
@@ -304,7 +308,6 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_capture_dir_input->setReadOnly(true);
     this->tool_capture_dir_input->setPlaceholderText("Double click to choose directory!");
 
-    this->tool_capture_capture_video = new QPushButton("Capture Video", this->capture_box);
     this->tool_capture_capture_one = new QPushButton("Capture One", this->capture_box);
     this->tool_capture_capture_interval = new QPushButton("Capture All", this->capture_box);
     this->tool_capture_capture_currentall = new QPushButton("Capture Current All", this->capture_box);
@@ -319,7 +322,6 @@ void mMainWindow::buildToolBoxTab2() {
     this->capture_box_layout->addWidget(this->tool_capture_dir_input, 0, 1, 1, 3);
     this->capture_box_layout->addWidget(this->tool_capture_img_extension_label, 1, 0, 1, 1);
     this->capture_box_layout->addWidget(this->tool_capture_img_extension_combox, 1, 1, 1, 1);
-    this->capture_box_layout->addWidget(this->tool_capture_capture_video, 1, 2, 1, 2);
 
     this->capture_box_layout->addWidget(this->tool_capture_capture_one, 2, 0, 1, 2);
     this->capture_box_layout->addWidget(this->tool_capture_capture_interval, 2, 2, 1, 2);
@@ -369,11 +371,11 @@ void mMainWindow::bindEvents() {
     connect(this->camera_list_follow_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(cameraEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
     connect(this->tool_camera_loadfromfile_btn, SIGNAL(clicked()), this, SLOT(cameraLoadFromFileSlot()));
     connect(this->tool_camera_savetofile_btn, SIGNAL(clicked()), this, SLOT(cameraSaveToFileSlot()));
+    connect(this->tool_camera_visualize_btn, SIGNAL(clicked()), this, SLOT(cameraVisualizeSlot()));
 
     connect(this->tool_capture_dir_input, SIGNAL(lineEditOpenDirSignal()), this, SLOT(captureDirSlot()));
     connect(this->tool_capture_capture_one, SIGNAL(clicked()), this, SLOT(captureOneFrame()));
     connect(this->tool_capture_capture_interval, SIGNAL(clicked()), this, SLOT(captureAllFrames()));
-    connect(this->tool_capture_capture_video, SIGNAL(clicked()), this, SLOT(captureVideo()));
     connect(this->tool_capture_capture_currentall, SIGNAL(clicked()), this, SLOT(captureCurrentAll()));
     connect(this->tool_camera_type_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraTypeChangeSlot(int)));
     connect(this->tool_render_floor_btn, SIGNAL(clicked()), this, SLOT(sceneFloorSlot()));
@@ -642,14 +644,12 @@ void mMainWindow::cameraActivateSlot() {
         // first disable the camera follow
         int cur_row = index_list[0].row();
         if (this->cur_camera_type == 0) {
-            this->cameraSetAllFollow(false);
-
             this->gl_widget->setCurCamera(this->camera_mat_arr[cur_row].second);
         }
         else if (this->cur_camera_type == 1) {
-
             this->gl_widget->setCurCamera(this->camera_vec_arr[cur_row].second);
         }
+        this->cameraUpdataFollowNFocus();
     }
 }
 void mMainWindow::cameraFollowSlot() {
@@ -682,7 +682,20 @@ void mMainWindow::cameraFocusSlot() {
         QMessageBox::critical(this, "Camera Error", "Need a pose in the scene!");
     }
 }
-
+void mMainWindow::cameraUpdataFollowNFocus() {
+    if (!this->gl_widget->getFollowPerson()) {
+        this->tool_camera_follow_btn->setText("Follow");
+    }
+    else {
+        this->tool_camera_follow_btn->setText("Unfollow");
+    }
+    if (!this->gl_widget->getFocusOnPerson()) {
+        this->tool_camera_focuson_btn->setText("Focus");
+    }
+    else {
+        this->tool_camera_focuson_btn->setText("Unfocus");
+    }
+}
 void mMainWindow::cameraSetAllFollow(bool is_follow) {
     if (!is_follow) {
         this->tool_camera_follow_btn->setText("Follow");
@@ -694,7 +707,6 @@ void mMainWindow::cameraSetAllFollow(bool is_follow) {
     }
     this->gl_widget->setFollowPerson(is_follow);
     this->gl_widget->setFocusOnPerson(is_follow);
-
 }
 void mMainWindow::cameraEditNameSlot(QModelIndex cur_index, QModelIndex bottomright, QVector<int> roles) {
     if (this->cur_camera_type == 0) {
@@ -908,6 +920,36 @@ void mMainWindow::cameraSaveToFileSlot() {
     }
 }
 
+void mMainWindow::cameraVisualizeSlot() {
+    bool is_visualize = this->tool_camera_visualize_btn->text() == "Show";
+
+    std::vector<const mCamera *> cameras_arr;
+    if (this->cur_camera_type == 0) {
+        for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
+            cameras_arr.push_back(this->camera_mat_arr[i].second);
+        }
+    }
+    else if (this->cur_camera_type == 1) {
+        for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
+            cameras_arr.push_back(this->camera_vec_arr[i].second);
+        }
+    }
+    if (!cameras_arr.empty()) {
+        if (is_visualize) {
+            this->tool_camera_visualize_btn->setText("Hide");
+            this->gl_widget->setVisualizeCameras(cameras_arr);
+        }
+        else {
+            this->tool_camera_visualize_btn->setText("Show");
+            this->gl_widget->setVisualizeCameras(std::vector<const mCamera *>());
+        }
+
+    }
+    else {
+        QMessageBox::critical(this, "Value Error", "The camera list is empty!");
+    }
+}
+
 void mMainWindow::captureDirSlot() {
     QString dir_name = QFileDialog::getExistingDirectory(this, "Select a directory to save the captured images.", ".");
     if (!dir_name.isEmpty()) {
@@ -981,104 +1023,67 @@ void mMainWindow::saveLabelsSlot(std::vector<glm::vec2> labels_2d, std::vector<g
 }
 
 void mMainWindow::captureOneFrame() {
-//    QString dir_name = this->tool_capture_dir_input->text();
-//    QFileInfo dir_info(dir_name);
-//    if (!dir_name.isEmpty() && dir_info.isDir()) {
-//        // Get view mats
-//        std::vector<glm::mat4> cur_view_mats({glm::mat4(0.0)});
-//        this->gl_widget->captureFrame(cur_view_mats);
-//    }
-//    else {
-//        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
-//    }
+    QString dir_name = this->tool_capture_dir_input->text();
+    QFileInfo dir_info(dir_name);
+    if (!dir_name.isEmpty() && dir_info.isDir()) {
+        // Get view mats
+        this->gl_widget->captureFrame(std::vector<const mCamera*>());
+    }
+    else {
+        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
+    }
 }
 void mMainWindow::captureAllFrames() {
-//    QString dir_name = this->tool_capture_dir_input->text();
-//    QFileInfo dir_info(dir_name);
-//    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
-//        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
-//        return;
-//    }
+    QString dir_name = this->tool_capture_dir_input->text();
+    QFileInfo dir_info(dir_name);
+    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
+        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
+        return;
+    }
 
-//    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
-//    this->fileActivatedSlot(cur_index);
-//    this->videoResetSlot();
+    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
+    this->fileActivatedSlot(cur_index);
+    this->videoResetSlot();
 
-//    if (!dir_name.isEmpty() && dir_info.isDir()) {
-//        // Get view mats
-//        if (this->cur_camera_type == 0) {
-//            std::vector<glm::mat4> cur_view_mats;
-//            for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
-//                cur_view_mats.push_back(this->camera_mat_arr[i].second);
-//            }
-//            this->gl_widget->captureAllFrames(cur_view_mats);
-//            this->videoStartSlot();
-//        }
-//        else {
-//            std::vector<glm::vec3> cur_view_vecs;
-//            for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
-//                cur_view_vecs.push_back(this->camera_vec_arr[i].second);
-//            }
-//            this->gl_widget->captureAllFrames(cur_view_vecs);
-//            this->videoStartSlot();
-//        }
-//    }
-//    else {
-//        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
-//    }
+    if (!dir_name.isEmpty() && dir_info.isDir()) {
+        std::vector<const mCamera*> cameras_for_capture;
+        if (this->cur_camera_type == 0) {
+            for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
+                cameras_for_capture.push_back(this->camera_mat_arr[i].second);
+            }
+        }
+        else {
+            for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
+                cameras_for_capture.push_back(this->camera_vec_arr[i].second);
+            }
+        }
+
+        this->gl_widget->captureAllFrames(cameras_for_capture);
+        this->videoStartSlot();
+    }
+    else {
+        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
+    }
 }
 
 void mMainWindow::captureCurrentAll() {
-//    QString dir_name = this->tool_capture_dir_input->text();
-//    QFileInfo dir_info(dir_name);
-//    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
-//        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
-//        return;
-//    }
+    QString dir_name = this->tool_capture_dir_input->text();
+    QFileInfo dir_info(dir_name);
+    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
+        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
+        return;
+    }
+    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
+    this->fileActivatedSlot(cur_index);
+    this->videoResetSlot();
 
-//    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
-//    this->fileActivatedSlot(cur_index);
-//    this->videoResetSlot();
-
-//    if (!dir_name.isEmpty() && dir_info.isDir()) {
-//        // Get view mats
-//        std::vector<glm::mat4> cur_ex_mat({glm::mat4(0.f)});
-//        this->gl_widget->captureAllFrames(cur_ex_mat);
-//        this->videoStartSlot();
-//    }
-//    else {
-//        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
-//    }
-}
-
-void mMainWindow::captureVideo() {
-//    QString dir_name = this->tool_capture_dir_input->text();
-//    QFileInfo dir_info(dir_name);
-//    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
-//        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
-//        return;
-//    }
-
-//    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
-//    this->fileActivatedSlot(cur_index);
-//    this->videoResetSlot();
-
-//    if (!dir_name.isEmpty() && dir_info.isDir()) {
-//        // Get view mats
-//        if (this->cur_camera_type == 0) {
-//            std::vector<glm::mat4> cur_view_mats;
-//            this->gl_widget->captureAllFrames(cur_view_mats);
-//            this->videoStartSlot();
-//        }
-//        else {
-//            std::vector<glm::vec3> cur_view_vecs;
-//            this->gl_widget->captureAllFrames(cur_view_vecs);
-//            this->videoStartSlot();
-//        }
-//    }
-//    else {
-//        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
-//    }
+    if (!dir_name.isEmpty() && dir_info.isDir()) {
+        this->gl_widget->captureAllFrames(std::vector<const mCamera*>());
+        this->videoStartSlot();
+    }
+    else {
+        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
+    }
 }
 
 void mMainWindow::sceneFloorSlot() {

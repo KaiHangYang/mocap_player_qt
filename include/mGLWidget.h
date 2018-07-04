@@ -43,6 +43,7 @@ public:
     void setAngleJitter(float jitter_size);
     void setUseShading(bool use_shading);
     void setVerticalAngle(float angle);
+    void setVisualizeCameras(std::vector<const mCamera *> cameras_arr);
 
 public slots:
     void changePoseFile(QString & file_name, int cur_dataset_num);
@@ -101,6 +102,10 @@ private:
     /**************** Progress control **************/
     void sendProgress(bool is_reset);
     /************************************************/
+
+    /**************** Camera visualization **************/
+    std::vector<const mCamera *> cur_visualization_cameras;
+    /****************************************************/
 
     /************** Capture Control *****************/
     int cur_capture_num;

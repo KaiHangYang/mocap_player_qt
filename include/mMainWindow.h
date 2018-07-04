@@ -60,17 +60,18 @@ public slots:
     void cameraActivateSlot();
     void cameraFollowSlot();
     void cameraFocusSlot();
+    void cameraUpdataFollowNFocus();
     void cameraSetAllFollow(bool is_follow);
     void cameraEditNameSlot(QModelIndex topleft, QModelIndex bottomright, QVector<int> roles);
     void captureDirSlot();
     void captureOneFrame();
     void captureAllFrames();
-    void captureVideo();
     void captureCurrentAll();
     void cameraTypeChangeSlot(int index);
     void cameraSplitCircleSlot();
     void cameraSetVerticalAngle();
     void cameraSetSplitPrefix();
+    void cameraVisualizeSlot();
     void sceneFloorSlot();
     void saveFramesSlot(cv::Mat & frames, int cur_frame, int cur_num);
     void saveLabelsSlot(std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num, bool is_raw);
@@ -182,6 +183,7 @@ private:
 
     QPushButton * tool_camera_loadfromfile_btn;
     QPushButton * tool_camera_savetofile_btn;
+    QLabel * tool_camera_visualize_lbl;
     QPushButton * tool_camera_visualize_btn;
     QPushButton * tool_camera_add_btn;
     QPushButton * tool_camera_addcurr_btn;
@@ -223,7 +225,6 @@ private:
     QLabel * tool_capture_dir_label;
     mLineEditWidget * tool_capture_dir_input;
 
-    QPushButton * tool_capture_capture_video;
     QPushButton * tool_capture_capture_one;
     QPushButton * tool_capture_capture_interval;
     QPushButton * tool_capture_capture_currentall;

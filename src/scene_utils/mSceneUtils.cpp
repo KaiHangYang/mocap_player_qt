@@ -53,12 +53,16 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
 
     this->initScene();
 
+    // Read the camera mesh.
+    this->camera_mesh = new mMeshReader(this->VAO, this->core_func);
+    this->camera_mesh->addMesh(mPoseDef::model_base_dir + "camera.obj");
 }
 mSceneUtils::~mSceneUtils() {
     this->pose_model->~mPoseModel();
     this->scene_shader->~mShader();
     this->depth_shader->~mShader();
     this->cur_camera->~mCamera();
+    this->camera_mesh->~mMeshReader();
 }
 
 void mSceneUtils::initScene() {
@@ -331,6 +335,77 @@ void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, cons
     this->_getLabelsFromFrame(joints, view_mat, proj_mat, labels_2d, labels_3d);
 }
 
+void mSceneUtils::_setDepthShaderUniforms(int light_num) {
+    if (this->is_ar) {
+        for (int i = 0; i < 6; ++i) {
+            this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mShadowTransforms_AR[light_num][i]);
+        }
+        this->depth_shader->setVal("far_plane", mShadowFarPlane_AR);
+        this->depth_shader->setVal("lightPos", mLightPos_AR[light_num]);
+    }
+    else {
+        for (int i = 0; i < 6; ++i) {
+            this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mShadowTransforms[light_num][i]);
+        }
+        this->depth_shader->setVal("far_plane", mShadowFarPlane);
+        this->depth_shader->setVal("lightPos", mLightPos[light_num]);
+    }
+    this->depth_shader->setVal("model", glm::mat4(1.f));
+}
+void mSceneUtils::_setSceneShaderUnoforms(glm::mat4 model_mat, glm::mat4 view_mat, glm::mat4 proj_mat, bool is_use_shadow) {
+    glm::mat4 view_r_mat = glm::mat4(glm::mat3(view_mat));
+    glm::mat4 view_t_mat = glm::inverse(view_r_mat) * view_mat;
+    this->scene_shader->setVal("use_shading", this->use_shading);
+    this->scene_shader->setVal("renderType", 1);
+    this->scene_shader->setVal("use_shadow", is_use_shadow);
+    this->scene_shader->setVal("viewPos", glm::vec3(-view_t_mat[3][0], -view_t_mat[3][1], -view_t_mat[3][2]));
+    this->scene_shader->setVal("projection", proj_mat);
+    this->scene_shader->setVal("view", view_mat);
+    this->scene_shader->setVal("model", model_mat);
+    this->scene_shader->setVal("normMat", glm::transpose(glm::inverse(model_mat)));
+
+    if (this->is_ar) {
+        this->scene_shader->setVal("far_plane", mShadowFarPlane_AR);
+        this->scene_shader->setVal("shadow_bias", mBias_AR);
+    }
+    else {
+        this->scene_shader->setVal("far_plane", mShadowFarPlane);
+        this->scene_shader->setVal("shadow_bias", mBias);
+    }
+
+    for (int light_num = 0; light_num < mLightSum; ++light_num) {
+        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].ambient").c_str(), mAmbient);
+        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].diffuse").c_str(), mDiffuse);
+        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].specular").c_str(), mSpecular);
+        if (this->is_ar) {
+            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mLightPos_AR[light_num]);
+        }
+        else {
+            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mLightPos[light_num]);
+        }
+
+        this->scene_shader->setVal(("depth_cube["+ std::to_string(light_num) + "]").c_str(), 1 + light_num);
+
+        this->core_func->glActiveTexture(GL_TEXTURE1 + light_num);
+        this->core_func->glBindTexture(GL_TEXTURE_CUBE_MAP, this->shadow_fbo[light_num]);
+    }
+}
+
+void mSceneUtils::_drawFloor() {
+    this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_vbo);
+    this->core_func->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    this->core_func->glEnableVertexAttribArray(0);
+
+    this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_cbo);
+    this->core_func->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    this->core_func->glEnableVertexAttribArray(1);
+
+    this->core_func->glDrawArrays(GL_TRIANGLES, 0, this->array_size);
+
+    this->core_func->glDisableVertexAttribArray(0);
+    this->core_func->glDisableVertexAttribArray(1);
+}
+
 void mSceneUtils::_beforeRender(const std::vector<glm::vec3> & points_3d) {
     // points_3d is in the global coordinate
     if (points_3d.size() == this->pose_model->num_of_joints) {
@@ -362,37 +437,11 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
         this->core_func->glBindFramebuffer(GL_FRAMEBUFFER, this->shadow_fbo[light_num]);
         this->core_func->glClear(GL_DEPTH_BUFFER_BIT);
 
-        if (this->is_ar) {
-            for (int i = 0; i < 6; ++i) {
-                this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mShadowTransforms_AR[light_num][i]);
-            }
-            this->depth_shader->setVal("far_plane", mShadowFarPlane_AR);
-            this->depth_shader->setVal("lightPos", mLightPos_AR[light_num]);
-        }
-        else {
-            for (int i = 0; i < 6; ++i) {
-                this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mShadowTransforms[light_num][i]);
-            }
-            this->depth_shader->setVal("far_plane", mShadowFarPlane);
-            this->depth_shader->setVal("lightPos", mLightPos[light_num]);
-        }
-        this->depth_shader->setVal("model", glm::mat4(1.f));
+        this->_setDepthShaderUniforms(light_num);
 
         if (this->is_with_floor) {
-            this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_vbo);
-            this->core_func->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-            this->core_func->glEnableVertexAttribArray(0);
-
-            this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_cbo);
-            this->core_func->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-            this->core_func->glEnableVertexAttribArray(1);
-
-            this->core_func->glDrawArrays(GL_TRIANGLES, 0, this->array_size);
-
-            this->core_func->glDisableVertexAttribArray(0);
-            this->core_func->glDisableVertexAttribArray(1);
+            this->_drawFloor();
         }
-
         if (points_3d.size() == this->pose_model->num_of_joints) {
             this->pose_model->draw(points_3d, cur_cam_ex_mat, 1);
         }
@@ -405,59 +454,36 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
     this->core_func->glViewport(0, 0, this->wnd_width, this->wnd_height);
 
     this->scene_shader->use();
-    glm::mat4 view_r_mat = glm::mat4(glm::mat3(cur_cam_ex_mat));
-    glm::mat4 view_t_mat = glm::inverse(view_r_mat) * cur_cam_ex_mat;
-    this->scene_shader->setVal("use_shading", this->use_shading);
-    this->scene_shader->setVal("renderType", 1);
-    this->scene_shader->setVal("use_shadow", mShadowUseShadow);
-    this->scene_shader->setVal("viewPos", glm::vec3(view_t_mat[3][0], view_t_mat[3][1], view_t_mat[3][2]));
-    this->scene_shader->setVal("projection", cur_cam_in_mat);
-    this->scene_shader->setVal("view", cur_cam_ex_mat);
-    this->scene_shader->setVal("model", glm::mat4(1.f));
-    this->scene_shader->setVal("normMat", glm::transpose(glm::inverse(glm::mat4(1.f))));
+    this->_setSceneShaderUnoforms(glm::mat4(1.f), cur_cam_ex_mat, cur_cam_in_mat, mShadowUseShadow);
 
-    if (this->is_ar) {
-        this->scene_shader->setVal("far_plane", mShadowFarPlane_AR);
-        this->scene_shader->setVal("shadow_bias", mBias_AR);
-    }
-    else {
-        this->scene_shader->setVal("far_plane", mShadowFarPlane);
-        this->scene_shader->setVal("shadow_bias", mBias);
-    }
-
-    for (int light_num = 0; light_num < mLightSum; ++light_num) {
-        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].ambient").c_str(), mAmbient);
-        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].diffuse").c_str(), mDiffuse);
-        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].specular").c_str(), mSpecular);
-        if (this->is_ar) {
-            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mLightPos_AR[light_num]);
-        }
-        else {
-            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mLightPos[light_num]);
-        }
-
-        this->scene_shader->setVal(("depth_cube["+ std::to_string(light_num) + "]").c_str(), 1 + light_num);
-
-        this->core_func->glActiveTexture(GL_TEXTURE1 + light_num);
-        this->core_func->glBindTexture(GL_TEXTURE_CUBE_MAP, this->shadow_fbo[light_num]);
-    }
-
+    // Render the floor
     if (this->is_with_floor) {
-        this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_vbo);
-        this->core_func->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-        this->core_func->glEnableVertexAttribArray(0);
-
-        this->core_func->glBindBuffer(GL_ARRAY_BUFFER, this->ground_cbo);
-        this->core_func->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-        this->core_func->glEnableVertexAttribArray(1);
-
-        this->core_func->glDrawArrays(GL_TRIANGLES, 0, this->array_size);
-
-        this->core_func->glDisableVertexAttribArray(0);
-        this->core_func->glDisableVertexAttribArray(1);
+        this->_drawFloor();
     }
 
     if (points_3d.size() == this->pose_model->num_of_joints) {
         this->pose_model->draw(points_3d, cur_cam_ex_mat, 0);
+    }
+}
+
+/********** PAY ATTENTION: This function must be called after the person_center_pos is updated!!!!!!!!!! ************/
+void mSceneUtils::renderCamerasPos(std::vector<const mCamera *> cameras) {
+    this->VAO->bind();
+    this->core_func->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    this->core_func->glViewport(0, 0, this->wnd_width, this->wnd_height);
+    glm::mat4 cur_view_r_mat, cur_view_t_mat, cur_view_mat, cur_proj_mat;
+    glm::vec3 camera_pos, visualize_camera_pos;
+
+    cur_proj_mat = this->cur_camera->getProjMat();
+    cur_view_mat = this->cur_camera->getViewMat(this->person_center_pos, &cur_view_r_mat, &cur_view_t_mat);
+
+    for (int i = 0; i < cameras.size(); ++i) {
+        this->scene_shader->use();
+        glm::mat4 cur_model_mat = cameras[i]->getAffineMatrix(this->person_center_pos);
+        this->_setSceneShaderUnoforms(cur_model_mat, cur_view_mat, cur_proj_mat, false);
+        this->scene_shader->setVal("renderType", 0);
+        this->scene_shader->setVal("fragColor", glm::vec3(1.0, 0.9294117647058824, 0.0745098039215686));
+
+        this->camera_mesh->render(0);
     }
 }

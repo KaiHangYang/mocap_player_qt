@@ -218,3 +218,48 @@ bool mCamera::getFocus() const {
 bool mCamera::getFollow() const {
     return this->is_follow;
 }
+
+glm::vec3 mCamera::getCameraPos(glm::vec3 pose_center) const {
+    glm::mat4 cur_view_t_mat, cur_view_r_mat;
+    this->getViewMat(pose_center, &cur_view_r_mat, &cur_view_t_mat);
+    return glm::vec3(-cur_view_t_mat[3][0], -cur_view_t_mat[3][1], -cur_view_t_mat[3][2]);
+}
+
+glm::mat4 mCamera::getAffineMatrix(glm::vec3 pose_center) const {
+    float e = 0.00005;
+
+    glm::mat4 cur_view_t_mat, cur_view_r_mat;
+    this->getViewMat(pose_center, &cur_view_r_mat, &cur_view_t_mat);
+    glm::vec3 camera_pos(-cur_view_t_mat[3][0], -cur_view_t_mat[3][1], -cur_view_t_mat[3][2]);
+    glm::mat4 rotate_mat;
+
+    glm::vec3 raw_axis_x = glm::vec3(1, 0, 0);
+    glm::vec3 raw_axis_y = glm::vec3(0, 1, 0);
+    glm::vec3 cur_axis_x = glm::vec3(cur_view_r_mat[0][0], cur_view_r_mat[1][0], cur_view_r_mat[2][0]);
+    glm::vec3 cur_axis_y = glm::vec3(cur_view_r_mat[0][1], cur_view_r_mat[1][1], cur_view_r_mat[2][1]);
+
+    // first rotate the coordiant to make the axis_x in the new axis_x
+    glm::vec3 rotate_axis;
+    float rotate_angle;
+
+    if (glm::length(raw_axis_x - cur_axis_x) < e) {
+        // the vector is in the same line
+        rotate_mat = glm::mat4(1.f);
+    }
+    else {
+        rotate_axis = glm::normalize(glm::cross(raw_axis_x, cur_axis_x));
+        rotate_angle = glm::acos(glm::dot(raw_axis_x, cur_axis_x));
+        rotate_mat = glm::rotate(glm::mat4(1.f), rotate_angle, rotate_axis);
+    }
+
+    raw_axis_x = cur_axis_x;
+    raw_axis_y = glm::vec3(rotate_mat * glm::vec4(raw_axis_y, 1.0f));
+
+    if (glm::length(raw_axis_y - cur_axis_y) >= e) {
+        rotate_axis = glm::normalize(glm::cross(raw_axis_y, cur_axis_y));
+        rotate_angle = glm::acos(glm::dot(raw_axis_y, cur_axis_y));
+        rotate_mat = glm::rotate(glm::mat4(1.f), rotate_angle, rotate_axis) * rotate_mat;
+    }
+
+    return glm::translate(glm::mat4(1.f), camera_pos - glm::vec3(0.f)) * rotate_mat;
+}

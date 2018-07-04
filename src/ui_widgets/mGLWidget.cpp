@@ -181,7 +181,12 @@ void mGLWidget::setVerticalAngle(float angle) {
     this->scene->setVerticalAngle(angle);
 }
 
+void mGLWidget::setVisualizeCameras(std::vector<const mCamera *> cameras_arr) {
+    this->cur_visualization_cameras = cameras_arr;
+}
+
 void mGLWidget::captureFrame(std::vector<const mCamera *> cameras) {
+    this->cur_capture_cameras.clear();
     if (cameras.size() == 0) {
         this->cur_capture_cameras.push_back(const_cast<const mCamera *>(this->scene->getCurCamera()));
     }
@@ -343,5 +348,10 @@ void mGLWidget::draw() {
         }
     }
 
+
     this->scene->render(cur_pose_joints);
+    // the render will clear the color and depth bit, so I need to render the camera below
+    if (!this->cur_visualization_cameras.empty()) {
+        this->scene->renderCamerasPos(this->cur_visualization_cameras);
+    }
 }

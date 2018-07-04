@@ -17,6 +17,10 @@ public:
     glm::mat4 getViewMat(glm::vec3 pose_center, glm::mat4 * view_r_mat = nullptr, glm::mat4 * view_t_mat = nullptr) const;
     glm::mat4 getProjMat() const;
     glm::vec3 getViewVec() const;
+    glm::vec3 getCameraPos(glm::vec3 pose_center) const;
+
+    // the matrix to translate and rotate the origin coordinat to the camera coordiante
+    glm::mat4 getAffineMatrix(glm::vec3 pose_center) const;
 
     bool getFollow() const;
     bool getFocus() const;

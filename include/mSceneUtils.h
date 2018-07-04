@@ -10,6 +10,7 @@
 #include "mPoseModel.h"
 #include "mShader.h"
 #include "mCamera.h"
+#include "mMeshReader.h"
 
 #include <opencv2/core/core.hpp>
 
@@ -19,6 +20,7 @@ public:
     ~mSceneUtils();
 
     void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), const mCamera * camera=nullptr);
+    void renderCamerasPos(std::vector<const mCamera *> cameras);
 
     const mCamera * getCurCamera();
     void setCurCamera(const mCamera * camera);
@@ -61,7 +63,11 @@ private:
 
     void _beforeRender(const std::vector<glm::vec3> & points_3d);
     void _render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat);
+    void _setDepthShaderUniforms(int light_num);
+    void _setSceneShaderUnoforms(glm::mat4 model_mat, glm::mat4 view_mat, glm::mat4 proj_mat, bool is_use_shadow);
+    void _drawFloor();
     void _getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, const glm::mat4 & proj_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
+
 
     int wnd_width;
     int wnd_height;
@@ -94,8 +100,8 @@ private:
     mShader * depth_shader;
 
     mPoseModel * pose_model;
-    mCamera * cur_camera;
-
+    mCamera * cur_camera; // The inner camera
+    mMeshReader * camera_mesh;
 };
 
 #endif

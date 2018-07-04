@@ -13,7 +13,7 @@
 class mPoseModel {
 public:
 
-    mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, bool use_shading, int pose_type=0);
+    mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, float target_model_size, bool is_ar, bool use_shading, int pose_type=0);
     ~mPoseModel();
 
     void draw(std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, int render_type=0);
@@ -32,8 +32,6 @@ private:
 
     mShader * depth_shader;
     mShader * pose_shader;
-
-    glm::mat4 proj_mat;
 
     bool is_ar;
     bool use_shading;

@@ -21,6 +21,7 @@ public:
     const mCamera * getCurCamera();
     void setCurCamera(const mCamera * camera);
 
+    void setCurInMat(glm::mat4 proj_mat);
     glm::mat4 getCurExMat();
     void setCurExMat(glm::mat4 cur_ex_mat);
     glm::vec3 getCurFollowVec();

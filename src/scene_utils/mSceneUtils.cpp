@@ -49,7 +49,7 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->depth_shader = new mShader(mDepthShaderFiles[0], mDepthShaderFiles[1], mDepthShaderFiles[2]);
 
     this->cur_camera = new mCamera(cam_in_mat, cam_ex_mat, this->wnd_width, this->wnd_height, this->is_ar);
-    this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, this->cur_camera->getProjMat(), target_model_size, is_ar, this->use_shading, pose_type);
+    this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, target_model_size, is_ar, this->use_shading, pose_type);
 
     this->initScene();
 
@@ -297,6 +297,11 @@ void mSceneUtils::setVerticalAngle(float angle) {
 void mSceneUtils::setPoseCenter(glm::vec3 pose_center) {
     this->person_center_pos = pose_center;
 }
+
+void mSceneUtils::setCurInMat(glm::mat4 proj_mat) {
+    this->cur_camera->setProjMat(proj_mat);
+}
+
 
 // TODO: The 3D view coordinate labels need to be checked.
 //       THe 2D is right, after visualized.

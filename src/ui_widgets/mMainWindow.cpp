@@ -184,6 +184,9 @@ void mMainWindow::buildToolBoxTab1() {
     this->tool_render_floor_label = new QLabel("Use floor:", this->render_box);
     this->tool_render_floor_btn = new QPushButton("True", this->render_box);
 
+    this->tool_render_camera_type_lbl = new QLabel("Camera Type:", this->render_box);
+    this->tool_render_camera_type_btn = new QPushButton("Perspective", this->render_box);
+
     this->tool_camera_visualize_lbl = new QLabel("Visualize cameras:", this->render_box);
     this->tool_camera_visualize_btn = new QPushButton("Show", this->render_box);
 
@@ -193,6 +196,8 @@ void mMainWindow::buildToolBoxTab1() {
     this->render_box_layout->addWidget(this->tool_render_floor_btn, 1, 1, 1, 1);
     this->render_box_layout->addWidget(this->tool_camera_visualize_lbl, 2, 0, 1, 1);
     this->render_box_layout->addWidget(this->tool_camera_visualize_btn, 2, 1, 1, 1);
+    this->render_box_layout->addWidget(this->tool_render_camera_type_lbl, 3, 0, 1, 1);
+    this->render_box_layout->addWidget(this->tool_render_camera_type_btn, 3, 1, 1, 1);
 
     this->tool_box_layout->addWidget(this->file_box, 0, 0, 2, 1);
     this->tool_box_layout->addWidget(this->pose_box, 2, 0, 1, 1);
@@ -224,7 +229,6 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_camera_follow_btn = new QPushButton("Follow", this->camera_box);
     this->tool_camera_focuson_btn = new QPushButton("Focus", this->camera_box);
     this->tool_camera_remove_btn = new QPushButton("Remove", this->camera_box);
-    this->tool_camera_removeall_btn = new QPushButton("Remove All", this->camera_box);
     this->tool_camera_type_label = new QLabel("Camera Type: ", this->camera_box);
     this->tool_camera_type_combo = new QComboBox(this->camera_box);
 
@@ -283,7 +287,6 @@ void mMainWindow::buildToolBoxTab2() {
     this->camera_box_layout->addWidget(this->tool_camera_remove_btn, 1, 2, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_follow_btn, 2, 0, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_focuson_btn, 2, 1, 1, 1);
-//    this->camera_box_layout->addWidget(this->tool_camera_removeall_btn, 1, 1, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_split_prefix_label, 3, 0, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_split_prefix_input, 3, 1, 1, 1);
     this->camera_box_layout->addWidget(this->tool_camera_split_prefix_btn, 3, 2, 1, 1);
@@ -332,9 +335,6 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_box_2_layout->addWidget(this->camera_box, 0, 0, 1, 1);
     this->tool_box_2_layout->addWidget(this->capture_box, 1, 0, 1, 1);
 
-    this->tool_camera_removeall_btn->setDisabled(true);
-    this->tool_camera_removeall_btn->hide();
-
     this->cameraTypeChangeSlot(this->cur_camera_type);
 }
 void mMainWindow::bindEvents() {
@@ -363,7 +363,6 @@ void mMainWindow::bindEvents() {
     connect(this->tool_camera_addcurr_btn, SIGNAL(clicked()), this, SLOT(cameraAddCurrSlot()));
     //    connect(this->tool_camera_add_btn, SIGNAL(clicked()), this, SLOT(cameraAddSlot()));
     connect(this->tool_camera_remove_btn, SIGNAL(clicked()), this, SLOT(cameraRemoveSlot()));
-    connect(this->tool_camera_removeall_btn, SIGNAL(clicked()), this, SLOT(cameraRemoveAllSlot()));
     connect(this->tool_camera_activate_btn, SIGNAL(clicked()), this, SLOT(cameraActivateSlot()));
     connect(this->tool_camera_follow_btn, SIGNAL(clicked()), this, SLOT(cameraFollowSlot()));
     connect(this->tool_camera_focuson_btn, SIGNAL(clicked()), this, SLOT(cameraFocusSlot()));
@@ -391,6 +390,7 @@ void mMainWindow::bindEvents() {
     connect(this->tool_pose_angle_jitter_size_btn, SIGNAL(clicked()), this, SLOT(poseSetAngleJitterSize()));
     connect(this->tool_render_type_btn, SIGNAL(clicked()), this, SLOT(renderSetUseShading()));
     connect(this->tool_capture_stop, SIGNAL(clicked()), this, SLOT(captureStop()));
+    connect(this->tool_render_camera_type_btn, SIGNAL(clicked()), this, SLOT(renderCameraTypeChange()));
 }
 
 
@@ -567,6 +567,20 @@ void mMainWindow::poseTemporaryStateSlot(bool is_pause) {
         this->gl_widget->tempStartPose();
     }
 }
+
+void mMainWindow::renderCameraTypeChange() {
+    QString cur_text = this->tool_render_camera_type_btn->text();
+    if (cur_text == "Perspective") {
+        this->tool_render_camera_type_btn->setText("Ortho");
+        this->gl_widget->setCurInMat(m_cam_in_mat_ortho);
+    }
+    else if (cur_text == "Ortho") {
+        this->tool_render_camera_type_btn->setText("Perspective");
+        this->gl_widget->setCurInMat(m_cam_in_mat_perspective);
+    }
+    this->cameraRemoveAllSlot();
+}
+
 // Slot for camera control
 void mMainWindow::cameraAddCurrSlot() {
     int cur_row = 0;
@@ -625,22 +639,22 @@ void mMainWindow::cameraRemoveSlot() {
         index_list = this->tool_camera_listview->selectionModel()->selectedIndexes();
     }
 }
+
 void mMainWindow::cameraRemoveAllSlot() {
     this->cameraVisualizeHideSlot();
-    if (this->cur_camera_type == 0) {
-        for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
-            delete this->camera_mat_arr[i].second;
-        }
-        this->camera_mat_arr.clear();
-        this->camera_list_model->removeRows(0, this->camera_list_model->rowCount());
+    // remove all cameras
+    for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
+        delete this->camera_mat_arr[i].second;
     }
-    else if (this->cur_camera_type == 1) {
-        for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
-            delete this->camera_vec_arr[i].second;
-        }
-        this->camera_vec_arr.clear();
-        this->camera_list_follow_model->removeRows(0, this->camera_list_follow_model->rowCount());
+    this->camera_mat_arr.clear();
+    this->camera_list_model->removeRows(0, this->camera_list_model->rowCount());
+
+    for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
+        delete this->camera_vec_arr[i].second;
     }
+    this->camera_vec_arr.clear();
+    this->camera_list_follow_model->removeRows(0, this->camera_list_follow_model->rowCount());
+
 }
 void mMainWindow::cameraActivateSlot() {
     QModelIndexList index_list = this->tool_camera_listview->selectionModel()->selectedIndexes();

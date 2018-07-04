@@ -14,19 +14,7 @@ mCamera::mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int wnd_width, int wnd_
     this->is_focus = false;
 
     // set the intrinsic matrix of the camera
-    if (this->is_ar) {
-        // Currently, the below code works, Now I will make sure from the procedure of calculation
-        // The new z projected is only used for clip, so I can assume the near plane 1 and far plane inf. without change the new image(x and y);
-        // See http://www.songho.ca/opengl/gl_projectionmatrix.html
-        this->proj_mat = glm::transpose(glm::mat4({
-            2.0*proj_mat[0][0] / this->wnd_width, 0, -1 + 2.0*proj_mat[0][2] / this->wnd_width, 0.0,
-            0, -2.0*proj_mat[1][1]/this->wnd_height, 1 - 2.0*proj_mat[1][2] / this->wnd_height, 0.0,
-            0, 0, 1, -2 * 1,
-            0, 0, 1, 0}));
-    }
-    else {
-        this->proj_mat = glm::transpose(proj_mat);
-    }
+    this->setProjMat(proj_mat);
     view_mat = glm::transpose(view_mat);
     this->setViewMat(view_mat);
 }
@@ -114,6 +102,22 @@ void mCamera::setViewMat(glm::mat4 view_mat) {
     this->view_r_mat = glm::mat4(glm::mat3(view_mat));
     this->view_t_mat = glm::inverse(this->view_r_mat) * view_mat;
     this->view_t_mat[0][1] = this->view_t_mat[0][2] = this->view_t_mat[1][0] = this->view_t_mat[1][2] = this->view_t_mat[2][0]= this->view_t_mat[2][1] = 0;
+}
+
+void mCamera::setProjMat(glm::mat4 proj_mat) {
+    if (this->is_ar) {
+        // Currently, the below code works, Now I will make sure from the procedure of calculation
+        // The new z projected is only used for clip, so I can assume the near plane 1 and far plane inf. without change the new image(x and y);
+        // See http://www.songho.ca/opengl/gl_projectionmatrix.html
+        this->proj_mat = glm::transpose(glm::mat4({
+            2.0*proj_mat[0][0] / this->wnd_width, 0, -1 + 2.0*proj_mat[0][2] / this->wnd_width, 0.0,
+            0, -2.0*proj_mat[1][1]/this->wnd_height, 1 - 2.0*proj_mat[1][2] / this->wnd_height, 0.0,
+            0, 0, 1, -2 * 1,
+            0, 0, 1, 0}));
+    }
+    else {
+        this->proj_mat = glm::transpose(proj_mat);
+    }
 }
 
 void mCamera::getSplittedCameras(int camera_num, glm::vec3 pose_center, std::vector<glm::mat4> &splitted_cameras) {

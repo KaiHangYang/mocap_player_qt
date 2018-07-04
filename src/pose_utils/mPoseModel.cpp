@@ -144,12 +144,11 @@ static std::vector<glm::vec3> mJointColors({
     glm::vec3(0, 0.6, 1) // right feet
 });
 
-mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, glm::mat4 cam_in_mat, float target_model_size, bool is_ar, bool use_shading, int pose_type) {
+mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, float target_model_size, bool is_ar, bool use_shading, int pose_type) {
 
     this->pose_shader = pose_shader;
     this->depth_shader = depth_shader;
 
-    this->proj_mat = cam_in_mat;
     this->is_ar = is_ar;
     this->use_shading = use_shading;
     this->core_func = core_func;
@@ -218,7 +217,6 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
     // Some uniform has been set in the scene_utils before this function is called
     shader->setVal("renderType", 0);
     shader->setVal("viewPos", glm::vec3(-view_t_mat[3][0], -view_t_mat[3][1], -view_t_mat[3][2]));
-    shader->setVal("projection", this->proj_mat);
     shader->setVal("view", view_mat);
 
     glm::u32vec2 * indices_ptr = &this->bone_indices[0];

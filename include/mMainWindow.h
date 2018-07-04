@@ -50,7 +50,7 @@ public slots:
     void progressBarDisplaySlot(int cur_num, int total, bool is_reset);
     void progressBarSetSlot(float cur_ratio);
     void poseTemporaryStateSlot(bool is_pause);
-
+    void renderCameraTypeChange();
     void cameraAddSlot();
     void cameraAddCurrSlot();
     void cameraRemoveSlot();
@@ -172,6 +172,8 @@ private:
     QPushButton * tool_render_type_btn;
     QLabel * tool_render_floor_label;
     QPushButton * tool_render_floor_btn;
+    QLabel * tool_render_camera_type_lbl;
+    QPushButton * tool_render_camera_type_btn;
 
     QLabel * tool_pose_jitter_size_label;
     QLineEdit * tool_pose_jitter_size_input;
@@ -192,7 +194,6 @@ private:
     QPushButton * tool_camera_addcurr_btn;
     QPushButton * tool_camera_activate_btn;
     QPushButton * tool_camera_remove_btn;
-    QPushButton * tool_camera_removeall_btn;
     QPushButton * tool_camera_follow_btn;
     QPushButton * tool_camera_focuson_btn;
 

@@ -32,6 +32,8 @@ public:
     void setCurFollowVec(glm::vec3 cur_follow_vec);
     glm::vec3 getCurFollowVec();
 
+    void setCurInMat(glm::mat4 proj_mat);
+
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
     void getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras);
 

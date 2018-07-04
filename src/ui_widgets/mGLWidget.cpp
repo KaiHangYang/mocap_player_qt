@@ -29,7 +29,7 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->pose_angle_jitter_range = 0;
 
     this->is_ar = m_is_ar;
-    this->cam_in_mat = m_cam_in_mat;
+    this->cam_in_mat = m_cam_in_mat_perspective;
     this->cam_ex_mat = m_cam_ex_mat;
 
     this->mocap_data = new mMoCapData;
@@ -125,6 +125,9 @@ void mGLWidget::sendProgress(bool is_reset) {
     if (this->is_has_pose) {
         emit progressDisplaySignal(this->mocap_data->getCurFrame(), this->mocap_data->getTotalFrame(), is_reset);
     }
+}
+void mGLWidget::setCurInMat(glm::mat4 proj_mat) {
+    this->scene->setCurInMat(proj_mat);
 }
 void mGLWidget::setCurCamera(const mCamera *camera) {
     this->scene->setCurCamera(camera);

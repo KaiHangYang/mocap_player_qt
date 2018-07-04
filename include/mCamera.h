@@ -27,6 +27,7 @@ public:
 
     void setViewMat(glm::mat4 view_mat);
     void setViewVec(glm::vec3 view_vec);
+    void setProjMat(glm::mat4 proj_mat);
 
     void setFocus(bool is_focus);
     void setFollow(bool is_follow, glm::vec3 pose_center);

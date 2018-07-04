@@ -67,11 +67,14 @@ public slots:
     void captureOneFrame();
     void captureAllFrames();
     void captureCurrentAll();
+    void captureStop();
     void cameraTypeChangeSlot(int index);
     void cameraSplitCircleSlot();
     void cameraSetVerticalAngle();
     void cameraSetSplitPrefix();
-    void cameraVisualizeSlot();
+    void cameraVisualizeToggleSlot();
+    void cameraVisualizeShowSlot();
+    void cameraVisualizeHideSlot();
     void sceneFloorSlot();
     void saveFramesSlot(cv::Mat & frames, int cur_frame, int cur_num);
     void saveLabelsSlot(std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num, bool is_raw);
@@ -226,8 +229,9 @@ private:
     mLineEditWidget * tool_capture_dir_input;
 
     QPushButton * tool_capture_capture_one;
-    QPushButton * tool_capture_capture_interval;
+    QPushButton * tool_capture_capture_all;
     QPushButton * tool_capture_capture_currentall;
+    QPushButton * tool_capture_stop;
 
     QLabel * tool_capture_img_extension_label;
     QComboBox * tool_capture_img_extension_combox;

@@ -37,7 +37,7 @@ public:
     void captureAllFrames(std::vector<const mCamera *> cameras);
 
     void resetCapture();
-    void stopCapture();
+    void stopCaptureAll();
     void setPoseChangeStep(float change_step);
     void setJitter(float jitter_size);
     void setAngleJitter(float jitter_size);
@@ -50,9 +50,10 @@ public slots:
     void togglePose();
     void startPose();
     void stopPose();
-    void resetPose();
-    void tempStartPose();
     void tempPausePose();
+    void tempStartPose();
+
+    void resetPose();
     void setPose(float ratio);
 signals:
     void doubleClickPoseToggleSignal();
@@ -90,7 +91,7 @@ private:
 
     /**************** Pose control ******************/
     int pose_state; // -1 no pose; 0 pause; 1 start; 2 reset; (after reset the state is 1)
-    int temp_pose_state;
+    int temp_pose_state; // for the prograss bar control
     bool is_has_pose;
     std::vector<glm::vec3> cur_pose_joints;
     std::vector<glm::vec3> cur_pose_joints_raw;
@@ -108,11 +109,9 @@ private:
     /****************************************************/
 
     /************** Capture Control *****************/
-    int cur_capture_num;
     std::vector<const mCamera *> cur_capture_cameras;
     bool is_set_capture_frame;
-    bool is_set_capture_all_frames;
-    int cur_capture_type;
+    bool is_capture_all;
     /************************************************/
 };
 

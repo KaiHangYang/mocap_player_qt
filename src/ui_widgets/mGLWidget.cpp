@@ -14,14 +14,14 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
     // set cam_in_mat cam_ex_mat and is_ar here
-    this->cur_capture_num = 0;
     this->cur_capture_cameras = std::vector<const mCamera *>();
     this->is_set_capture_frame = false;
-    this->is_set_capture_all_frames = false;
+    this->is_capture_all = false;
 
     this->is_with_floor = true;
     this->pose_state = -1;
     this->temp_pose_state = 1;
+
     this->is_has_pose = false;
     this->cur_pose_joints = std::vector<glm::vec3>();
     this->pose_change_step = 200;
@@ -185,6 +185,10 @@ void mGLWidget::setVisualizeCameras(std::vector<const mCamera *> cameras_arr) {
     this->cur_visualization_cameras = cameras_arr;
 }
 
+void mGLWidget::captureAllFrames(std::vector<const mCamera *> cameras) {
+    this->is_capture_all = true;
+    this->captureFrame(cameras);
+}
 void mGLWidget::captureFrame(std::vector<const mCamera *> cameras) {
     this->cur_capture_cameras.clear();
     if (cameras.size() == 0) {
@@ -193,33 +197,16 @@ void mGLWidget::captureFrame(std::vector<const mCamera *> cameras) {
     else {
         this->cur_capture_cameras = cameras;
     }
-    this->cur_capture_num = 0;
-    this->tempPausePose();
-
     this->is_set_capture_frame = true;
 }
-
 void mGLWidget::resetCapture() {
-    if (this->is_set_capture_all_frames) {
-        this->captureFrame(this->cur_capture_cameras);
-    }
-    else {
-        this->is_set_capture_frame = false;
-        this->cur_capture_cameras.clear();
-        this->cur_capture_num = 0;
-    }
+    this->is_set_capture_frame = false;
+    this->cur_capture_cameras.clear();
 }
 
-void mGLWidget::captureAllFrames(std::vector<const mCamera *> cameras) {
-    this->is_set_capture_all_frames = true;
-    this->captureFrame(cameras);
-}
-
-void mGLWidget::stopCapture() {
-    if (this->is_set_capture_all_frames) {
-        this->is_set_capture_all_frames = false;
-        this->resetCapture();
-    }
+void mGLWidget::stopCaptureAll() {
+    this->is_capture_all = false;
+    this->resetCapture();
 }
 
 /*************** Implementation of slots *****************/
@@ -247,6 +234,15 @@ void mGLWidget::togglePose() {
         }
     }
 }
+
+void mGLWidget::tempPausePose() {
+    this->temp_pose_state = 0;
+}
+
+void mGLWidget::tempStartPose() {
+    this->temp_pose_state = 1;
+}
+
 void mGLWidget::startPose() {
     this->pose_state = 1;
 }
@@ -270,22 +266,11 @@ void mGLWidget::setPose(float ratio) {
     this->mocap_data->getOneFrame(this->cur_pose_joints, this->cur_pose_joints_raw, 0.0, this->pose_jitter_range, this->pose_angle_jitter_range);
 }
 
-void mGLWidget::tempPausePose() {
-    if (this->is_has_pose) {
-        this->temp_pose_state = 0; // temp stop
-    }
-}
-void mGLWidget::tempStartPose() {
-    if (this->is_has_pose) {
-        this->temp_pose_state = 1; // temp start
-    }
-}
-
-
 void mGLWidget::draw() {
 
     /*************** Code for changing the pose *****************/
-    if (this->pose_state == 1 && this->temp_pose_state == 1) {
+    // the temp_pose_state is for the prograss bar control
+    if (this->pose_state == 1 && this->temp_pose_state) {
         this->sendProgress(false);
         std::vector<glm::vec3> tmp_pose_joints;
         bool result = this->mocap_data->getOneFrame(tmp_pose_joints, this->cur_pose_joints_raw, this->pose_change_step, this->pose_jitter_range, this->pose_angle_jitter_range);
@@ -297,61 +282,57 @@ void mGLWidget::draw() {
             this->cur_pose_joints = tmp_pose_joints;
             // Then I need to update the pose center
             this->scene->setPoseCenter(this->cur_pose_joints[this->cur_pose_joints.size() - 1]);
-            // if use capture all, here I need to set flags for it.
-        }
-        if (this->is_set_capture_all_frames) {
-            this->tempPausePose();
+
         }
     }
     /*************************************************************/
 
-    /******************* Code for handle the rotate ***************/
-    // Cause the mouse event is handled here.
-    glm::mat4 cur_ex_r_mat, cur_ex_t_mat, cur_rotate_mat;
-    this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
-    cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat, this->scene->m_rotate_dir);
-    this->scene->rotateCamera(cur_rotate_mat);
-    /**************************************************************/
-
     /*********************** Code for render and captures ********************/
-    // Just handle the frame capture of only one
     if (this->is_set_capture_frame) {
-        if (this->cur_capture_num < this->cur_capture_cameras.size()) {
+        for (int cam_num = 0; cam_num < this->cur_capture_cameras.size(); ++cam_num) {
             std::vector<glm::vec2> labels_2d;
             std::vector<glm::vec3> labels_3d;
 
             std::vector<glm::vec2> labels_2d_raw;
             std::vector<glm::vec3> labels_3d_raw;
 
-            this->scene->render(this->cur_pose_joints, this->cur_capture_cameras[this->cur_capture_num]);
-            this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_cameras[this->cur_capture_num], labels_2d, labels_3d);
+            this->scene->render(this->cur_pose_joints, this->cur_capture_cameras[cam_num]);
+            this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_cameras[cam_num], labels_2d, labels_3d);
             if (this->is_ar) {
-                this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, this->cur_capture_cameras[this->cur_capture_num], labels_2d_raw, labels_3d_raw);
+                this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, this->cur_capture_cameras[cam_num], labels_2d_raw, labels_3d_raw);
             }
 
             cv::Mat captured_img;
             this->swapBuffers(); // Important to capture frames
             this->scene->captureFrame(captured_img);
-//            mVTools::drawLines(captured_img, labels_2d);
+
             int cur_frame_num = this->mocap_data->getCurFrame();
-            emit saveCapturedFrameSignal(captured_img, cur_frame_num, this->cur_capture_num);
-            emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, this->cur_capture_num, false);
+            emit saveCapturedFrameSignal(captured_img, cur_frame_num, cam_num);
+            emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, cam_num, false);
             if (this->is_ar) {
-                emit saveCapturedLabelSignal(labels_2d_raw, labels_3d_raw, cur_frame_num, this->cur_capture_num, true);
+                emit saveCapturedLabelSignal(labels_2d_raw, labels_3d_raw, cur_frame_num, cam_num, true);
             }
-            this->cur_capture_num++;
-            return;
         }
-        else {
+        // This frame captured finished, if capture_all then continue, or reset capture.
+        // The capture all is stop beyond this file
+        if (!this->is_capture_all) {
             this->resetCapture();
-            this->tempStartPose();
+        }
+    }
+    else {
+        /******************* Code for handle the rotate and only in the free mode, this function is used ***************/
+        // Cause the mouse event is handled here.
+        glm::mat4 cur_ex_r_mat, cur_ex_t_mat, cur_rotate_mat;
+        this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
+        cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat, this->scene->m_rotate_dir);
+        this->scene->rotateCamera(cur_rotate_mat);
+        /***************************************************************************************************************/
+
+        this->scene->render(cur_pose_joints);
+        // the render will clear the color and depth bit, so I need to render the camera below
+        if (!this->cur_visualization_cameras.empty()) {
+            this->scene->renderCamerasPos(this->cur_visualization_cameras);
         }
     }
 
-
-    this->scene->render(cur_pose_joints);
-    // the render will clear the color and depth bit, so I need to render the camera below
-    if (!this->cur_visualization_cameras.empty()) {
-        this->scene->renderCamerasPos(this->cur_visualization_cameras);
-    }
 }

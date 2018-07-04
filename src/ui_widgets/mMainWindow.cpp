@@ -309,8 +309,9 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_capture_dir_input->setPlaceholderText("Double click to choose directory!");
 
     this->tool_capture_capture_one = new QPushButton("Capture One", this->capture_box);
-    this->tool_capture_capture_interval = new QPushButton("Capture All", this->capture_box);
+    this->tool_capture_capture_all = new QPushButton("Capture All", this->capture_box);
     this->tool_capture_capture_currentall = new QPushButton("Capture Current All", this->capture_box);
+    this->tool_capture_stop = new QPushButton("Stop Capture", this->capture_box);
 
     this->tool_capture_img_extension_label = new QLabel("Img Format: ", this->capture_box);
     this->tool_capture_img_extension_combox = new QComboBox(this->capture_box);
@@ -324,8 +325,9 @@ void mMainWindow::buildToolBoxTab2() {
     this->capture_box_layout->addWidget(this->tool_capture_img_extension_combox, 1, 1, 1, 1);
 
     this->capture_box_layout->addWidget(this->tool_capture_capture_one, 2, 0, 1, 2);
-    this->capture_box_layout->addWidget(this->tool_capture_capture_interval, 2, 2, 1, 2);
+    this->capture_box_layout->addWidget(this->tool_capture_capture_all, 2, 2, 1, 2);
     this->capture_box_layout->addWidget(this->tool_capture_capture_currentall, 3, 0, 1, 3);
+    this->capture_box_layout->addWidget(this->tool_capture_stop, 3, 3, 1, 1);
 
     this->tool_box_2_layout->addWidget(this->camera_box, 0, 0, 1, 1);
     this->tool_box_2_layout->addWidget(this->capture_box, 1, 0, 1, 1);
@@ -371,11 +373,11 @@ void mMainWindow::bindEvents() {
     connect(this->camera_list_follow_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(cameraEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
     connect(this->tool_camera_loadfromfile_btn, SIGNAL(clicked()), this, SLOT(cameraLoadFromFileSlot()));
     connect(this->tool_camera_savetofile_btn, SIGNAL(clicked()), this, SLOT(cameraSaveToFileSlot()));
-    connect(this->tool_camera_visualize_btn, SIGNAL(clicked()), this, SLOT(cameraVisualizeSlot()));
+    connect(this->tool_camera_visualize_btn, SIGNAL(clicked()), this, SLOT(cameraVisualizeToggleSlot()));
 
     connect(this->tool_capture_dir_input, SIGNAL(lineEditOpenDirSignal()), this, SLOT(captureDirSlot()));
     connect(this->tool_capture_capture_one, SIGNAL(clicked()), this, SLOT(captureOneFrame()));
-    connect(this->tool_capture_capture_interval, SIGNAL(clicked()), this, SLOT(captureAllFrames()));
+    connect(this->tool_capture_capture_all, SIGNAL(clicked()), this, SLOT(captureAllFrames()));
     connect(this->tool_capture_capture_currentall, SIGNAL(clicked()), this, SLOT(captureCurrentAll()));
     connect(this->tool_camera_type_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraTypeChangeSlot(int)));
     connect(this->tool_render_floor_btn, SIGNAL(clicked()), this, SLOT(sceneFloorSlot()));
@@ -388,6 +390,7 @@ void mMainWindow::bindEvents() {
     connect(this->tool_pose_jitter_size_btn, SIGNAL(clicked()), this, SLOT(poseSetJitterSize()));
     connect(this->tool_pose_angle_jitter_size_btn, SIGNAL(clicked()), this, SLOT(poseSetAngleJitterSize()));
     connect(this->tool_render_type_btn, SIGNAL(clicked()), this, SLOT(renderSetUseShading()));
+    connect(this->tool_capture_stop, SIGNAL(clicked()), this, SLOT(captureStop()));
 }
 
 
@@ -605,8 +608,8 @@ void mMainWindow::cameraAddSlot() {
     this->tool_camera_dialog->show();
 }
 void mMainWindow::cameraRemoveSlot() {
+    this->cameraVisualizeHideSlot();
     QModelIndexList index_list = this->tool_camera_listview->selectionModel()->selectedIndexes();
-
     while (!index_list.isEmpty()) {
         int cur_row = index_list[0].row();
         if (this->cur_camera_type == 0) {
@@ -623,6 +626,7 @@ void mMainWindow::cameraRemoveSlot() {
     }
 }
 void mMainWindow::cameraRemoveAllSlot() {
+    this->cameraVisualizeHideSlot();
     if (this->cur_camera_type == 0) {
         for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
             delete this->camera_mat_arr[i].second;
@@ -920,9 +924,12 @@ void mMainWindow::cameraSaveToFileSlot() {
     }
 }
 
-void mMainWindow::cameraVisualizeSlot() {
-    bool is_visualize = this->tool_camera_visualize_btn->text() == "Show";
+void mMainWindow::cameraVisualizeHideSlot() {
+    this->tool_camera_visualize_btn->setText("Show");
+    this->gl_widget->setVisualizeCameras(std::vector<const mCamera *>());
+}
 
+void mMainWindow::cameraVisualizeShowSlot() {
     std::vector<const mCamera *> cameras_arr;
     if (this->cur_camera_type == 0) {
         for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
@@ -934,19 +941,24 @@ void mMainWindow::cameraVisualizeSlot() {
             cameras_arr.push_back(this->camera_vec_arr[i].second);
         }
     }
-    if (!cameras_arr.empty()) {
-        if (is_visualize) {
-            this->tool_camera_visualize_btn->setText("Hide");
-            this->gl_widget->setVisualizeCameras(cameras_arr);
-        }
-        else {
-            this->tool_camera_visualize_btn->setText("Show");
-            this->gl_widget->setVisualizeCameras(std::vector<const mCamera *>());
-        }
 
+    if (!cameras_arr.empty()) {
+        this->tool_camera_visualize_btn->setText("Hide");
+        this->gl_widget->setVisualizeCameras(cameras_arr);
     }
     else {
         QMessageBox::critical(this, "Value Error", "The camera list is empty!");
+    }
+}
+
+void mMainWindow::cameraVisualizeToggleSlot() {
+    bool is_visualize = this->tool_camera_visualize_btn->text() == "Show";
+
+    if (is_visualize) {
+        this->cameraVisualizeShowSlot();
+    }
+    else {
+        this->cameraVisualizeHideSlot();
     }
 }
 
@@ -1021,7 +1033,10 @@ void mMainWindow::saveLabelsSlot(std::vector<glm::vec2> labels_2d, std::vector<g
         }
     }
 }
-
+void mMainWindow::captureStop() {
+    this->gl_widget->stopCaptureAll();
+    this->videoStopSlot();
+}
 void mMainWindow::captureOneFrame() {
     QString dir_name = this->tool_capture_dir_input->text();
     QFileInfo dir_info(dir_name);
@@ -1105,7 +1120,7 @@ void mMainWindow::changeNextPoseSlot() {
         QMessageBox::critical(this, "Pose File Error", "There is no pose file in the list!");
     }
     else if (this->cur_pose_file_index[this->cur_dataset_num] >= cur_sum) {
-        this->gl_widget->stopCapture();
+        this->gl_widget->stopCaptureAll();
         QMessageBox::warning(this, "Warning", "No more pose file to process!");
     }
     else {

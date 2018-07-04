@@ -18,8 +18,10 @@ public:
     mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, bool is_ar=false, int pose_type=0);
     ~mSceneUtils();
 
-    void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), glm::mat4 cam_ex_mat = glm::mat4(0.f));
-    void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), glm::vec3 cam_ex_vec = glm::vec3(0.f));
+    void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), const mCamera * camera=nullptr);
+
+    const mCamera * getCurCamera();
+    void setCurCamera(const mCamera * camera);
 
     void setCurExMat(glm::mat4 cur_ex_mat);
     glm::mat4 getCurExMat();
@@ -31,8 +33,7 @@ public:
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
     void getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras);
 
-    void getLabelsFromFrame(const std::vector<glm::vec3> &joints, const glm::mat4 &view_mat, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
-    void getLabelsFromFrame(const std::vector<glm::vec3> &joints, const glm::vec3 &view_vec, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
+    void getLabelsFromFrame(const std::vector<glm::vec3> &joints, const mCamera * camera, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
 
     void moveCamera(int move_type, QMouseEvent * event = NULL);
     void rotateCamera(glm::mat4 rotate_mat);
@@ -46,6 +47,7 @@ public:
 
     void setUseShading(bool use_shading);
     void setVerticalAngle(float angle);
+    void setPoseCenter(glm::vec3 pose_center);
 
 
     // Just for tmp adjust for normal and vr mode
@@ -58,9 +60,8 @@ private:
     std::vector<GLfloat> getGroundColor();
 
     void _beforeRender(const std::vector<glm::vec3> & points_3d);
-    void _render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat);
-    void _getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
-    glm::mat4 convertVec2Mat(const glm::vec3 & follow_vec, glm::vec3 person_center_pos);
+    void _render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat);
+    void _getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, const glm::mat4 & proj_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
 
     int wnd_width;
     int wnd_height;

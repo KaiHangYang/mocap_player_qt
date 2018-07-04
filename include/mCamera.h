@@ -8,16 +8,18 @@
 
 class mCamera {
 public:
+    mCamera(const mCamera * camera);
     mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int wnd_width=mWindowWidth, int wnd_height=mWindowHeight, bool is_ar = m_is_ar);
     ~mCamera();
 
-    glm::mat4 getProjMat();
-    glm::mat4 getViewMat(glm::vec3 pose_center);
-    glm::mat4 getViewMat(glm::vec3 pose_center, glm::mat4 &view_r_mat, glm::mat4 &view_t_mat);
-    glm::vec3 getViewVec(glm::vec3 pose_center);
+    mCamera& operator=(const mCamera &a);
 
-    bool getFollow();
-    bool getFocus();
+    glm::mat4 getViewMat(glm::vec3 pose_center, glm::mat4 * view_r_mat = nullptr, glm::mat4 * view_t_mat = nullptr) const;
+    glm::mat4 getProjMat() const;
+    glm::vec3 getViewVec() const;
+
+    bool getFollow() const;
+    bool getFocus() const;
 
     void setViewMat(glm::mat4 view_mat);
     void setViewVec(glm::vec3 view_vec);
@@ -28,12 +30,14 @@ public:
     void rotateCamera(glm::mat4 rotate_mat);
 
     /**** function used in different mode ****/
-
     void setVerticalAngle(float angle, glm::vec3 pose_center);
     void getSplittedCameras(int camera_num, glm::vec3 pose_center, std::vector<glm::mat4> &splitted_cameras);
     void getSplittedCameras(int camera_num, glm::vec3 pose_center, std::vector<glm::vec3> &splitted_cameras);
 
 private:
+    void updateViewMat(glm::vec3 pose_center);
+    void updateViewVec(glm::vec3 pose_center);
+
     glm::vec3 follow_dert;
     bool is_follow;
     bool is_focus;

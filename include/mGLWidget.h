@@ -18,6 +18,9 @@ public:
     ~mGLWidget();
     int getPoseState();
     bool getIsHasPose();
+    const mCamera * getCurCamera();
+    void setCurCamera(const mCamera * camera);
+
     glm::mat4 getCurExMat();
     void setCurExMat(glm::mat4 cur_ex_mat);
     glm::vec3 getCurFollowVec();
@@ -27,12 +30,12 @@ public:
     bool getFollowPerson();
     bool getFocusOnPerson();
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
-    void setFollowDefault();
+
     void setUseFloor(bool is_with_floor);
-    void captureFrame(const std::vector<glm::vec3> & view_vecs);
-    void captureFrame(const std::vector<glm::mat4> & view_mats);
-    void captureAllFrames(const std::vector<glm::vec3> & view_vecs);
-    void captureAllFrames(const std::vector<glm::mat4> & view_mats);
+
+    void captureFrame(std::vector<const mCamera *> cameras);
+    void captureAllFrames(std::vector<const mCamera *> cameras);
+
     void resetCapture();
     void stopCapture();
     void setPoseChangeStep(float change_step);
@@ -100,9 +103,8 @@ private:
     /************************************************/
 
     /************** Capture Control *****************/
-    int cur_capture_sum;
-    std::vector<glm::mat4> cur_capture_view_mats;
-    std::vector<glm::vec3> cur_capture_view_vecs;
+    int cur_capture_num;
+    std::vector<const mCamera *> cur_capture_cameras;
     bool is_set_capture_frame;
     bool is_set_capture_all_frames;
     int cur_capture_type;

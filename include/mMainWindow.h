@@ -20,6 +20,7 @@
 
 #include "mProgressBarWidget.h"
 #include "mLineEditWidget.h"
+#include "mCamera.h"
 
 namespace Ui {
 class mMainWindow;
@@ -68,7 +69,6 @@ public slots:
     void captureCurrentAll();
     void cameraTypeChangeSlot(int index);
     void cameraSplitCircleSlot();
-    void cameraSetDefaultSlot();
     void cameraSetVerticalAngle();
     void cameraSetSplitPrefix();
     void sceneFloorSlot();
@@ -105,8 +105,8 @@ private:
     int cur_camera_type; // 0 is the global type, 1 is the follow type
     int cur_camera_name_num[2];
     int cur_camera_num[2];
-    std::vector<std::pair<QString, glm::mat4>> camera_mat_arr;
-    std::vector<std::pair<QString, glm::vec3>> camera_vec_arr;
+    std::vector<std::pair<QString, const mCamera *>> camera_mat_arr;
+    std::vector<std::pair<QString, const mCamera *>> camera_vec_arr;
 
     QString file_dialog_extension;
     QString file_dialog_initial_dir;

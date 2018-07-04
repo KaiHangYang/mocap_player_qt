@@ -14,12 +14,10 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
     // set cam_in_mat cam_ex_mat and is_ar here
-    this->cur_capture_sum = 0;
-    this->cur_capture_view_mats = std::vector<glm::mat4>();
+    this->cur_capture_num = 0;
+    this->cur_capture_cameras = std::vector<const mCamera *>();
     this->is_set_capture_frame = false;
     this->is_set_capture_all_frames = false;
-    this->cur_capture_type = 0; // global
-
 
     this->is_with_floor = true;
     this->pose_state = -1;
@@ -128,6 +126,12 @@ void mGLWidget::sendProgress(bool is_reset) {
         emit progressDisplaySignal(this->mocap_data->getCurFrame(), this->mocap_data->getTotalFrame(), is_reset);
     }
 }
+void mGLWidget::setCurCamera(const mCamera *camera) {
+    this->scene->setCurCamera(camera);
+}
+const mCamera * mGLWidget::getCurCamera() {
+    return this->scene->getCurCamera();
+}
 glm::mat4 mGLWidget::getCurExMat() {
     return this->scene->getCurExMat();
 }
@@ -157,75 +161,9 @@ bool mGLWidget::getFocusOnPerson() {
 void mGLWidget::getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras) {
     this->scene->getSplittedCameras(camera_num, splitted_cameras);
 }
-void mGLWidget::setFollowDefault() {
-//    this->scene->setFollowDefault();
+void mGLWidget::setPoseChangeStep(float change_step) {
+    this->pose_change_step = change_step;
 }
-
-void mGLWidget::captureFrame(const std::vector<glm::vec3> & view_vecs) {
-
-    if (view_vecs.size() == 0) {
-        this->cur_capture_view_vecs = std::vector<glm::vec3>({this->getCurFollowVec()});
-    }
-    else {
-        this->cur_capture_view_vecs = view_vecs;
-    }
-    this->cur_capture_type = 1;
-    this->cur_capture_sum = 0;
-    this->tempPausePose();
-
-    this->is_set_capture_frame = true;
-}
-void mGLWidget::captureFrame(const std::vector<glm::mat4> & view_mats) {
-    if (view_mats.size() == 0) {
-        this->cur_capture_view_mats = std::vector<glm::mat4>({this->getCurExMat()});
-    }
-    else {
-        this->cur_capture_view_mats = view_mats;
-    }
-    this->cur_capture_type = 0;
-    this->cur_capture_sum = 0;
-    this->tempPausePose();
-
-    this->is_set_capture_frame = true;
-}
-
-void mGLWidget::resetCapture() {
-    if (this->is_set_capture_all_frames) {
-        if (this->cur_capture_type == 1) {
-            this->captureFrame(this->cur_capture_view_vecs);
-        }
-        else if (this->cur_capture_type == 0){
-            this->captureFrame(this->cur_capture_view_mats);
-        }
-    }
-    else {
-        this->is_set_capture_frame = false;
-        this->cur_capture_view_mats.clear();
-        this->cur_capture_view_vecs.clear();
-        this->cur_capture_sum = 0;
-        this->cur_capture_type = 0;
-    }
-}
-
-void mGLWidget::captureAllFrames(const std::vector<glm::vec3> &view_vecs) {
-    this->cur_capture_type = 1;
-    this->is_set_capture_all_frames = true;
-    this->captureFrame(view_vecs);
-}
-
-void mGLWidget::captureAllFrames(const std::vector<glm::mat4> &view_mats) {
-    this->cur_capture_type = 0;
-    this->is_set_capture_all_frames = true;
-    this->captureFrame(view_mats);
-}
-
-void mGLWidget::stopCapture() {
-    if (this->is_set_capture_all_frames) {
-        this->is_set_capture_all_frames = false;
-        this->resetCapture();
-    }
-}
-
 void mGLWidget::setUseFloor(bool is_with_floor) {
     this->scene->setFloor(is_with_floor);
     this->is_with_floor = is_with_floor;
@@ -237,18 +175,48 @@ void mGLWidget::setAngleJitter(float jitter_size) {
     this->pose_angle_jitter_range = jitter_size;
 }
 void mGLWidget::setUseShading(bool use_shading) {
-//    if (use_shading) {
-//        glEnable(GL_DEPTH_TEST);
-//    }
-//    else {
-//        glDisable(GL_DEPTH_TEST);
-//    }
-
     this->scene->setUseShading(use_shading);
 }
 void mGLWidget::setVerticalAngle(float angle) {
     this->scene->setVerticalAngle(angle);
 }
+
+void mGLWidget::captureFrame(std::vector<const mCamera *> cameras) {
+    if (cameras.size() == 0) {
+        this->cur_capture_cameras.push_back(const_cast<const mCamera *>(this->scene->getCurCamera()));
+    }
+    else {
+        this->cur_capture_cameras = cameras;
+    }
+    this->cur_capture_num = 0;
+    this->tempPausePose();
+
+    this->is_set_capture_frame = true;
+}
+
+void mGLWidget::resetCapture() {
+    if (this->is_set_capture_all_frames) {
+        this->captureFrame(this->cur_capture_cameras);
+    }
+    else {
+        this->is_set_capture_frame = false;
+        this->cur_capture_cameras.clear();
+        this->cur_capture_num = 0;
+    }
+}
+
+void mGLWidget::captureAllFrames(std::vector<const mCamera *> cameras) {
+    this->is_set_capture_all_frames = true;
+    this->captureFrame(cameras);
+}
+
+void mGLWidget::stopCapture() {
+    if (this->is_set_capture_all_frames) {
+        this->is_set_capture_all_frames = false;
+        this->resetCapture();
+    }
+}
+
 /*************** Implementation of slots *****************/
 void mGLWidget::changePoseFile(QString & file_name, int cur_dataset_num) {
     if (this->mocap_reader.parse(file_name, cur_dataset_num, this->mocap_data)) {
@@ -308,16 +276,10 @@ void mGLWidget::tempStartPose() {
     }
 }
 
-void mGLWidget::setPoseChangeStep(float change_step) {
-    this->pose_change_step = change_step;
-}
 
 void mGLWidget::draw() {
-    glm::mat4 cur_ex_r_mat, cur_ex_t_mat, cur_rotate_mat;
-    this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
-    cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat, this->scene->m_rotate_dir);
-    this->scene->rotateCamera(cur_rotate_mat);
 
+    /*************** Code for changing the pose *****************/
     if (this->pose_state == 1 && this->temp_pose_state == 1) {
         this->sendProgress(false);
         std::vector<glm::vec3> tmp_pose_joints;
@@ -328,35 +290,38 @@ void mGLWidget::draw() {
         }
         else {
             this->cur_pose_joints = tmp_pose_joints;
+            // Then I need to update the pose center
+            this->scene->setPoseCenter(this->cur_pose_joints[this->cur_pose_joints.size() - 1]);
             // if use capture all, here I need to set flags for it.
         }
         if (this->is_set_capture_all_frames) {
             this->tempPausePose();
         }
     }
+    /*************************************************************/
 
+    /******************* Code for handle the rotate ***************/
+    // Cause the mouse event is handled here.
+    glm::mat4 cur_ex_r_mat, cur_ex_t_mat, cur_rotate_mat;
+    this->scene->getCurExMat(cur_ex_r_mat, cur_ex_t_mat);
+    cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat, this->scene->m_rotate_dir);
+    this->scene->rotateCamera(cur_rotate_mat);
+    /**************************************************************/
+
+    /*********************** Code for render and captures ********************/
     // Just handle the frame capture of only one
     if (this->is_set_capture_frame) {
-        if ((this->cur_capture_type == 0 && this->cur_capture_sum < this->cur_capture_view_mats.size()) || (this->cur_capture_type == 1 && this->cur_capture_sum < this->cur_capture_view_vecs.size())) {
+        if (this->cur_capture_num < this->cur_capture_cameras.size()) {
             std::vector<glm::vec2> labels_2d;
             std::vector<glm::vec3> labels_3d;
 
             std::vector<glm::vec2> labels_2d_raw;
             std::vector<glm::vec3> labels_3d_raw;
 
-            if (this->cur_capture_type == 0) {
-                this->scene->render(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum]);
-                this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_view_mats[this->cur_capture_sum], labels_2d, labels_3d);
-                if (this->is_ar) {
-                    this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, this->cur_capture_view_mats[this->cur_capture_sum], labels_2d_raw, labels_3d_raw);
-                }
-            }
-            else if (this->cur_capture_type == 1) {
-                this->scene->render(this->cur_pose_joints, this->cur_capture_view_vecs[this->cur_capture_sum]);
-                this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_view_vecs[this->cur_capture_sum], labels_2d, labels_3d);
-                if (this->is_ar) {
-                    this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, this->cur_capture_view_vecs[this->cur_capture_sum], labels_2d_raw, labels_3d_raw);
-                }
+            this->scene->render(this->cur_pose_joints, this->cur_capture_cameras[this->cur_capture_num]);
+            this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_cameras[this->cur_capture_num], labels_2d, labels_3d);
+            if (this->is_ar) {
+                this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, this->cur_capture_cameras[this->cur_capture_num], labels_2d_raw, labels_3d_raw);
             }
 
             cv::Mat captured_img;
@@ -364,12 +329,12 @@ void mGLWidget::draw() {
             this->scene->captureFrame(captured_img);
 //            mVTools::drawLines(captured_img, labels_2d);
             int cur_frame_num = this->mocap_data->getCurFrame();
-            emit saveCapturedFrameSignal(captured_img, cur_frame_num, this->cur_capture_sum);
-            emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, this->cur_capture_sum, false);
+            emit saveCapturedFrameSignal(captured_img, cur_frame_num, this->cur_capture_num);
+            emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, this->cur_capture_num, false);
             if (this->is_ar) {
-                emit saveCapturedLabelSignal(labels_2d_raw, labels_3d_raw, cur_frame_num, this->cur_capture_sum, true);
+                emit saveCapturedLabelSignal(labels_2d_raw, labels_3d_raw, cur_frame_num, this->cur_capture_num, true);
             }
-            this->cur_capture_sum++;
+            this->cur_capture_num++;
             return;
         }
         else {
@@ -378,5 +343,5 @@ void mGLWidget::draw() {
         }
     }
 
-    this->scene->render(cur_pose_joints, glm::mat4(0.f));
+    this->scene->render(cur_pose_joints);
 }

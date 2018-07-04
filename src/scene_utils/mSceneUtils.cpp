@@ -48,7 +48,7 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->scene_shader = new mShader(mPoseShaderFiles[0], mPoseShaderFiles[1]);
     this->depth_shader = new mShader(mDepthShaderFiles[0], mDepthShaderFiles[1], mDepthShaderFiles[2]);
 
-    this->cur_camera = new mCamera(cam_in_mat, cam_ex_mat, this->wnd_width, this->wnd_height, 0, this->is_ar);
+    this->cur_camera = new mCamera(cam_in_mat, cam_ex_mat, this->wnd_width, this->wnd_height, this->is_ar);
     this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, this->cur_camera->getProjMat(), target_model_size, is_ar, this->use_shading, pose_type);
 
     this->initScene();
@@ -226,18 +226,25 @@ void mSceneUtils::moveCamera(int move_type, QMouseEvent * event) {
 void mSceneUtils::rotateCamera(glm::mat4 rotate_mat) {
     this->cur_camera->rotateCamera(rotate_mat);
 }
+
+void mSceneUtils::setCurCamera(const mCamera * camera) {
+    *(this->cur_camera) = *camera;
+}
+const mCamera* mSceneUtils::getCurCamera() {
+    return this->cur_camera;
+}
 void mSceneUtils::setCurExMat(glm::mat4 cur_ex_mat) {
     this->cur_camera->setViewMat(cur_ex_mat);
 }
 glm::mat4 mSceneUtils::getCurExMat(glm::mat4 & cam_ex_r_mat, glm::mat4 & cam_ex_t_mat) {
-    return this->cur_camera->getViewMat(this->person_center_pos, cam_ex_r_mat, cam_ex_t_mat);
+    return this->cur_camera->getViewMat(this->person_center_pos, &cam_ex_r_mat, &cam_ex_t_mat);
 }
 glm::mat4 mSceneUtils::getCurExMat() {
     return this->cur_camera->getViewMat(this->person_center_pos);
 }
 
 glm::vec3 mSceneUtils::getCurFollowVec() {
-    return this->cur_camera->getViewVec(this->person_center_pos);
+    return this->cur_camera->getViewVec();
 }
 void mSceneUtils::setCurFollowVec(glm::vec3 cur_follow_vec) {
     this->cur_camera->setViewVec(cur_follow_vec);
@@ -283,32 +290,13 @@ void mSceneUtils::getSplittedCameras(int camera_num, std::vector<glm::vec3> &spl
 void mSceneUtils::setVerticalAngle(float angle) {
     this->cur_camera->setVerticalAngle(angle, this->person_center_pos);
 }
-
-glm::mat4 mSceneUtils::convertVec2Mat(const glm::vec3 & follow_vec, glm::vec3 person_center_pos) {
-
-    glm::mat4 cur_view_t_mat(1.f);
-    glm::mat4 cur_view_r_mat(1.f);
-
-    cur_view_t_mat[3][0] = -(follow_vec[0] + person_center_pos[0]);
-    cur_view_t_mat[3][1] = -(follow_vec[1] + person_center_pos[1]);
-    cur_view_t_mat[3][2] = -(follow_vec[2] + person_center_pos[2]);
-
-    glm::vec3 camera_pos(-cur_view_t_mat[3][0], -cur_view_t_mat[3][1], -cur_view_t_mat[3][2]);
-
-    glm::vec3 z_axis = glm::normalize(camera_pos - person_center_pos);
-    glm::vec3 x_axis = glm::normalize(glm::cross(glm::vec3(0, 1, 0), z_axis));
-    glm::vec3 y_axis = glm::normalize(glm::cross(z_axis, x_axis));
-
-    cur_view_r_mat[0][0] = x_axis.x;cur_view_r_mat[0][1] = y_axis.x;cur_view_r_mat[0][2] = z_axis.x;
-    cur_view_r_mat[1][0] = x_axis.y;cur_view_r_mat[1][1] = y_axis.y;cur_view_r_mat[1][2] = z_axis.y;
-    cur_view_r_mat[2][0] = x_axis.z;cur_view_r_mat[2][1] = y_axis.z;cur_view_r_mat[2][2] = z_axis.z;
-
-    return cur_view_r_mat * cur_view_t_mat;
+void mSceneUtils::setPoseCenter(glm::vec3 pose_center) {
+    this->person_center_pos = pose_center;
 }
 
 // TODO: The 3D view coordinate labels need to be checked.
 //       THe 2D is right, after visualized.
-void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
+void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, const glm::mat4 & proj_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
     if (joints.size() != 0) {
         labels_2d = std::vector<glm::vec2>(joints.size());
         labels_3d = std::vector<glm::vec3>(joints.size());
@@ -336,54 +324,35 @@ void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, con
     }
 }
 
-void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
+void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, const mCamera * camera, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
     // Joints is in the global coordinate
-    this->_getLabelsFromFrame(joints, view_mat, labels_2d, labels_3d);
-}
-
-void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::vec3 & view_vec, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
-    // Joints is in the global coordinate
-    glm::vec3 root_joint = joints[joints.size() - 1];
-    glm::mat4 cur_view_mat = this->convertVec2Mat(view_vec, root_joint);
-    this->_getLabelsFromFrame(joints, cur_view_mat, labels_2d, labels_3d);
+    glm::mat4 view_mat = camera->getViewMat(this->person_center_pos);
+    glm::mat4 proj_mat = camera->getProjMat();
+    this->_getLabelsFromFrame(joints, view_mat, proj_mat, labels_2d, labels_3d);
 }
 
 void mSceneUtils::_beforeRender(const std::vector<glm::vec3> & points_3d) {
     // points_3d is in the global coordinate
     if (points_3d.size() == this->pose_model->num_of_joints) {
-        this->person_center_pos = points_3d[points_3d.size()-1];
+        this->setPoseCenter(points_3d[points_3d.size() - 1]);
     }
 }
 
-void mSceneUtils::render(std::vector<glm::vec3> points_3d, glm::mat4 cam_ex_mat) {
+void mSceneUtils::render(std::vector<glm::vec3> points_3d, const mCamera * camera) {
     this->_beforeRender(points_3d);
-
-    glm::mat4 cur_cam_ex_mat;
-    if (cam_ex_mat == glm::mat4(0.f)) {
-        cur_cam_ex_mat = this->getCurExMat();
+    glm::mat4 cur_cam_ex_mat, cur_cam_in_mat;
+    if (camera != nullptr) {
+        cur_cam_ex_mat = camera->getViewMat(this->person_center_pos);
+        cur_cam_in_mat = camera->getProjMat();
     }
     else {
-        cur_cam_ex_mat = cam_ex_mat;
+        cur_cam_ex_mat = this->cur_camera->getViewMat(this->person_center_pos);
+        cur_cam_in_mat = this->cur_camera->getProjMat();
     }
-
-    this->_render(points_3d, cur_cam_ex_mat);
+    this->_render(points_3d, cur_cam_ex_mat, cur_cam_in_mat);
 }
 
-void mSceneUtils::render(std::vector<glm::vec3> points_3d, glm::vec3 cam_ex_vec) {
-    this->_beforeRender(points_3d);
-
-    glm::mat4 cur_cam_ex_mat;
-    if (cam_ex_vec == glm::vec3(0.f)) {
-        cur_cam_ex_mat = this->convertVec2Mat(this->getCurFollowVec(), this->person_center_pos);
-    }
-    else {
-        cur_cam_ex_mat = this->convertVec2Mat(cam_ex_vec, this->person_center_pos);
-    }
-
-    this->_render(points_3d, cur_cam_ex_mat);
-}
-
-void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat) {
+void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat) {
 
     for (int light_num = 0; light_num < mLightSum; ++light_num) {
         this->VAO->bind();
@@ -442,7 +411,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
     this->scene_shader->setVal("renderType", 1);
     this->scene_shader->setVal("use_shadow", mShadowUseShadow);
     this->scene_shader->setVal("viewPos", glm::vec3(view_t_mat[3][0], view_t_mat[3][1], view_t_mat[3][2]));
-    this->scene_shader->setVal("projection", this->cur_camera->getProjMat());
+    this->scene_shader->setVal("projection", cur_cam_in_mat);
     this->scene_shader->setVal("view", cur_cam_ex_mat);
     this->scene_shader->setVal("model", glm::mat4(1.f));
     this->scene_shader->setVal("normMat", glm::transpose(glm::inverse(glm::mat4(1.f))));

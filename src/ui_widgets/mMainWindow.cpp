@@ -570,8 +570,11 @@ void mMainWindow::cameraAddCurrSlot() {
         QModelIndex index = this->camera_list_model->index(cur_row);
 
         this->camera_list_model->setData(index, "camera " + QString::number(this->cur_camera_name_num[this->cur_camera_type]++));
+        std::pair<QString, const mCamera *> camera_to_add;
 
-        this->camera_mat_arr.insert(this->camera_mat_arr.begin(), std::pair<QString, glm::mat4>(index.data().toString(), this->gl_widget->getCurExMat()));
+        camera_to_add.first = index.data().toString();
+        camera_to_add.second = const_cast<const mCamera *>(new mCamera(this->gl_widget->getCurCamera()));
+        this->camera_mat_arr.insert(this->camera_mat_arr.begin(), camera_to_add);
 
         this->tool_camera_listview->setCurrentIndex(index);
         this->cur_camera_num[this->cur_camera_type] ++;
@@ -583,8 +586,10 @@ void mMainWindow::cameraAddCurrSlot() {
             QModelIndex index = this->camera_list_follow_model->index(cur_row);
 
             this->camera_list_follow_model->setData(index, "camera " + QString::number(this->cur_camera_name_num[this->cur_camera_type]++));
-
-            this->camera_vec_arr.insert(this->camera_vec_arr.begin(), std::pair<QString, glm::vec3>(index.data().toString(), this->gl_widget->getCurFollowVec()));
+            std::pair<QString, const mCamera *> camera_to_add;
+            camera_to_add.first = index.data().toString();
+            camera_to_add.second = const_cast<const mCamera *>(new mCamera(this->gl_widget->getCurCamera()));
+            this->camera_vec_arr.insert(this->camera_vec_arr.begin(), camera_to_add);
 
             this->tool_camera_listview->setCurrentIndex(index);
             this->cur_camera_num[this->cur_camera_type]++;
@@ -603,10 +608,12 @@ void mMainWindow::cameraRemoveSlot() {
     while (!index_list.isEmpty()) {
         int cur_row = index_list[0].row();
         if (this->cur_camera_type == 0) {
+            delete this->camera_mat_arr[cur_row].second;
             this->camera_mat_arr.erase(this->camera_mat_arr.begin() + cur_row, this->camera_mat_arr.begin() + cur_row + 1);
             this->camera_list_model->removeRow(cur_row);
         }
         else if (this->cur_camera_type == 1) {
+            delete this->camera_vec_arr[cur_row].second;
             this->camera_vec_arr.erase(this->camera_vec_arr.begin() + cur_row, this->camera_vec_arr.begin() + cur_row + 1);
             this->camera_list_follow_model->removeRow(cur_row);
         }
@@ -615,10 +622,16 @@ void mMainWindow::cameraRemoveSlot() {
 }
 void mMainWindow::cameraRemoveAllSlot() {
     if (this->cur_camera_type == 0) {
+        for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
+            delete this->camera_mat_arr[i].second;
+        }
         this->camera_mat_arr.clear();
         this->camera_list_model->removeRows(0, this->camera_list_model->rowCount());
     }
     else if (this->cur_camera_type == 1) {
+        for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
+            delete this->camera_vec_arr[i].second;
+        }
         this->camera_vec_arr.clear();
         this->camera_list_follow_model->removeRows(0, this->camera_list_follow_model->rowCount());
     }
@@ -631,11 +644,11 @@ void mMainWindow::cameraActivateSlot() {
         if (this->cur_camera_type == 0) {
             this->cameraSetAllFollow(false);
 
-            this->gl_widget->setCurExMat(this->camera_mat_arr[cur_row].second);
+            this->gl_widget->setCurCamera(this->camera_mat_arr[cur_row].second);
         }
         else if (this->cur_camera_type == 1) {
-//            qDebug() << this->camera_vec_arr[cur_row].first << " " << index_list[0].data().toString();
-            this->gl_widget->setCurFollowVec(this->camera_vec_arr[cur_row].second);
+
+            this->gl_widget->setCurCamera(this->camera_vec_arr[cur_row].second);
         }
     }
 }
@@ -764,17 +777,18 @@ void mMainWindow::cameraSplitCircleSlot() {
         QModelIndex index = this->camera_list_follow_model->index(cur_row);
 
         this->camera_list_follow_model->setData(index, this->split_camera_prefix + QString::number(i));
+        std::pair<QString, const mCamera *> camera_to_add;
 
-        this->camera_vec_arr.insert(this->camera_vec_arr.begin(), std::pair<QString, glm::vec3>(index.data().toString(), splited_cameras[i]));
+        camera_to_add.first = index.data().toString();
+        mCamera * cur_camera = new mCamera(this->gl_widget->getCurCamera());
+        cur_camera->setViewVec(splited_cameras[i]);
+        camera_to_add.second = const_cast<const mCamera *>(cur_camera);
+
+        this->camera_vec_arr.insert(this->camera_vec_arr.begin(), camera_to_add);
 
         this->tool_camera_listview->setCurrentIndex(index);
         this->cur_camera_num[this->cur_camera_type]++;
     }
-}
-
-/*********** May be discarded ************/
-void mMainWindow::cameraSetDefaultSlot() {
-    this->gl_widget->setFollowDefault();
 }
 
 void mMainWindow::cameraSetVerticalAngle() {
@@ -823,7 +837,13 @@ void mMainWindow::cameraLoadFromFileSlot() {
                         QModelIndex index = this->camera_list_model->index(0);
                         this->camera_list_model->setData(index, file_string);
 
-                        this->camera_mat_arr.insert(this->camera_mat_arr.begin(), std::pair<QString, glm::mat4>(file_string, data_mat));
+                        std::pair<QString, const mCamera *> camera_to_add;
+                        camera_to_add.first = file_string;
+                        mCamera * cur_camera = new mCamera(this->gl_widget->getCurCamera());
+                        cur_camera->setViewMat(data_mat);
+                        camera_to_add.second = const_cast<const mCamera *>(cur_camera);
+                        this->camera_mat_arr.insert(this->camera_mat_arr.begin(), camera_to_add);
+
                         this->tool_camera_listview->setCurrentIndex(index);
                         this->cur_camera_num[this->cur_camera_type] ++;
                     }
@@ -837,7 +857,13 @@ void mMainWindow::cameraLoadFromFileSlot() {
                         QModelIndex index = this->camera_list_follow_model->index(0);
                         this->camera_list_follow_model->setData(index, file_string);
 
-                        this->camera_vec_arr.insert(this->camera_vec_arr.begin(), std::pair<QString, glm::vec3>(file_string, data_vec));
+                        std::pair<QString, const mCamera *> camera_to_add;
+                        camera_to_add.first = file_string;
+                        mCamera * cur_camera = new mCamera(this->gl_widget->getCurCamera());
+                        cur_camera->setViewVec(data_vec);
+                        camera_to_add.second = const_cast<const mCamera *>(cur_camera);
+                        this->camera_vec_arr.insert(this->camera_vec_arr.begin(), camera_to_add);
+
                         this->tool_camera_listview->setCurrentIndex(index);
                         this->cur_camera_num[this->cur_camera_type] ++;
                     }
@@ -861,7 +887,9 @@ void mMainWindow::cameraSaveToFileSlot() {
 
             if (this->cur_camera_type == 0) {
                 for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
-                    glm::mat4 cam_ex_mat = this->camera_mat_arr[i].second;
+                    // Here, because the camera_type is 0, the person center is usless
+                    this->camera_mat_arr[i].second->getViewMat(glm::vec3(0.f));
+                    glm::mat4 cam_ex_mat = this->camera_mat_arr[i].second->getViewMat(glm::vec3(0.f));
                     file_stream << cam_ex_mat[0][0] << " " << cam_ex_mat[0][1] << " " << cam_ex_mat[0][2] << " " << cam_ex_mat[0][3] << " " << \
                                    cam_ex_mat[1][0] << " " << cam_ex_mat[1][1] << " " << cam_ex_mat[1][2] << " " << cam_ex_mat[1][3] << " " << \
                                    cam_ex_mat[2][0] << " " << cam_ex_mat[2][1] << " " << cam_ex_mat[2][2] << " " << cam_ex_mat[2][3] << " " << \
@@ -870,7 +898,8 @@ void mMainWindow::cameraSaveToFileSlot() {
             }
             else if (this->cur_camera_type == 1) {
                 for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
-                    glm::vec3 cam_ex_vec = this->camera_vec_arr[i].second;
+                    // Here, cause the render process will update the view vec, so I juse get it.
+                    glm::vec3 cam_ex_vec = this->camera_vec_arr[i].second->getViewVec();
                     file_stream << cam_ex_vec[0] << " " << cam_ex_vec[1] << " " << cam_ex_vec[2] << " " << this->camera_vec_arr[i].first << "\n";
                 }
             }
@@ -952,104 +981,104 @@ void mMainWindow::saveLabelsSlot(std::vector<glm::vec2> labels_2d, std::vector<g
 }
 
 void mMainWindow::captureOneFrame() {
-    QString dir_name = this->tool_capture_dir_input->text();
-    QFileInfo dir_info(dir_name);
-    if (!dir_name.isEmpty() && dir_info.isDir()) {
-        // Get view mats
-        std::vector<glm::mat4> cur_view_mats({glm::mat4(0.0)});
-        this->gl_widget->captureFrame(cur_view_mats);
-    }
-    else {
-        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
-    }
+//    QString dir_name = this->tool_capture_dir_input->text();
+//    QFileInfo dir_info(dir_name);
+//    if (!dir_name.isEmpty() && dir_info.isDir()) {
+//        // Get view mats
+//        std::vector<glm::mat4> cur_view_mats({glm::mat4(0.0)});
+//        this->gl_widget->captureFrame(cur_view_mats);
+//    }
+//    else {
+//        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
+//    }
 }
 void mMainWindow::captureAllFrames() {
-    QString dir_name = this->tool_capture_dir_input->text();
-    QFileInfo dir_info(dir_name);
-    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
-        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
-        return;
-    }
+//    QString dir_name = this->tool_capture_dir_input->text();
+//    QFileInfo dir_info(dir_name);
+//    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
+//        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
+//        return;
+//    }
 
-    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
-    this->fileActivatedSlot(cur_index);
-    this->videoResetSlot();
+//    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
+//    this->fileActivatedSlot(cur_index);
+//    this->videoResetSlot();
 
-    if (!dir_name.isEmpty() && dir_info.isDir()) {
-        // Get view mats
-        if (this->cur_camera_type == 0) {
-            std::vector<glm::mat4> cur_view_mats;
-            for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
-                cur_view_mats.push_back(this->camera_mat_arr[i].second);
-            }
-            this->gl_widget->captureAllFrames(cur_view_mats);
-            this->videoStartSlot();
-        }
-        else {
-            std::vector<glm::vec3> cur_view_vecs;
-            for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
-                cur_view_vecs.push_back(this->camera_vec_arr[i].second);
-            }
-            this->gl_widget->captureAllFrames(cur_view_vecs);
-            this->videoStartSlot();
-        }
-    }
-    else {
-        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
-    }
+//    if (!dir_name.isEmpty() && dir_info.isDir()) {
+//        // Get view mats
+//        if (this->cur_camera_type == 0) {
+//            std::vector<glm::mat4> cur_view_mats;
+//            for (int i = 0; i < this->camera_mat_arr.size(); ++i) {
+//                cur_view_mats.push_back(this->camera_mat_arr[i].second);
+//            }
+//            this->gl_widget->captureAllFrames(cur_view_mats);
+//            this->videoStartSlot();
+//        }
+//        else {
+//            std::vector<glm::vec3> cur_view_vecs;
+//            for (int i = 0; i < this->camera_vec_arr.size(); ++i) {
+//                cur_view_vecs.push_back(this->camera_vec_arr[i].second);
+//            }
+//            this->gl_widget->captureAllFrames(cur_view_vecs);
+//            this->videoStartSlot();
+//        }
+//    }
+//    else {
+//        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
+//    }
 }
 
 void mMainWindow::captureCurrentAll() {
-    QString dir_name = this->tool_capture_dir_input->text();
-    QFileInfo dir_info(dir_name);
-    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
-        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
-        return;
-    }
+//    QString dir_name = this->tool_capture_dir_input->text();
+//    QFileInfo dir_info(dir_name);
+//    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
+//        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
+//        return;
+//    }
 
-    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
-    this->fileActivatedSlot(cur_index);
-    this->videoResetSlot();
+//    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
+//    this->fileActivatedSlot(cur_index);
+//    this->videoResetSlot();
 
-    if (!dir_name.isEmpty() && dir_info.isDir()) {
-        // Get view mats
-        std::vector<glm::mat4> cur_ex_mat({glm::mat4(0.f)});
-        this->gl_widget->captureAllFrames(cur_ex_mat);
-        this->videoStartSlot();
-    }
-    else {
-        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
-    }
+//    if (!dir_name.isEmpty() && dir_info.isDir()) {
+//        // Get view mats
+//        std::vector<glm::mat4> cur_ex_mat({glm::mat4(0.f)});
+//        this->gl_widget->captureAllFrames(cur_ex_mat);
+//        this->videoStartSlot();
+//    }
+//    else {
+//        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
+//    }
 }
 
 void mMainWindow::captureVideo() {
-    QString dir_name = this->tool_capture_dir_input->text();
-    QFileInfo dir_info(dir_name);
-    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
-        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
-        return;
-    }
+//    QString dir_name = this->tool_capture_dir_input->text();
+//    QFileInfo dir_info(dir_name);
+//    if (this->cur_pose_file_index[this->cur_dataset_num] >= this->file_list_model[this->cur_dataset_num]->rowCount()) {
+//        QMessageBox::critical(this, "Pose Error", "Pose files list is not valid or current processed pose file is the last one!");
+//        return;
+//    }
 
-    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
-    this->fileActivatedSlot(cur_index);
-    this->videoResetSlot();
+//    QModelIndex cur_index = this->file_list_model[this->cur_dataset_num]->index(this->cur_pose_file_index[this->cur_dataset_num]);
+//    this->fileActivatedSlot(cur_index);
+//    this->videoResetSlot();
 
-    if (!dir_name.isEmpty() && dir_info.isDir()) {
-        // Get view mats
-        if (this->cur_camera_type == 0) {
-            std::vector<glm::mat4> cur_view_mats;
-            this->gl_widget->captureAllFrames(cur_view_mats);
-            this->videoStartSlot();
-        }
-        else {
-            std::vector<glm::vec3> cur_view_vecs;
-            this->gl_widget->captureAllFrames(cur_view_vecs);
-            this->videoStartSlot();
-        }
-    }
-    else {
-        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
-    }
+//    if (!dir_name.isEmpty() && dir_info.isDir()) {
+//        // Get view mats
+//        if (this->cur_camera_type == 0) {
+//            std::vector<glm::mat4> cur_view_mats;
+//            this->gl_widget->captureAllFrames(cur_view_mats);
+//            this->videoStartSlot();
+//        }
+//        else {
+//            std::vector<glm::vec3> cur_view_vecs;
+//            this->gl_widget->captureAllFrames(cur_view_vecs);
+//            this->videoStartSlot();
+//        }
+//    }
+//    else {
+//        QMessageBox::critical(this, "Path Error", "Save directory is not valid!");
+//    }
 }
 
 void mMainWindow::sceneFloorSlot() {

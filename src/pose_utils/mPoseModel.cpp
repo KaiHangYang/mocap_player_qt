@@ -4,6 +4,8 @@
 #include "mRenderParameters.h"
 #include <glm/glm.hpp>
 
+//#define TEMP_POSE_RENDER_TYPE_2
+
 //static float skeleton_style[] = {
 //    0, 1.3, // head
 //    1, 0.6, // left shoulder
@@ -222,8 +224,15 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
     glm::u32vec2 * indices_ptr = &this->bone_indices[0];
     glm::mat4 trans;
     glm::mat4 curmodel;
-
+    /****************** Render with depth test and limb self-occlusion *******************/
+#ifndef TEMP_POSE_RENDER_TYPE_2
     this->core_func->glEnable(GL_DEPTH_TEST);
+//    qDebug() << "Limbs: Use the common render mode.";
+#else
+    this->core_func->glDisable(GL_DEPTH_TEST);
+//    qDebug() << "Limbs: Discard the self-occlusion render order";
+#endif
+
     // Draw the bones first
     for (unsigned int i = 0; i < lineNum; ++i) {
         unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
@@ -255,8 +264,8 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
         }
         this->mesh_reader->render(skeleton_style[2*i]);
     }
-    // Then draw the joints
 
+    // Then draw the joints
     /*********************** Draw the root first ***************************/
     if (!this->use_shading) {
         this->core_func->glDisable(GL_DEPTH_TEST);
@@ -293,7 +302,12 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
             }
         }
     }
+#ifndef TEMP_POSE_RENDER_TYPE_2
     std::sort(camera_coord_vertexs.begin(), camera_coord_vertexs.end(), joint_z_cmp);
+//    qDebug() << "Joints: Use the common render mode.";
+#else
+//    qDebug() << "Joints: Discard the self-occlusion render order";
+#endif
     for (unsigned int i = 0; i < vertexNum; ++i) {
         int cur_vertex_num;
         if (!this->use_shading) {

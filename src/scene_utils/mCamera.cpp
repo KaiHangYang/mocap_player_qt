@@ -6,12 +6,14 @@
 mCamera::mCamera(const mCamera *camera) {
     *this = *camera;
 }
-mCamera::mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int wnd_width, int wnd_height, bool is_ar) {
+mCamera::mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int camera_type, int wnd_width, int wnd_height, bool is_ar) {
     this->wnd_height = wnd_height;
     this->wnd_width = wnd_width;
     this->is_ar = is_ar;
     this->is_focus = false;
     this->is_focus = false;
+
+    this->setCameraType(camera_type);
 
     // set the intrinsic matrix of the camera
     this->setProjMat(proj_mat);
@@ -30,6 +32,7 @@ mCamera& mCamera::operator=(const mCamera &a) {
     this->view_r_mat = a.view_r_mat;
     this->view_t_mat = a.view_t_mat;
     this->follow_dert = a.follow_dert;
+    this->camera_type = a.camera_type; // is the camera use perspective(0) or my 'ortho' proj_mat(1)
     return *this;
 }
 
@@ -58,6 +61,11 @@ void mCamera::setFollow(bool is_follow, glm::vec3 pose_center) {
         this->updateViewMat(pose_center);
     }
 }
+
+void mCamera::setCameraType(int camera_type) {
+    this->camera_type = camera_type;
+}
+
 glm::mat4 mCamera::getProjMat() const {
     return this->proj_mat;
 }
@@ -221,6 +229,10 @@ bool mCamera::getFocus() const {
 
 bool mCamera::getFollow() const {
     return this->is_follow;
+}
+
+int mCamera::getCameraType() const {
+    return this->camera_type;
 }
 
 glm::vec3 mCamera::getCameraPos(glm::vec3 pose_center) const {

@@ -5,8 +5,6 @@
         <file alias="depth.vert">shaders/depth.vert</file>
         <file alias="scene.frag">shaders/multilight.frag</file>
         <file alias="scene.vert">shaders/multilight.vert</file>
-        <file alias="model.frag">shaders/model_f.shader</file>
-        <file alias="model.vert">shaders/model_v.shader</file>
     </qresource>
     <qresource prefix="/images">
         <file alias="icon-pause">images/pause.png</file>

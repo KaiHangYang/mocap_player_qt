@@ -9,7 +9,7 @@
 class mCamera {
 public:
     mCamera(const mCamera * camera);
-    mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int wnd_width=mWindowWidth, int wnd_height=mWindowHeight, bool is_ar = m_is_ar);
+    mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int camera_type, int wnd_width=mWindowWidth, int wnd_height=mWindowHeight, bool is_ar = m_is_ar);
     ~mCamera();
 
     mCamera& operator=(const mCamera &a);
@@ -24,6 +24,7 @@ public:
 
     bool getFollow() const;
     bool getFocus() const;
+    int getCameraType() const;
 
     void setViewMat(glm::mat4 view_mat);
     void setViewVec(glm::vec3 view_vec);
@@ -31,6 +32,7 @@ public:
 
     void setFocus(bool is_focus);
     void setFollow(bool is_follow, glm::vec3 pose_center);
+    void setCameraType(int camera_type);
     void moveCamera(glm::vec3 move_step, glm::vec3 pose_center);
     void rotateCamera(glm::mat4 rotate_mat);
 
@@ -55,6 +57,8 @@ private:
 
     glm::mat4 view_r_mat;
     glm::mat4 view_t_mat;
+
+    int camera_type; // 0 means perspective, 1 means 'ortho'
 };
 
 #endif

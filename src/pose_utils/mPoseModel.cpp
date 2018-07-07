@@ -4,7 +4,7 @@
 #include "mRenderParameters.h"
 #include <glm/glm.hpp>
 
-#define TEMP_POSE_RENDER_TYPE_2
+//#define TEMP_POSE_RENDER_TYPE_2
 
 //static float skeleton_style[] = {
 //    0, 1.3, // head
@@ -192,7 +192,7 @@ bool joint_z_cmp(std::pair<glm::vec3, int> a, std::pair<glm::vec3, int> b) {
     }
 }
 
-void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat, int render_type) {
+void mPoseModel::renderPose(std::vector<glm::vec3> vertexs, glm::mat4 view_mat, glm::mat4 proj_mat, int camera_type, int render_type) {
 
     this->VAO->bind();
     unsigned int vertexNum = vertexs.size();
@@ -214,8 +214,8 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
         std::cout << "(mPoseModel.cpp): render_type is not valid!" << std::endl;
         exit(-1);
     }
-    shader->use();
 
+    shader->use();
     // Some uniform has been set in the scene_utils before this function is called
     shader->setVal("renderType", 0);
     shader->setVal("viewPos", glm::vec3(-view_t_mat[3][0], -view_t_mat[3][1], -view_t_mat[3][2]));
@@ -224,7 +224,57 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
     glm::u32vec2 * indices_ptr = &this->bone_indices[0];
     glm::mat4 trans;
     glm::mat4 curmodel;
-    /****************** Render with depth test and limb self-occlusion *******************/
+
+    if (camera_type == 1) {
+        /****************** Change the joint position if the camera is ortho *******************/
+        for (int i = 0; i < vertexs.size(); ++i) {
+            glm::vec4 cur_vertex(vertexs[i], 1.0);
+            cur_vertex = glm::transpose(m_cam_in_mat_perspective) * view_mat * glm::mat4(1.f) * cur_vertex;
+            cur_vertex /= cur_vertex.w;
+            cur_vertex = glm::inverse(view_mat) * glm::inverse(proj_mat) * cur_vertex;
+            vertexs[i] = glm::vec3(cur_vertex);
+        }
+    }
+
+    std::vector<glm::vec3> tmpJointColors = mJointColors;
+    if (!this->use_shading) {
+        tmpJointColors[14] = glm::vec3(1.f);
+        for (unsigned int i = 0; i < lineNum; ++i) {
+            unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
+            indices_ptr ++;
+            if (!vertexFlags[line[1]]) {
+                vertexFlags[line[1]] = true;
+                curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.3, 1.3, 1.3));
+                glm::mat4 trans_mat = glm::translate(glm::mat4(1.0f), vertexs[line[1]]);
+                curmodel = trans_mat * curmodel;
+                glm::mat4 to_camera_coord = view_mat;
+
+                if (render_type == 0) {
+                    // the vertex is in the global coordinate, so I only need to use the view_mat
+                    camera_coord_vertexs[line[0]].first = to_camera_coord * glm::vec4(vertexs[line[0]], 1.f);
+                    camera_coord_vertexs[line[0]].second = line[0];
+                    camera_coord_vertexs[line[1]].first = to_camera_coord * glm::vec4(vertexs[line[1]], 1.f);
+                    camera_coord_vertexs[line[1]].second = line[1];
+
+                    if (std::abs((camera_coord_vertexs[line[0]].first).z) > std::abs((camera_coord_vertexs[line[1]].first).z)) {
+                        tmpJointColors[line[1]] = glm::vec3(1.f);
+                    }
+                    else {
+                        tmpJointColors[line[1]] = glm::vec3(0.f);
+                    }
+                }
+            }
+        }
+    }
+#ifndef TEMP_POSE_RENDER_TYPE_2
+    std::sort(camera_coord_vertexs.begin(), camera_coord_vertexs.end(), joint_z_cmp);
+//    qDebug() << "Joints: Use the common render mode.";
+#else
+//    qDebug() << "Joints: Discard the self-occlusion render order";
+#endif
+
+
+    // Draw the bones first
 #ifndef TEMP_POSE_RENDER_TYPE_2
     this->core_func->glEnable(GL_DEPTH_TEST);
 //    qDebug() << "Limbs: Use the common render mode.";
@@ -232,8 +282,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
     this->core_func->glDisable(GL_DEPTH_TEST);
 //    qDebug() << "Limbs: Discard the self-occlusion render order";
 #endif
-
-    // Draw the bones first
+    indices_ptr = &this->bone_indices[0];
     for (unsigned int i = 0; i < lineNum; ++i) {
         unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
         indices_ptr ++;
@@ -271,43 +320,6 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
         this->core_func->glDisable(GL_DEPTH_TEST);
     }
 
-    std::vector<glm::vec3> tmpJointColors = mJointColors;
-    indices_ptr = &this->bone_indices[0];
-    if (!this->use_shading) {
-        tmpJointColors[14] = glm::vec3(1.f);
-        for (unsigned int i = 0; i < lineNum; ++i) {
-            unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
-            indices_ptr ++;
-            if (!vertexFlags[line[1]]) {
-                vertexFlags[line[1]] = true;
-                curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.3, 1.3, 1.3));
-                glm::mat4 trans_mat = glm::translate(glm::mat4(1.0f), vertexs[line[1]]);
-                curmodel = trans_mat * curmodel;
-                glm::mat4 to_camera_coord = view_mat;
-
-                if (render_type == 0) {
-                    // the vertex is in the global coordinate, so I only need to use the view_mat
-                    camera_coord_vertexs[line[0]].first = to_camera_coord * glm::vec4(vertexs[line[0]], 1.f);
-                    camera_coord_vertexs[line[0]].second = line[0];
-                    camera_coord_vertexs[line[1]].first = to_camera_coord * glm::vec4(vertexs[line[1]], 1.f);
-                    camera_coord_vertexs[line[1]].second = line[1];
-
-                    if (std::abs((camera_coord_vertexs[line[0]].first).z) > std::abs((camera_coord_vertexs[line[1]].first).z)) {
-                        tmpJointColors[line[1]] = glm::vec3(1.f);
-                    }
-                    else {
-                        tmpJointColors[line[1]] = glm::vec3(0.f);
-                    }
-                }
-            }
-        }
-    }
-#ifndef TEMP_POSE_RENDER_TYPE_2
-    std::sort(camera_coord_vertexs.begin(), camera_coord_vertexs.end(), joint_z_cmp);
-//    qDebug() << "Joints: Use the common render mode.";
-#else
-//    qDebug() << "Joints: Discard the self-occlusion render order";
-#endif
     for (unsigned int i = 0; i < vertexNum; ++i) {
         int cur_vertex_num;
         if (!this->use_shading) {
@@ -329,6 +341,6 @@ void mPoseModel::renderPose(std::vector<glm::vec3> &vertexs, glm::mat4 view_mat,
 
 }
 
-void mPoseModel::draw(std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, int render_type) {
-    this->renderPose(points, cam_ex_mat, render_type);
+void mPoseModel::draw(std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, glm::mat4 & cam_in_mat, int camera_type, int render_type) {
+    this->renderPose(points, cam_ex_mat, cam_in_mat, camera_type, render_type);
 }

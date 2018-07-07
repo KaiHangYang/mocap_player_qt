@@ -18,6 +18,10 @@ public:
     ~mGLWidget();
     int getPoseState();
     bool getIsHasPose();
+
+    int getCurCameraType();
+    void setCurCameraType(int camera_type);
+
     const mCamera * getCurCamera();
     void setCurCamera(const mCamera * camera);
 

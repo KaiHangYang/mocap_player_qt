@@ -13,7 +13,7 @@
 
 static float move_step = 80.0;
 
-mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, bool is_ar, int pose_type) {
+mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, int camera_type, bool is_ar, int pose_type) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
     this->is_ar = is_ar;
@@ -48,7 +48,7 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->scene_shader = new mShader(mPoseShaderFiles[0], mPoseShaderFiles[1]);
     this->depth_shader = new mShader(mDepthShaderFiles[0], mDepthShaderFiles[1], mDepthShaderFiles[2]);
 
-    this->cur_camera = new mCamera(cam_in_mat, cam_ex_mat, this->wnd_width, this->wnd_height, this->is_ar);
+    this->cur_camera = new mCamera(cam_in_mat, cam_ex_mat, camera_type, this->wnd_width, this->wnd_height, this->is_ar);
     this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, target_model_size, is_ar, this->use_shading, pose_type);
 
     this->initScene();
@@ -267,6 +267,13 @@ bool mSceneUtils::getFocusOnCenter() {
     return this->cur_camera->getFocus();
 }
 
+int mSceneUtils::getCurCameraType() {
+    return this->cur_camera->getCameraType();
+}
+void mSceneUtils::setCurCameraType(int camera_type) {
+    this->cur_camera->setCameraType(camera_type);
+}
+
 void mSceneUtils::captureFrame(cv::Mat & cur_frame) {
     this->core_func->glReadBuffer(GL_FRONT);
     if (cur_frame.size().height != this->wnd_height || cur_frame.size().width != this->wnd_width) {
@@ -421,18 +428,21 @@ void mSceneUtils::_beforeRender(const std::vector<glm::vec3> & points_3d) {
 void mSceneUtils::render(std::vector<glm::vec3> points_3d, const mCamera * camera) {
     this->_beforeRender(points_3d);
     glm::mat4 cur_cam_ex_mat, cur_cam_in_mat;
+    int camera_type;
     if (camera != nullptr) {
         cur_cam_ex_mat = camera->getViewMat(this->person_center_pos);
         cur_cam_in_mat = camera->getProjMat();
+        camera_type = camera->getCameraType();
     }
     else {
         cur_cam_ex_mat = this->cur_camera->getViewMat(this->person_center_pos);
         cur_cam_in_mat = this->cur_camera->getProjMat();
+        camera_type = this->cur_camera->getCameraType();
     }
-    this->_render(points_3d, cur_cam_ex_mat, cur_cam_in_mat);
+    this->_render(points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type);
 }
 
-void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat) {
+void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat, int camera_type) {
 
     for (int light_num = 0; light_num < mLightSum; ++light_num) {
         this->VAO->bind();
@@ -448,7 +458,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
             this->_drawFloor();
         }
         if (points_3d.size() == this->pose_model->num_of_joints) {
-            this->pose_model->draw(points_3d, cur_cam_ex_mat, 1);
+            this->pose_model->draw(points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type, 1);
         }
     }
 
@@ -467,7 +477,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
     }
 
     if (points_3d.size() == this->pose_model->num_of_joints) {
-        this->pose_model->draw(points_3d, cur_cam_ex_mat, 0);
+        this->pose_model->draw(points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type, 0);
     }
 }
 

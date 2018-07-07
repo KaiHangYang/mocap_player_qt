@@ -29,7 +29,13 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->pose_angle_jitter_range = 0;
 
     this->is_ar = m_is_ar;
-    this->cam_in_mat = m_cam_in_mat_perspective;
+    if (m_camera_type == 0) {
+        this->cam_in_mat = m_cam_in_mat_perspective;
+    }
+    else {
+        this->cam_in_mat = m_cam_in_mat_ortho;
+    }
+
     this->cam_ex_mat = m_cam_ex_mat;
 
     this->mocap_data = new mMoCapData;
@@ -50,7 +56,7 @@ void mGLWidget::initializeGL() {
     this->core_func->initializeOpenGLFunctions();
     this->VAO->create();
 
-    this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, this->cam_in_mat, this->cam_ex_mat, this->is_ar);
+    this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, this->cam_in_mat, this->cam_ex_mat, m_camera_type, this->is_ar);
     glViewport(0, 0, this->wnd_width, this->wnd_height);
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
@@ -186,6 +192,13 @@ void mGLWidget::setVerticalAngle(float angle) {
 
 void mGLWidget::setVisualizeCameras(std::vector<const mCamera *> cameras_arr) {
     this->cur_visualization_cameras = cameras_arr;
+}
+
+int mGLWidget::getCurCameraType() {
+    return this->scene->getCurCameraType();
+}
+void mGLWidget::setCurCameraType(int camera_type) {
+    this->scene->setCurCameraType(camera_type);
 }
 
 void mGLWidget::captureAllFrames(std::vector<const mCamera *> cameras) {

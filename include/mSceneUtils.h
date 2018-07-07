@@ -16,11 +16,14 @@
 
 class mSceneUtils {
 public:
-    mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, bool is_ar=false, int pose_type=0);
+    mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, int camera_type, bool is_ar=false, int pose_type=0);
     ~mSceneUtils();
 
     void render(std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), const mCamera * camera=nullptr);
     void renderCamerasPos(std::vector<const mCamera *> cameras);
+
+    int getCurCameraType();
+    void setCurCameraType(int camera_type);
 
     const mCamera * getCurCamera();
     void setCurCamera(const mCamera * camera);
@@ -53,7 +56,6 @@ public:
     void setVerticalAngle(float angle);
     void setPoseCenter(glm::vec3 pose_center);
 
-
     // Just for tmp adjust for normal and vr mode
     float m_move_dir[3];
     float m_rotate_dir[2];
@@ -64,7 +66,7 @@ private:
     std::vector<GLfloat> getGroundColor();
 
     void _beforeRender(const std::vector<glm::vec3> & points_3d);
-    void _render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat);
+    void _render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat, int camera_type);
     void _setDepthShaderUniforms(int light_num);
     void _setSceneShaderUnoforms(glm::mat4 model_mat, glm::mat4 view_mat, glm::mat4 proj_mat, bool is_use_shadow);
     void _drawFloor();

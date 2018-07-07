@@ -81,14 +81,6 @@ FORMS += \
     window.ui
 
 DISTFILES += \
-    shaders/cam_f.shader \
-    shaders/cam_v.shader \
-    shaders/model_f.shader \
-    shaders/model_v.shader \
-    shaders/multilight_f.shader \
-    shaders/multilight_v.shader \
-    shaders/scene_f.shader \
-    shaders/scene_v.shader \
     shaders/depth.geo \
     shaders/depth.frag \
     shaders/multilight.frag \

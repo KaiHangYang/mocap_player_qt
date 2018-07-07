@@ -93,7 +93,7 @@ if __name__ == "__main__":
     total_valid_count = 1400
     total_frames = total_train_count
     # tfrecord_file = "/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_train.tfrecord"
-    tfrecord_file = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/sfu_valid.tfrecord"
+    tfrecord_file = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/render_type_2/sfu_valid_render_2.tfrecord"
     ################################ Init tfrecord valider ##################################
     dataset_reader = data_valid.DataValid(tfrecord_file)
     #########################################################################################

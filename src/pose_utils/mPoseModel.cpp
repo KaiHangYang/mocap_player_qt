@@ -4,7 +4,7 @@
 #include "mRenderParameters.h"
 #include <glm/glm.hpp>
 
-//#define TEMP_POSE_RENDER_TYPE_2
+#define TEMP_POSE_RENDER_TYPE_2
 
 //static float skeleton_style[] = {
 //    0, 1.3, // head

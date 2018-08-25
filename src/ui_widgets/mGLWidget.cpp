@@ -116,7 +116,7 @@ void mGLWidget::paintGL() {
         glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     }
     else {
-        glClearColor(0.5f, 0.5f, 0.5f, 1.f);
+        glClearColor(0.2f, 0.2f, 0.2f, 1.f);
     }
     this->draw();
 }
@@ -312,10 +312,17 @@ void mGLWidget::draw() {
             std::vector<glm::vec2> labels_2d_raw;
             std::vector<glm::vec3> labels_3d_raw;
 
-            this->scene->render(this->cur_pose_joints, this->cur_capture_cameras[cam_num]);
-            this->scene->getLabelsFromFrame(this->cur_pose_joints, this->cur_capture_cameras[cam_num], labels_2d, labels_3d);
+            std::vector<glm::vec3> adjusted_pose_joints;
+            std::vector<glm::vec3> adjusted_pose_joints_raw;
+
+            // When the camera is ortho camera, I adjust the position of the joints to make the pose more like the one in the perspective mode.
+            adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints, this->cur_capture_cameras[cam_num]);
+            adjusted_pose_joints_raw = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints_raw, this->cur_capture_cameras[cam_num]);
+
+            this->scene->render(adjusted_pose_joints, this->cur_capture_cameras[cam_num]);
+            this->scene->getLabelsFromFrame(this->cur_pose_joints, adjusted_pose_joints, this->cur_capture_cameras[cam_num], labels_2d, labels_3d);
             if (this->is_ar) {
-                this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, this->cur_capture_cameras[cam_num], labels_2d_raw, labels_3d_raw);
+                this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, adjusted_pose_joints_raw, this->cur_capture_cameras[cam_num], labels_2d_raw, labels_3d_raw);
             }
 
             cv::Mat captured_img;
@@ -343,8 +350,11 @@ void mGLWidget::draw() {
         cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat, this->scene->m_rotate_dir);
         this->scene->rotateCamera(cur_rotate_mat);
         /***************************************************************************************************************/
+        std::vector<glm::vec3> adjusted_pose_joints;
 
-        this->scene->render(cur_pose_joints);
+        adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints);
+        this->scene->render(adjusted_pose_joints);
+
         // the render will clear the color and depth bit, so I need to render the camera below
         if (!this->cur_visualization_cameras.empty()) {
             this->scene->renderCamerasPos(this->cur_visualization_cameras);

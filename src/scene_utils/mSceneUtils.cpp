@@ -312,23 +312,23 @@ void mSceneUtils::setCurInMat(glm::mat4 proj_mat) {
 
 // TODO: The 3D view coordinate labels need to be checked.
 //       THe 2D is right, after visualized.
-void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, const glm::mat4 & proj_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
-    if (joints.size() != 0) {
-        labels_2d = std::vector<glm::vec2>(joints.size());
-        labels_3d = std::vector<glm::vec3>(joints.size());
+void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw, const std::vector<glm::vec3> & joints_adjusted, const glm::mat4 & view_mat, const glm::mat4 & proj_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
+    if (joints_raw.size() != 0) {
+        labels_2d = std::vector<glm::vec2>(joints_raw.size());
+        labels_3d = std::vector<glm::vec3>(joints_raw.size());
 
         // Used for the "Current camera" Mode
         glm::mat4 cur_view_mat = view_mat;
         if (cur_view_mat == glm::mat4(0.f)) {
             cur_view_mat = this->getCurExMat();
         }
-        glm::vec3 root_joint = glm::vec3(cur_view_mat * glm::vec4(joints[joints.size() - 1], 1.f));
-        glm::mat4 cam_proj_mat = this->cur_camera->getProjMat();
-        for (int i = 0; i < joints.size(); ++i) {
-            glm::vec4 cur_2d = cam_proj_mat * cur_view_mat * glm::vec4(joints[i], 1.0);
+        glm::vec3 root_joint = glm::vec3(cur_view_mat * glm::vec4(joints_raw[joints_raw.size() - 1], 1.f));
+        glm::mat4 cam_proj_mat = proj_mat;
+        for (int i = 0; i < joints_raw.size(); ++i) {
+            glm::vec4 cur_2d = cam_proj_mat * cur_view_mat * glm::vec4(joints_adjusted[i], 1.0);
             cur_2d /= cur_2d.w;
             labels_2d[i] = glm::vec2(this->wnd_width * (cur_2d.x + 1.f) / 2.f , this->wnd_height * (1.f - cur_2d.y) / 2.f);
-            labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints[i], 1.f)) - root_joint;
+            labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints_raw[i], 1.f)) - root_joint;
 
             // Cause the camera in the real word
             if (!this->is_ar) {
@@ -340,11 +340,11 @@ void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints, con
     }
 }
 
-void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints, const mCamera * camera, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
+void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw, const std::vector<glm::vec3> & joints_adjusted, const mCamera * camera, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
     // Joints is in the global coordinate
     glm::mat4 view_mat = camera->getViewMat(this->person_center_pos);
     glm::mat4 proj_mat = camera->getProjMat();
-    this->_getLabelsFromFrame(joints, view_mat, proj_mat, labels_2d, labels_3d);
+    this->_getLabelsFromFrame(joints_raw, joints_adjusted, view_mat, proj_mat, labels_2d, labels_3d);
 }
 
 void mSceneUtils::_setDepthShaderUniforms(int light_num) {
@@ -418,12 +418,46 @@ void mSceneUtils::_drawFloor() {
     this->core_func->glDisableVertexAttribArray(1);
 }
 
+// This function is used the make the pose in the ortho camera the same as the one in the perspective camera.
+std::vector<glm::vec3> mSceneUtils::adjustPoseAccordingToCamera(std::vector<glm::vec3> joints_3d, const mCamera *camera) {
+    std::vector<glm::vec3> result_joints_3d = joints_3d;
+
+    this->_beforeRender(joints_3d);
+    glm::mat4 cur_cam_ex_mat, cur_cam_in_mat;
+    int camera_type;
+    if (camera != nullptr) {
+        cur_cam_ex_mat = camera->getViewMat(this->person_center_pos);
+        cur_cam_in_mat = camera->getProjMat();
+        camera_type = camera->getCameraType();
+    }
+    else {
+        cur_cam_ex_mat = this->cur_camera->getViewMat(this->person_center_pos);
+        cur_cam_in_mat = this->cur_camera->getProjMat();
+        camera_type = this->cur_camera->getCameraType();
+    }
+
+    if (camera_type == 1) {
+        /****************** Change the joint position if the camera is ortho *******************/
+        /****************** This is why when I change the z of the camera, the size of the model will change. ****************/
+        for (int i = 0; i < joints_3d.size(); ++i) {
+            glm::vec4 cur_vertex(joints_3d[i], 1.0);
+            cur_vertex = glm::transpose(m_cam_in_mat_perspective) * cur_cam_ex_mat * glm::mat4(1.f) * cur_vertex;
+            cur_vertex /= cur_vertex.w;
+            cur_vertex = glm::inverse(cur_cam_ex_mat) * glm::inverse(cur_cam_in_mat) * cur_vertex;
+            result_joints_3d[i] = glm::vec3(cur_vertex);
+        }
+    }
+
+    return result_joints_3d;
+}
+
 void mSceneUtils::_beforeRender(const std::vector<glm::vec3> & points_3d) {
     // points_3d is in the global coordinate
     if (points_3d.size() == this->pose_model->num_of_joints) {
         this->setPoseCenter(points_3d[points_3d.size() - 1]);
     }
 }
+
 
 void mSceneUtils::render(std::vector<glm::vec3> points_3d, const mCamera * camera) {
     this->_beforeRender(points_3d);

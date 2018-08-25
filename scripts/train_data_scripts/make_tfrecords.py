@@ -5,9 +5,10 @@ import tensorflow as tf
 import sys
 
 sys.path.append("../")
+sys.path.append("/home/kaihang/Projects/mocap_pose_tf/cpm_utils/visualize_utils/")
 
 from reader_scripts import dataReader as data_reader
-from visual_tools import display_utils
+import display_utils
 
 pad_scale = 0.2
 target_image_size = 368
@@ -54,7 +55,6 @@ def get_crop(img, points, num_of_joints):
         is_discard = True
     return cropped_img, (min_x, min_y, max_x, max_y), is_discard
 
-
 def data_resize_with_cropped(img, joints2d, num_of_joints=15):
 
     points = np.reshape(joints2d, (num_of_joints, 2))
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     if is_ar:
         camera_num = 1
     else:
-        camera_num = 36
+        camera_num = 42
 
     # train_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/train"
     # test_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/valid"
@@ -98,11 +98,11 @@ if __name__ == "__main__":
     # train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_train.tfrecord")
     # test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_valid.tfrecord")
 
-    train_data_path = "/home/kaihang/Desktop/test_dir/cmu_data/render_type_2/train"
-    test_data_path = "/home/kaihang/Desktop/test_dir/cmu_data/render_type_2/valid"
+    train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/bone_1/train"
+    test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/bone_1/valid"
 
-    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/cmu_train_render_2.tfrecord")
-    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/cmu_valid_render_2.tfrecord")
+    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_1.tfrecord")
+    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_1.tfrecord")
 
     train_dataset_list = os.listdir(train_data_path)
     valid_dataset_list = os.listdir(test_data_path)
@@ -137,7 +137,15 @@ if __name__ == "__main__":
                 labels_2d = labels[0].copy()
                 labels_3d = labels[1].copy()
 
+                ###### Visualize the data ######
                 # labels_3d[:, 1:3] = -1 * labels_3d[:, 1:3] # TODO This is the temporary
+
+                # img = display_utils.drawLines(img, labels_2d)
+                # img = display_utils.drawPoints(img, labels_2d)
+
+                # cv2.imshow("test", img)
+                # cv2.waitKey(0)
+                ################################
 
                 img, labels_2d_raw, offset, scale, _ = data_resize_with_cropped(img, labels_2d_raw)
                 labels_2d -= offset[0:2]

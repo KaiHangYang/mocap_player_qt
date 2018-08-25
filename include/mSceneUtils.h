@@ -40,7 +40,7 @@ public:
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
     void getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras);
 
-    void getLabelsFromFrame(const std::vector<glm::vec3> &joints, const mCamera * camera, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
+    void getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw, const std::vector<glm::vec3> & joints_adjusted, const mCamera * camera, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
 
     void moveCamera(int move_type, QMouseEvent * event = NULL);
     void rotateCamera(glm::mat4 rotate_mat);
@@ -56,6 +56,8 @@ public:
     void setVerticalAngle(float angle);
     void setPoseCenter(glm::vec3 pose_center);
 
+    std::vector<glm::vec3> adjustPoseAccordingToCamera(std::vector<glm::vec3> joints_3d, const mCamera * camera = nullptr);
+
     // Just for tmp adjust for normal and vr mode
     float m_move_dir[3];
     float m_rotate_dir[2];
@@ -70,7 +72,7 @@ private:
     void _setDepthShaderUniforms(int light_num);
     void _setSceneShaderUnoforms(glm::mat4 model_mat, glm::mat4 view_mat, glm::mat4 proj_mat, bool is_use_shadow);
     void _drawFloor();
-    void _getLabelsFromFrame(const std::vector<glm::vec3> & joints, const glm::mat4 & view_mat, const glm::mat4 & proj_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
+    void _getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw, const std::vector<glm::vec3> & joints_adjusted, const glm::mat4 & view_mat, const glm::mat4 & proj_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d);
 
 
     int wnd_width;

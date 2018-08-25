@@ -4,7 +4,7 @@
 #include "mRenderParameters.h"
 #include <glm/glm.hpp>
 
-//#define TEMP_POSE_RENDER_TYPE_2
+#define TEMP_POSE_RENDER_TYPE_2
 
 //static float skeleton_style[] = {
 //    0, 1.3, // head
@@ -225,20 +225,11 @@ void mPoseModel::renderPose(std::vector<glm::vec3> vertexs, glm::mat4 view_mat, 
     glm::mat4 trans;
     glm::mat4 curmodel;
 
-    if (camera_type == 1) {
-        /****************** Change the joint position if the camera is ortho *******************/
-        for (int i = 0; i < vertexs.size(); ++i) {
-            glm::vec4 cur_vertex(vertexs[i], 1.0);
-            cur_vertex = glm::transpose(m_cam_in_mat_perspective) * view_mat * glm::mat4(1.f) * cur_vertex;
-            cur_vertex /= cur_vertex.w;
-            cur_vertex = glm::inverse(view_mat) * glm::inverse(proj_mat) * cur_vertex;
-            vertexs[i] = glm::vec3(cur_vertex);
-        }
-    }
-
     std::vector<glm::vec3> tmpJointColors = mJointColors;
     if (!this->use_shading) {
         tmpJointColors[14] = glm::vec3(1.f);
+        // use the hip bone as the ruler
+        float relative_position_threshhold = ((glm::length(vertexs[8] - vertexs[14]) + glm::length(vertexs[11] - vertexs[14])) / 2) * 0.1;
         for (unsigned int i = 0; i < lineNum; ++i) {
             unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
             indices_ptr ++;
@@ -255,12 +246,17 @@ void mPoseModel::renderPose(std::vector<glm::vec3> vertexs, glm::mat4 view_mat, 
                     camera_coord_vertexs[line[0]].second = line[0];
                     camera_coord_vertexs[line[1]].first = to_camera_coord * glm::vec4(vertexs[line[1]], 1.f);
                     camera_coord_vertexs[line[1]].second = line[1];
+                    float dert_z = std::abs((camera_coord_vertexs[line[0]].first).z) - std::abs((camera_coord_vertexs[line[1]].first).z);
 
-                    if (std::abs((camera_coord_vertexs[line[0]].first).z) > std::abs((camera_coord_vertexs[line[1]].first).z)) {
+                    // Here 30mm is the threshhold
+                    if (dert_z > relative_position_threshhold) {
                         tmpJointColors[line[1]] = glm::vec3(1.f);
                     }
-                    else {
+                    else if (dert_z < -relative_position_threshhold) {
                         tmpJointColors[line[1]] = glm::vec3(0.f);
+                    }
+                    else {
+                        tmpJointColors[line[1]] = glm::vec3(0.5f);
                     }
                 }
             }
@@ -301,7 +297,8 @@ void mPoseModel::renderPose(std::vector<glm::vec3> vertexs, glm::mat4 view_mat, 
         else {
             curmodel = glm::rotate(glm::mat4(1.0), angle, glm::normalize(glm::cross(vFrom, vTo)));
         }
-        glm::mat4 scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(skeleton_style[2*i + 1], length/this->model_size, skeleton_style[2*i + 1])) * glm::scale(glm::mat4(1.0), glm::vec3(this->model_scale));
+        // TODO Temporary scale the bones and the dot
+        glm::mat4 scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(1.0f * skeleton_style[2*i + 1], length/this->model_size, 1.0f * skeleton_style[2*i + 1])) * glm::scale(glm::mat4(1.0), glm::vec3(this->model_scale));
 
         curmodel = trans * curmodel * scaleMat;
         
@@ -329,7 +326,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> vertexs, glm::mat4 view_mat, 
             cur_vertex_num = i;
         }
 
-        curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.3, 1.3, 1.3));
+        curmodel = glm::scale(glm::mat4(1.f), 1.0f * this->model_scale * glm::vec3(1.3, 1.3, 1.3));
         curmodel = glm::translate(glm::mat4(1.0f), vertexs[cur_vertex_num]) * curmodel;
         shader->setVal("model", curmodel);
         if (render_type == 0) {

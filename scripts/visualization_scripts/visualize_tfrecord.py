@@ -93,7 +93,7 @@ if __name__ == "__main__":
     total_valid_count = 1400
     total_frames = total_train_count
     # tfrecord_file = "/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_train.tfrecord"
-    tfrecord_file = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/render_type_2/sfu_valid_render_2.tfrecord"
+    tfrecord_file = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_1.tfrecord"
     ################################ Init tfrecord valider ##################################
     dataset_reader = data_valid.DataValid(tfrecord_file)
     #########################################################################################
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         if not keep_still:
 
             img, points_2d, points_3d = dataset_reader.get_frame()
-            print(points_2d)
+            print(points_3d)
             # bones_length = np.zeros([14])
 
             # bones_length[0] = np.linalg.norm(points_3d[0] - points_3d[1])

@@ -436,6 +436,7 @@ std::vector<glm::vec3> mSceneUtils::adjustPoseAccordingToCamera(std::vector<glm:
         camera_type = this->cur_camera->getCameraType();
     }
 
+    // When the capture camera is ortho, then use the adjusted joints to render(Only used for renderring).
     if (camera_type == 1) {
         /****************** Change the joint position if the camera is ortho *******************/
         /****************** This is why when I change the z of the camera, the size of the model will change. ****************/
@@ -459,8 +460,8 @@ void mSceneUtils::_beforeRender(const std::vector<glm::vec3> & points_3d) {
 }
 
 
-void mSceneUtils::render(std::vector<glm::vec3> points_3d, const mCamera * camera) {
-    this->_beforeRender(points_3d);
+void mSceneUtils::render(std::vector<glm::vec3> points_3d_raw, std::vector<glm::vec3> points_3d, const mCamera * camera) {
+    this->_beforeRender(points_3d_raw);
     glm::mat4 cur_cam_ex_mat, cur_cam_in_mat;
     int camera_type;
     if (camera != nullptr) {
@@ -473,10 +474,10 @@ void mSceneUtils::render(std::vector<glm::vec3> points_3d, const mCamera * camer
         cur_cam_in_mat = this->cur_camera->getProjMat();
         camera_type = this->cur_camera->getCameraType();
     }
-    this->_render(points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type);
+    this->_render(points_3d_raw, points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type);
 }
 
-void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat, int camera_type) {
+void mSceneUtils::_render(std::vector<glm::vec3> points_3d_raw, std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat, int camera_type) {
 
     for (int light_num = 0; light_num < mLightSum; ++light_num) {
         this->VAO->bind();
@@ -492,7 +493,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
             this->_drawFloor();
         }
         if (points_3d.size() == this->pose_model->num_of_joints) {
-            this->pose_model->draw(points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type, 1);
+            this->pose_model->draw(points_3d_raw, points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type, 1);
         }
     }
 
@@ -511,7 +512,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex
     }
 
     if (points_3d.size() == this->pose_model->num_of_joints) {
-        this->pose_model->draw(points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type, 0);
+        this->pose_model->draw(points_3d_raw, points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type, 0);
     }
 }
 

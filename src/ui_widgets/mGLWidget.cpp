@@ -319,7 +319,7 @@ void mGLWidget::draw() {
             adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints, this->cur_capture_cameras[cam_num]);
             adjusted_pose_joints_raw = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints_raw, this->cur_capture_cameras[cam_num]);
 
-            this->scene->render(adjusted_pose_joints, this->cur_capture_cameras[cam_num]);
+            this->scene->render(this->cur_pose_joints, adjusted_pose_joints, this->cur_capture_cameras[cam_num]);
             this->scene->getLabelsFromFrame(this->cur_pose_joints, adjusted_pose_joints, this->cur_capture_cameras[cam_num], labels_2d, labels_3d);
             if (this->is_ar) {
                 this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, adjusted_pose_joints_raw, this->cur_capture_cameras[cam_num], labels_2d_raw, labels_3d_raw);
@@ -353,7 +353,7 @@ void mGLWidget::draw() {
         std::vector<glm::vec3> adjusted_pose_joints;
 
         adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints);
-        this->scene->render(adjusted_pose_joints);
+        this->scene->render(this->cur_pose_joints, adjusted_pose_joints);
 
         // the render will clear the color and depth bit, so I need to render the camera below
         if (!this->cur_visualization_cameras.empty()) {

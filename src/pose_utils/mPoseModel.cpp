@@ -4,7 +4,7 @@
 #include "mRenderParameters.h"
 #include <glm/glm.hpp>
 
-#define TEMP_POSE_RENDER_TYPE_2
+//#define TEMP_POSE_RENDER_TYPE_2
 
 //static float skeleton_style[] = {
 //    0, 1.3, // head
@@ -86,20 +86,20 @@ static float skeleton_style[] = {
 //};
 
 static glm::vec3 mBoneColors[] = {
-    glm::vec3(0, 1, 0), // head
-    glm::vec3(1, 0, 0), // left shoulder
-    glm::vec3(1, 0, 0), // left upper arm
-    glm::vec3(1, 0, 0), // left lower arm
-    glm::vec3(0, 0.6, 1), // right shoulder
-    glm::vec3(0, 0.6, 1), // right upper arm
-    glm::vec3(0, 0.6, 1), // right lower arm
+    glm::vec3(0, 0.5, 0), // head
+    glm::vec3(0.15, 0, 0), // left shoulder
+    glm::vec3(0.30, 0, 0), // left upper arm
+    glm::vec3(0.45, 0, 0), // left lower arm
+    glm::vec3(0, 0.15, 0.15), // right shoulder
+    glm::vec3(0, 0.30, 0.30), // right upper arm
+    glm::vec3(0, 0.45, 0.45), // right lower arm
     glm::vec3(0, 1, 0), // spine
-    glm::vec3(1, 0, 0), // left hip
-    glm::vec3(1, 0, 0), // left ham,
-    glm::vec3(1, 0, 0), // left calf,
-    glm::vec3(0, 0.6, 1), // right hip
-    glm::vec3(0, 0.6, 1), // right ham,
-    glm::vec3(0, 0.6, 1), // right calf,
+    glm::vec3(0.60, 0, 0), // left hip
+    glm::vec3(0.75, 0, 0), // left ham,
+    glm::vec3(0.90, 0, 0), // left calf,
+    glm::vec3(0, 0.60, 0.60), // right hip
+    glm::vec3(0, 0.75, 0.75), // right ham,
+    glm::vec3(0, 0.90, 0.90), // right calf,
     glm::vec3(1, 0, 0), // left feet,
     glm::vec3(0, 0.6, 1) // right feet
 };
@@ -192,7 +192,7 @@ bool joint_z_cmp(std::pair<glm::vec3, int> a, std::pair<glm::vec3, int> b) {
     }
 }
 
-void mPoseModel::renderPose(std::vector<glm::vec3> vertexs, glm::mat4 view_mat, glm::mat4 proj_mat, int camera_type, int render_type) {
+void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm::vec3> vertexs, glm::mat4 view_mat, glm::mat4 proj_mat, int camera_type, int render_type) {
 
     this->VAO->bind();
     unsigned int vertexNum = vertexs.size();
@@ -225,43 +225,42 @@ void mPoseModel::renderPose(std::vector<glm::vec3> vertexs, glm::mat4 view_mat, 
     glm::mat4 trans;
     glm::mat4 curmodel;
 
+    /*****************************change the joints color according to the position********************************/
+    // the raw_vertex is used for calcualte.
+
     std::vector<glm::vec3> tmpJointColors = mJointColors;
-    if (!this->use_shading) {
-        tmpJointColors[14] = glm::vec3(1.f);
-        // use the hip bone as the ruler
-        float relative_position_threshhold = ((glm::length(vertexs[8] - vertexs[14]) + glm::length(vertexs[11] - vertexs[14])) / 2) * 0.1;
-        for (unsigned int i = 0; i < lineNum; ++i) {
-            unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
-            indices_ptr ++;
-            if (!vertexFlags[line[1]]) {
-                vertexFlags[line[1]] = true;
-                curmodel = glm::scale(glm::mat4(1.f), this->model_scale * glm::vec3(1.3, 1.3, 1.3));
-                glm::mat4 trans_mat = glm::translate(glm::mat4(1.0f), vertexs[line[1]]);
-                curmodel = trans_mat * curmodel;
-                glm::mat4 to_camera_coord = view_mat;
+    tmpJointColors[14] = glm::vec3(1.f);
+    // use the hip bone as the ruler
+    float relative_position_threshhold = ((glm::length(raw_vertexs[8] - raw_vertexs[14]) + glm::length(raw_vertexs[11] - raw_vertexs[14])) / 2) * 0.1;
+    for (unsigned int i = 0; i < lineNum; ++i) {
+        unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
+        indices_ptr ++;
+        if (!vertexFlags[line[1]]) {
+            vertexFlags[line[1]] = true;
+            glm::mat4 to_camera_coord = view_mat;
 
-                if (render_type == 0) {
-                    // the vertex is in the global coordinate, so I only need to use the view_mat
-                    camera_coord_vertexs[line[0]].first = to_camera_coord * glm::vec4(vertexs[line[0]], 1.f);
-                    camera_coord_vertexs[line[0]].second = line[0];
-                    camera_coord_vertexs[line[1]].first = to_camera_coord * glm::vec4(vertexs[line[1]], 1.f);
-                    camera_coord_vertexs[line[1]].second = line[1];
-                    float dert_z = std::abs((camera_coord_vertexs[line[0]].first).z) - std::abs((camera_coord_vertexs[line[1]].first).z);
+            if (render_type == 0) {
+                // the vertex is in the global coordinate, so I only need to use the view_mat
+                camera_coord_vertexs[line[0]].first = to_camera_coord * glm::vec4(raw_vertexs[line[0]], 1.f);
+                camera_coord_vertexs[line[0]].second = line[0];
+                camera_coord_vertexs[line[1]].first = to_camera_coord * glm::vec4(raw_vertexs[line[1]], 1.f);
+                camera_coord_vertexs[line[1]].second = line[1];
+                float dert_z = std::abs((camera_coord_vertexs[line[0]].first).z) - std::abs((camera_coord_vertexs[line[1]].first).z);
 
-                    // Here 30mm is the threshhold
-                    if (dert_z > relative_position_threshhold) {
-                        tmpJointColors[line[1]] = glm::vec3(1.f);
-                    }
-                    else if (dert_z < -relative_position_threshhold) {
-                        tmpJointColors[line[1]] = glm::vec3(0.f);
-                    }
-                    else {
-                        tmpJointColors[line[1]] = glm::vec3(0.5f);
-                    }
+                if (dert_z > relative_position_threshhold) {
+                    tmpJointColors[line[1]] = glm::vec3(1.f);
+                }
+                else if (dert_z < -relative_position_threshhold) {
+                    tmpJointColors[line[1]] = glm::vec3(0.f);
+                }
+                else {
+                    tmpJointColors[line[1]] = glm::vec3(0.5f);
                 }
             }
         }
     }
+    /*********************************************************************************/
+
 #ifndef TEMP_POSE_RENDER_TYPE_2
     std::sort(camera_coord_vertexs.begin(), camera_coord_vertexs.end(), joint_z_cmp);
 //    qDebug() << "Joints: Use the common render mode.";
@@ -338,6 +337,6 @@ void mPoseModel::renderPose(std::vector<glm::vec3> vertexs, glm::mat4 view_mat, 
 
 }
 
-void mPoseModel::draw(std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, glm::mat4 & cam_in_mat, int camera_type, int render_type) {
-    this->renderPose(points, cam_ex_mat, cam_in_mat, camera_type, render_type);
+void mPoseModel::draw(std::vector<glm::vec3> raw_joints, std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, glm::mat4 & cam_in_mat, int camera_type, int render_type) {
+    this->renderPose(raw_joints, points, cam_ex_mat, cam_in_mat, camera_type, render_type);
 }

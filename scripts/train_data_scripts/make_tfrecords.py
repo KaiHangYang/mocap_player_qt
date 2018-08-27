@@ -98,11 +98,11 @@ if __name__ == "__main__":
     # train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_train.tfrecord")
     # test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_valid.tfrecord")
 
-    train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/bone_1/train"
-    test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/bone_1/valid"
+    train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/bone_2/train"
+    test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/bone_2/valid"
 
-    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_1.tfrecord")
-    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_1.tfrecord")
+    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_2.tfrecord")
+    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_2.tfrecord")
 
     train_dataset_list = os.listdir(train_data_path)
     valid_dataset_list = os.listdir(test_data_path)

@@ -9,6 +9,7 @@
 #include "mVisual.h"
 
 #include "mRenderParameters.h"
+#include "mSynthesisPaint.h"
 
 mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int wnd_height) : QGLWidget(gl_format, parent) {
     this->wnd_width = wnd_width;
@@ -28,15 +29,15 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->pose_jitter_range = 0;
     this->pose_angle_jitter_range = 0;
 
-    this->is_ar = m_is_ar;
-    if (m_camera_type == 0) {
-        this->cam_in_mat = m_cam_in_mat_perspective;
+    this->is_ar = mRenderParams::m_is_ar;
+    if (mRenderParams::m_camera_type == 0) {
+        this->cam_in_mat = mRenderParams::m_cam_in_mat_perspective;
     }
     else {
-        this->cam_in_mat = m_cam_in_mat_ortho;
+        this->cam_in_mat = mRenderParams::m_cam_in_mat_ortho;
     }
 
-    this->cam_ex_mat = m_cam_ex_mat;
+    this->cam_ex_mat = mRenderParams::m_cam_ex_mat;
 
     this->mocap_data = new mMoCapData;
 
@@ -56,7 +57,7 @@ void mGLWidget::initializeGL() {
     this->core_func->initializeOpenGLFunctions();
     this->VAO->create();
 
-    this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, this->cam_in_mat, this->cam_ex_mat, m_camera_type, this->is_ar);
+    this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, this->cam_in_mat, this->cam_ex_mat, mRenderParams::m_camera_type, this->is_ar);
     glViewport(0, 0, this->wnd_width, this->wnd_height);
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
@@ -354,6 +355,29 @@ void mGLWidget::draw() {
 
         adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints);
         this->scene->render(this->cur_pose_joints, adjusted_pose_joints);
+        cv::Mat captured_img;
+        std::vector<glm::vec2> labels_2d;
+        std::vector<glm::vec3> labels_3d;
+
+        this->scene->captureFrame(captured_img);
+
+        if (this->cur_pose_joints.size() != 0) {
+            this->scene->getLabelsFromFrame(this->cur_pose_joints, adjusted_pose_joints, this->scene->getCurCamera(), labels_2d, labels_3d);
+
+            /***** First test the mSynthesisPaint *****/
+            mSynthesisPaint::mGraphType cur_graph;
+            mSynthesisPaint::get_overlaps_graph(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, cur_graph);
+            std::vector<int> paint_order = mSynthesisPaint::get_render_order(cur_graph);
+            std::cout << "Paint order: ";
+            for (int t = 0; t < paint_order.size(); ++t) {
+                std::cout << paint_order[t] << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        cv::imshow("captured_img", captured_img);
+        cv::waitKey(5);
+        /******************************************/
 
         // the render will clear the color and depth bit, so I need to render the camera below
         if (!this->cur_visualization_cameras.empty()) {

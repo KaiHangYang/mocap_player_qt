@@ -6,146 +6,6 @@
 
 //#define TEMP_POSE_RENDER_TYPE_2
 
-//static float skeleton_style[] = {
-//    0, 1.3, // head
-//    1, 0.6, // left shoulder
-//    0, 1.5, // left upper arm
-//    0, 1.3, // left lower arm
-//    1, 0.6, // right shoulder
-//    0, 1.5, // right upper arm
-//    0, 1.3, // right lower arm
-//    1, 0.6, // spine
-//    1, 0.6, // left hip
-//    0, 2.0, // left ham,
-//    0, 1.6, // left calf,
-//    1, 0.6, // right hip
-//    0, 2.0, // right ham,
-//    0, 1.6, // right calf,
-//    0, 1.3, // left feet,
-//    0, 1.3, // right feet
-//};
-static float skeleton_style[] = {
-    1, 1.0, // head
-    1, 1.0, // left shoulder
-    1, 1.0, // left upper arm
-    1, 1.0, // left lower arm
-    1, 1.0, // right shoulder
-    1, 1.0, // right upper arm
-    1, 1.0, // right lower arm
-    1, 1.0, // spine
-    1, 1.0, // left hip
-    1, 1.0, // left ham,
-    1, 1.0, // left calf,
-    1, 1.0, // right hip
-    1, 1.0, // right ham,
-    1, 1.0, // right calf,
-    1, 1.0, // left feet,
-    1, 1.0, // right feet
-};
-//static glm::vec3 mBoneColors[] = {
-    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // head
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left shoulder
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left upper arm
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left lower arm
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right shoulder
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right upper arm
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right lower arm
-    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // spine
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left hip
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left ham,
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left calf,
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right hip
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right ham,
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right calf,
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left feet,
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824) // right feet
-//};
-
-//static glm::vec3 mJointColors[] = {
-    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // head
-    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // neck
-
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left shoulder
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left upper arm
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left lower arm
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right shoulder
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right upper arm
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right lower arm
-
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left hip
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left ham,
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left calf,
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right hip
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right ham,
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824), // right calf,
-
-    //glm::vec3(0.5294117647058824, 0.9882352941176471, 0.788235294117647), // root ,
-
-    //glm::vec3(0.5294117647058824, 0.788235294117647, 0.9882352941176471), // left feet,
-    //glm::vec3(0.9882352941176471, 0.788235294117647, 0.5294117647058824) // right feet
-//};
-
-static glm::vec3 mBoneColors[] = {
-    glm::vec3(0, 0.5, 0), // head
-    glm::vec3(0.15, 0, 0), // left shoulder
-    glm::vec3(0.30, 0, 0), // left upper arm
-    glm::vec3(0.45, 0, 0), // left lower arm
-    glm::vec3(0, 0.15, 0.15), // right shoulder
-    glm::vec3(0, 0.30, 0.30), // right upper arm
-    glm::vec3(0, 0.45, 0.45), // right lower arm
-    glm::vec3(0, 1, 0), // spine
-    glm::vec3(0.60, 0, 0), // left hip
-    glm::vec3(0.75, 0, 0), // left ham,
-    glm::vec3(0.90, 0, 0), // left calf,
-    glm::vec3(0, 0.60, 0.60), // right hip
-    glm::vec3(0, 0.75, 0.75), // right ham,
-    glm::vec3(0, 0.90, 0.90), // right calf,
-    glm::vec3(1, 0, 0), // left feet,
-    glm::vec3(0, 0.6, 1) // right feet
-};
-//static glm::vec3 mBoneColors[] = {
-//    glm::vec3(0.7, 0.7, 0.7), // head
-//    glm::vec3(0.7, 0.7, 0.7), // left shoulder
-//    glm::vec3(0.7, 0.7, 0.7), // left upper arm
-//    glm::vec3(0.7, 0.7, 0.7), // left lower arm
-//    glm::vec3(0.7, 0.7, 0.7), // right shoulder
-//    glm::vec3(0.7, 0.7, 0.7), // right upper arm
-//    glm::vec3(0.7, 0.7, 0.7), // right lower arm
-//    glm::vec3(0.7, 0.7, 0.7), // spine
-//    glm::vec3(0.7, 0.7, 0.7), // left hip
-//    glm::vec3(0.7, 0.7, 0.7), // left ham,
-//    glm::vec3(0.7, 0.7, 0.7), // left calf,
-//    glm::vec3(0.7, 0.7, 0.7), // right hip
-//    glm::vec3(0.7, 0.7, 0.7), // right ham,
-//    glm::vec3(0.7, 0.7, 0.7), // right calf,
-//    glm::vec3(0.7, 0.7, 0.7), // left feet,
-//    glm::vec3(0.7, 0.7, 0.7) // right feet
-//};
-
-static std::vector<glm::vec3> mJointColors({
-    glm::vec3(0, 1, 0), // head
-    glm::vec3(0, 1, 0), // neck
-
-    glm::vec3(1, 0, 0), // left shoulder
-    glm::vec3(1, 0, 0), // left upper arm
-    glm::vec3(1, 0, 0), // left lower arm
-    glm::vec3(0, 0.6, 1), // right shoulder
-    glm::vec3(0, 0.6, 1), // right upper arm
-    glm::vec3(0, 0.6, 1), // right lower arm
-
-    glm::vec3(1, 0, 0), // left hip
-    glm::vec3(1, 0, 0), // left ham,
-    glm::vec3(1, 0, 0), // left calf,
-    glm::vec3(0, 0.6, 1), // right hip
-    glm::vec3(0, 0.6, 1), // right ham,
-    glm::vec3(0, 0.6, 1), // right calf,
-
-    glm::vec3(0, 1, 0), // root ,
-
-    glm::vec3(1, 0, 0), // left feet,
-    glm::vec3(0, 0.6, 1) // right feet
-});
-
 mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, float target_model_size, bool is_ar, bool use_shading, int pose_type) {
 
     this->pose_shader = pose_shader;
@@ -228,7 +88,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
     /*****************************change the joints color according to the position********************************/
     // the raw_vertex is used for calcualte.
 
-    std::vector<glm::vec3> tmpJointColors = mJointColors;
+    std::vector<glm::vec3> tmpJointColors = mRenderParams::mJointColors;
     tmpJointColors[14] = glm::vec3(1.f);
     // use the hip bone as the ruler
     float relative_position_threshhold = ((glm::length(raw_vertexs[8] - raw_vertexs[14]) + glm::length(raw_vertexs[11] - raw_vertexs[14])) / 2) * 0.1;
@@ -297,17 +157,17 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
             curmodel = glm::rotate(glm::mat4(1.0), angle, glm::normalize(glm::cross(vFrom, vTo)));
         }
         // TODO Temporary scale the bones and the dot
-        glm::mat4 scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(1.0f * skeleton_style[2*i + 1], length/this->model_size, 1.0f * skeleton_style[2*i + 1])) * glm::scale(glm::mat4(1.0), glm::vec3(this->model_scale));
+        glm::mat4 scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(1.0f * mRenderParams::skeleton_style[2*i + 1], length/this->model_size, 1.0f * mRenderParams::skeleton_style[2*i + 1])) * glm::scale(glm::mat4(1.0), glm::vec3(this->model_scale));
 
         curmodel = trans * curmodel * scaleMat;
         
         shader->setVal("model", curmodel);
 
         if (render_type == 0) {
-            shader->setVal("fragColor", mBoneColors[i]);
+            shader->setVal("fragColor", mRenderParams::mBoneColors[i]);
             shader->setVal("normMat", glm::transpose(glm::inverse(curmodel)));
         }
-        this->mesh_reader->render(skeleton_style[2*i]);
+        this->mesh_reader->render(mRenderParams::skeleton_style[2*i]);
     }
 
     // Then draw the joints
@@ -332,7 +192,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
             shader->setVal("fragColor", tmpJointColors[cur_vertex_num]);
             shader->setVal("normMat", glm::transpose(glm::inverse(curmodel)));
         }
-        mesh_reader->render(0);
+//        mesh_reader->render(0);
     }
 
 }

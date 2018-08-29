@@ -51,7 +51,7 @@ void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, 
         glm::i32vec2 cur_bone = this->pose_bones_indices[i];
         bones_vec_arr[i] = glm::normalize(joints[cur_bone.y] - joints[cur_bone.x]);
     }
-    if (!m_is_ar) {
+    if (!mRenderParams::m_is_ar) {
         // use some jitter in the cur_bone_length
         for (int i = 0; i < cur_bones_length.size(); ++i) {
             cur_bones_length[i] = (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1)) * cur_bones_length[i];

@@ -45,8 +45,8 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
         this->m_rotate_dir[0] = 1; this->m_rotate_dir[1] = 1;
     }
 
-    this->scene_shader = new mShader(mPoseShaderFiles[0], mPoseShaderFiles[1]);
-    this->depth_shader = new mShader(mDepthShaderFiles[0], mDepthShaderFiles[1], mDepthShaderFiles[2]);
+    this->scene_shader = new mShader(mRenderParams::mPoseShaderFiles[0], mRenderParams::mPoseShaderFiles[1]);
+    this->depth_shader = new mShader(mRenderParams::mDepthShaderFiles[0], mRenderParams::mDepthShaderFiles[1], mRenderParams::mDepthShaderFiles[2]);
 
     this->cur_camera = new mCamera(cam_in_mat, cam_ex_mat, camera_type, this->wnd_width, this->wnd_height, this->is_ar);
     this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, target_model_size, is_ar, this->use_shading, pose_type);
@@ -84,17 +84,17 @@ void mSceneUtils::initScene() {
     this->core_func->glBufferData(GL_ARRAY_BUFFER, color_data.size() * sizeof(GLfloat), &color_data[0], GL_STATIC_DRAW);
 
     /************************ Handel shadow displayment ****************************/
-    this->shadow_fbo = std::vector<GLuint>(mLightSum, 0);
-    this->shadow_tbo = std::vector<GLuint>(mLightSum, 0);
+    this->shadow_fbo = std::vector<GLuint>(mRenderParams::mLightSum, 0);
+    this->shadow_tbo = std::vector<GLuint>(mRenderParams::mLightSum, 0);
 
     this->core_func->glEnable(GL_DEPTH_TEST);
-    this->core_func->glGenFramebuffers(mLightSum, &this->shadow_fbo[0]);
-    this->core_func->glGenTextures(mLightSum, &this->shadow_tbo[0]);
+    this->core_func->glGenFramebuffers(mRenderParams::mLightSum, &this->shadow_fbo[0]);
+    this->core_func->glGenTextures(mRenderParams::mLightSum, &this->shadow_tbo[0]);
 
-    for (int light_num = 0; light_num < mLightSum; ++light_num) {
+    for (int light_num = 0; light_num < mRenderParams::mLightSum; ++light_num) {
         this->core_func->glBindTexture(GL_TEXTURE_CUBE_MAP, this->shadow_tbo[light_num]);
         for (int i = 0; i < 6; ++i) {
-            this->core_func->glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, mShadowWndWidth, mShadowWndHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+            this->core_func->glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, mRenderParams::mShadowWndWidth, mRenderParams::mShadowWndHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
         }
 
         this->core_func->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -350,17 +350,17 @@ void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw, 
 void mSceneUtils::_setDepthShaderUniforms(int light_num) {
     if (this->is_ar) {
         for (int i = 0; i < 6; ++i) {
-            this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mShadowTransforms_AR[light_num][i]);
+            this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mRenderParams::mShadowTransforms_AR[light_num][i]);
         }
-        this->depth_shader->setVal("far_plane", mShadowFarPlane_AR);
-        this->depth_shader->setVal("lightPos", mLightPos_AR[light_num]);
+        this->depth_shader->setVal("far_plane", mRenderParams::mShadowFarPlane_AR);
+        this->depth_shader->setVal("lightPos", mRenderParams::mLightPos_AR[light_num]);
     }
     else {
         for (int i = 0; i < 6; ++i) {
-            this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mShadowTransforms[light_num][i]);
+            this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mRenderParams::mShadowTransforms[light_num][i]);
         }
-        this->depth_shader->setVal("far_plane", mShadowFarPlane);
-        this->depth_shader->setVal("lightPos", mLightPos[light_num]);
+        this->depth_shader->setVal("far_plane", mRenderParams::mShadowFarPlane);
+        this->depth_shader->setVal("lightPos", mRenderParams::mLightPos[light_num]);
     }
     this->depth_shader->setVal("model", glm::mat4(1.f));
 }
@@ -377,23 +377,23 @@ void mSceneUtils::_setSceneShaderUnoforms(glm::mat4 model_mat, glm::mat4 view_ma
     this->scene_shader->setVal("normMat", glm::transpose(glm::inverse(model_mat)));
 
     if (this->is_ar) {
-        this->scene_shader->setVal("far_plane", mShadowFarPlane_AR);
-        this->scene_shader->setVal("shadow_bias", mBias_AR);
+        this->scene_shader->setVal("far_plane", mRenderParams::mShadowFarPlane_AR);
+        this->scene_shader->setVal("shadow_bias", mRenderParams::mBias_AR);
     }
     else {
-        this->scene_shader->setVal("far_plane", mShadowFarPlane);
-        this->scene_shader->setVal("shadow_bias", mBias);
+        this->scene_shader->setVal("far_plane", mRenderParams::mShadowFarPlane);
+        this->scene_shader->setVal("shadow_bias", mRenderParams::mBias);
     }
 
-    for (int light_num = 0; light_num < mLightSum; ++light_num) {
-        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].ambient").c_str(), mAmbient);
-        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].diffuse").c_str(), mDiffuse);
-        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].specular").c_str(), mSpecular);
+    for (int light_num = 0; light_num < mRenderParams::mLightSum; ++light_num) {
+        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].ambient").c_str(), mRenderParams::mAmbient);
+        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].diffuse").c_str(), mRenderParams::mDiffuse);
+        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].specular").c_str(), mRenderParams::mSpecular);
         if (this->is_ar) {
-            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mLightPos_AR[light_num]);
+            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mRenderParams::mLightPos_AR[light_num]);
         }
         else {
-            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mLightPos[light_num]);
+            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mRenderParams::mLightPos[light_num]);
         }
 
         this->scene_shader->setVal(("depth_cube["+ std::to_string(light_num) + "]").c_str(), 1 + light_num);
@@ -442,7 +442,7 @@ std::vector<glm::vec3> mSceneUtils::adjustPoseAccordingToCamera(std::vector<glm:
         /****************** This is why when I change the z of the camera, the size of the model will change. ****************/
         for (int i = 0; i < joints_3d.size(); ++i) {
             glm::vec4 cur_vertex(joints_3d[i], 1.0);
-            cur_vertex = glm::transpose(m_cam_in_mat_perspective) * cur_cam_ex_mat * glm::mat4(1.f) * cur_vertex;
+            cur_vertex = glm::transpose(mRenderParams::m_cam_in_mat_perspective) * cur_cam_ex_mat * glm::mat4(1.f) * cur_vertex;
             cur_vertex /= cur_vertex.w;
             cur_vertex = glm::inverse(cur_cam_ex_mat) * glm::inverse(cur_cam_in_mat) * cur_vertex;
             result_joints_3d[i] = glm::vec3(cur_vertex);
@@ -479,9 +479,9 @@ void mSceneUtils::render(std::vector<glm::vec3> points_3d_raw, std::vector<glm::
 
 void mSceneUtils::_render(std::vector<glm::vec3> points_3d_raw, std::vector<glm::vec3> points_3d, glm::mat4 cur_cam_ex_mat, glm::mat4 cur_cam_in_mat, int camera_type) {
 
-    for (int light_num = 0; light_num < mLightSum; ++light_num) {
+    for (int light_num = 0; light_num < mRenderParams::mLightSum; ++light_num) {
         this->VAO->bind();
-        this->core_func->glViewport(0, 0, mShadowWndWidth, mShadowWndHeight);
+        this->core_func->glViewport(0, 0, mRenderParams::mShadowWndWidth, mRenderParams::mShadowWndHeight);
         this->depth_shader->use();
 
         this->core_func->glBindFramebuffer(GL_FRAMEBUFFER, this->shadow_fbo[light_num]);
@@ -504,7 +504,7 @@ void mSceneUtils::_render(std::vector<glm::vec3> points_3d_raw, std::vector<glm:
     this->core_func->glViewport(0, 0, this->wnd_width, this->wnd_height);
 
     this->scene_shader->use();
-    this->_setSceneShaderUnoforms(glm::mat4(1.f), cur_cam_ex_mat, cur_cam_in_mat, mShadowUseShadow);
+    this->_setSceneShaderUnoforms(glm::mat4(1.f), cur_cam_ex_mat, cur_cam_in_mat, mRenderParams::mShadowUseShadow);
 
     // Render the floor
     if (this->is_with_floor) {

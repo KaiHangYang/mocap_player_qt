@@ -9,7 +9,7 @@
 class mCamera {
 public:
     mCamera(const mCamera * camera);
-    mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int camera_type, int wnd_width=mWindowWidth, int wnd_height=mWindowHeight, bool is_ar = m_is_ar);
+    mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int camera_type, int wnd_width=mRenderParams::mWindowWidth, int wnd_height=mRenderParams::mWindowHeight, bool is_ar = mRenderParams::m_is_ar);
     ~mCamera();
 
     mCamera& operator=(const mCamera &a);

@@ -572,12 +572,12 @@ void mMainWindow::renderCameraTypeChange() {
     QString cur_text = this->tool_render_camera_type_btn->text();
     if (cur_text == "Perspective") {
         this->tool_render_camera_type_btn->setText("Ortho");
-        this->gl_widget->setCurInMat(m_cam_in_mat_ortho);
+        this->gl_widget->setCurInMat(mRenderParams::m_cam_in_mat_ortho);
         this->gl_widget->setCurCameraType(1);
     }
     else if (cur_text == "Ortho") {
         this->tool_render_camera_type_btn->setText("Perspective");
-        this->gl_widget->setCurInMat(m_cam_in_mat_perspective);
+        this->gl_widget->setCurInMat(mRenderParams::m_cam_in_mat_perspective);
         this->gl_widget->setCurCameraType(0);
     }
     this->cameraRemoveAllSlot();

@@ -355,28 +355,24 @@ void mGLWidget::draw() {
 
         adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints);
         this->scene->render(this->cur_pose_joints, adjusted_pose_joints);
-        cv::Mat captured_img;
-        std::vector<glm::vec2> labels_2d;
-        std::vector<glm::vec3> labels_3d;
 
-        this->scene->captureFrame(captured_img);
 
         if (this->cur_pose_joints.size() != 0) {
+            cv::Mat captured_img;
+            std::vector<glm::vec2> labels_2d;
+            std::vector<glm::vec3> labels_3d;
+
+            this->scene->captureFrame(captured_img);
             this->scene->getLabelsFromFrame(this->cur_pose_joints, adjusted_pose_joints, this->scene->getCurCamera(), labels_2d, labels_3d);
 
-            /***** First test the mSynthesisPaint *****/
-            mSynthesisPaint::mGraphType cur_graph;
-            mSynthesisPaint::get_overlaps_graph(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, cur_graph);
-            std::vector<int> paint_order = mSynthesisPaint::get_render_order(cur_graph);
-            std::cout << "Paint order: ";
-            for (int t = 0; t < paint_order.size(); ++t) {
-                std::cout << paint_order[t] << " ";
-            }
-            std::cout << std::endl;
+            cv::Mat synthesis_img(cv::Size(1024, 1024), CV_8UC3, cv::Scalar(51, 51, 51));
+
+            mSynthesisPaint::drawSynthesisData(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, labels_3d, synthesis_img);
+            cv::imshow("captured_img", synthesis_img);
+            cv::waitKey(5);
         }
 
-        cv::imshow("captured_img", captured_img);
-        cv::waitKey(5);
+
         /******************************************/
 
         // the render will clear the color and depth bit, so I need to render the camera below

@@ -186,22 +186,39 @@ static float skeleton_style[] = {
 //    glm::vec3(1, 1, 1), // left feet,
 //    glm::vec3(1, 1, 1) // right feet
 //};
+
 static glm::vec3 mBoneColors[] = {
-    glm::vec3(0, 0, 0), // head
-    glm::vec3(1, 0, 0), // left shoulder
-    glm::vec3(0, 1, 0), // left upper arm
-    glm::vec3(0, 0, 1), // left lower arm
-    glm::vec3(1, 1, 0), // right shoulder
-    glm::vec3(1, 0, 1), // right upper arm
-    glm::vec3(0, 1, 1), // right lower arm
-    glm::vec3(1, 1, 1), // spine
-    glm::vec3(0, 0, 0), // left hip
-    glm::vec3(0, 0, 0), // left ham,
-    glm::vec3(0, 0, 0), // left calf,
-    glm::vec3(0, 0, 0), // right hip
-    glm::vec3(0, 0, 0), // right ham,
-    glm::vec3(0, 0, 0), // right calf,
+    glm::vec3(1.000000, 1.000000, 0.000000),
+    glm::vec3(0.492543, 0.000000, 0.000000),
+    glm::vec3(0.000000, 1.000000, 0.000000),
+    glm::vec3(1.000000, 0.349454, 0.000000),
+    glm::vec3(0.499439, 0.558884, 1.000000),
+    glm::vec3(0.000000, 0.362774, 0.000000),
+    glm::vec3(0.500312, 0.000000, 0.624406),
+    glm::vec3(0.501744, 0.724322, 0.275356),
+    glm::vec3(0.000000, 1.000000, 1.000000),
+    glm::vec3(1.000000, 0.000000, 1.000000),
+    glm::vec3(1.000000, 0.499433, 0.611793),
+    glm::vec3(1.000000, 0.800000, 1.000000),
+    glm::vec3(0.000000, 0.502502, 0.611632),
+    glm::vec3(0.000000, 0.000000, 1.000000)
 };
+//static glm::vec3 mBoneColors[] = {
+//    glm::vec3(0.9451, 0.9294, 0.0196), // head #f1ed05
+//    glm::vec3(0.3098, 0.2392, 0.0902), // left shoulder #4f3d17
+//    glm::vec3(0.0, 0.9137, 0.3451), // left upper arm #00e958
+//    glm::vec3(0.6118, 0.0, 0.1725), // left lower arm #9c002c
+//    glm::vec3(0.6431, 0.6353, 0.6392), // right shoulder #a4a2a3
+//    glm::vec3(0.0, 0.4, 0.0902), // right upper arm #006617
+//    glm::vec3(0.2824, 0.1255, 0.7373), // right lower arm #4820bc
+//    glm::vec3(0.8078, 0.5922, 0.2471), // spine #ce973f
+//    glm::vec3(0.0, 0.9608, 0.9961), // left hip #00f5fe
+//    glm::vec3(1.0, 0.2078, 0.7843), // left ham #ff35c8
+//    glm::vec3(1.0, 0.3922, 0.4039), // left calf #ff6467
+//    glm::vec3(1.0, 0.8196, 0.8235), // right hip #ffd1d2
+//    glm::vec3(0.0, 0.5922, 0.5647), // right ham #009790
+//    glm::vec3(0.0, 0.4863, 0.9608), // right calf #007cf5
+//};
 
 static std::vector<glm::vec3> mJointColors({
     glm::vec3(0, 1, 0), // head

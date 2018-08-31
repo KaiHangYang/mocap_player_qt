@@ -94,37 +94,14 @@ void mBone2D::paintOn(cv::Mat &img) {
 }
 
 int get_bone_index_from_color(glm::vec3 color) {
-    int max_index = std::distance(&color[0], std::max_element(&color[0], &color[0] + 3));
-//    std::cout << "max index " << max_index << "index value" << color[max_index] << std::endl;
+    std::vector<float> color_distance(mPoseDef::num_of_bones, 0);
+    glm::vec3 tmp_vec;
+    for (int i = 0; i < mPoseDef::num_of_bones; ++i) {
+        tmp_vec = color - mRenderParams::mBoneColors[i];
+        color_distance[i] = tmp_vec.x*tmp_vec.x + tmp_vec.y*tmp_vec.y + tmp_vec.z*tmp_vec.z;
+    }
 
-    int val_index = static_cast<int>(std::round(color[max_index] / 0.15));
-
-    int bone_index = 0;
-    if (max_index == 0) {
-        if (val_index < 4) {
-            bone_index = (val_index >= 1)?val_index: 1;
-        }
-        else {
-            bone_index = ((val_index > 6)?6:val_index) + 4;
-        }
-    }
-    else if (max_index == 1) {
-        if (std::abs(val_index - 3) < std::abs(val_index - 6)) {
-            bone_index = 0;
-        }
-        else {
-            bone_index = 7;
-        }
-    }
-    else {
-        if (val_index < 4) {
-            bone_index = ((val_index >= 1)?val_index:1) + 3;
-        }
-        else {
-            bone_index = ((val_index > 6)?6:val_index) + 7;
-        }
-    }
-    return bone_index;
+    return std::distance(&color_distance[0], std::min_element(&color_distance[0], &color_distance[0] + 14));
 }
 
 // TODO: The check process can be made parallel

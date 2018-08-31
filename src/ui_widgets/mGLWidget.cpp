@@ -372,10 +372,9 @@ void mGLWidget::draw() {
 //            cv::Mat synthesis_img(cv::Size(1024, 1024), CV_8UC3, cv::Scalar(51, 51, 51));
 
 //            mSynthesisPaint::drawSynthesisData(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, labels_3d, synthesis_img);
-////            cv::imshow("captured_img", synthesis_img);
-////            cv::waitKey(3);
+//            cv::imshow("captured_img", synthesis_img);
+//            cv::waitKey(3);
 //        }
-
 
         /******************************************/
 
@@ -384,5 +383,4 @@ void mGLWidget::draw() {
             this->scene->renderCamerasPos(this->cur_visualization_cameras);
         }
     }
-
 }

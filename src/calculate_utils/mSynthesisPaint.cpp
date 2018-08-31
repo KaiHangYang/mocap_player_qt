@@ -216,7 +216,7 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
     for (int bone_it = 0 ; bone_it < mPoseDef::num_of_bones; ++bone_it) {
         boost::add_vertex(graph);
         glm::u32vec2 cur_bone_index = mPoseDef::bones_indices[bone_it];
-        bones_array[bone_it].initialize(raw_joints_2d[cur_bone_index.x], raw_joints_2d[cur_bone_index.y], bone_it, mRenderParams::mBoneColors[bone_it], tmpJointColors[cur_bone_index.y], 16, 10);
+        bones_array[bone_it].initialize(raw_joints_2d[cur_bone_index.x], raw_joints_2d[cur_bone_index.y], bone_it, mRenderParams::mBoneColors[bone_it], tmpJointColors[cur_bone_index.y], 16, 11);
         if (!bones_array[bone_it].is_inited) {
             std::cout << "Uninitialized bone: " << bone_it << std::endl;
         }

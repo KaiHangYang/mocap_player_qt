@@ -369,7 +369,7 @@ void mGLWidget::draw() {
 
             mSynthesisPaint::drawSynthesisData(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, labels_3d, synthesis_img);
             cv::imshow("captured_img", synthesis_img);
-            cv::waitKey(5);
+            cv::waitKey(0);
         }
 
 

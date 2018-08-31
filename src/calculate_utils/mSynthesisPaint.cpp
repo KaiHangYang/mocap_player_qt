@@ -10,23 +10,23 @@
 namespace mSynthesisPaint {
 
 mBone2D::mBone2D(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 bone_color, glm::vec3 joint_color, float rect_width, float joint_ratio) {
-    this->initialize(source, target, bone_index, bone_color, joint_color, rect_width);
+    this->is_inited = false;
+    this->initialize(source, target, bone_index, bone_color, joint_color, rect_width, joint_ratio);
 }
 void mBone2D::initialize(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 bone_color, glm::vec3 joint_color, float rect_width, float joint_ratio) {
+    this->is_inited = true;
     this->bone_polygon_2d.clear();
     this->source = source;
     this->target = target;
     this->rect_width = rect_width;
     this->bone_index = bone_index;
-    this->is_inited = true;
+
     this->bone_color = bone_color;
     this->joint_color = joint_color;
     this->joint_ratio = joint_ratio;
 
     this->bone_length_2d = glm::length(this->target - this->source);
-    if (this->bone_length_2d < MY_EPSILON) {
-        this->bone_length_2d = 2;
-    }
+
     glm::vec2 l_vec = glm::normalize(this->target - this->source);
     glm::vec2 w_vec({-l_vec.y, l_vec.x});
 

@@ -76,7 +76,7 @@ public slots:
     void cameraVisualizeShowSlot();
     void cameraVisualizeHideSlot();
     void sceneFloorSlot();
-    void saveFramesSlot(cv::Mat & frames, int cur_frame, int cur_num);
+    void saveFramesSlot(cv::Mat & frames, int cur_frame, int cur_num, QString suffix);
     void saveLabelsSlot(std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num, bool is_raw);
     void changeNextPoseSlot();
     void poseSetChangeSize();

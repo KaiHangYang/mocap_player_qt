@@ -6,6 +6,12 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include <iostream>
+#include <glm/gtx/string_cast.hpp>
+
+/******************* Bugs waiting to fixed ********************/
+// 1. When the joints' endpoints are very near, the initialize program has some problems. Waiting to be fixed.
+// 2. The relation of the adjacent joints may made wrong circle in the graph (Solved, I made the bone source a little short(the length of the joint ratio, but the spine is left the raw one))
+/**************************************************************/
 
 namespace mSynthesisPaint {
 
@@ -16,7 +22,8 @@ mBone2D::mBone2D(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 b
 void mBone2D::initialize(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 bone_color, glm::vec3 joint_color, float rect_width, float joint_ratio) {
     this->is_inited = true;
     this->bone_polygon_2d.clear();
-    this->source = source;
+    this->raw_source = source;
+    this->source = this->raw_source;
     this->target = target;
     this->rect_width = rect_width;
     this->bone_index = bone_index;
@@ -29,6 +36,11 @@ void mBone2D::initialize(glm::vec2 source, glm::vec2 target, int bone_index, glm
 
     glm::vec2 l_vec = glm::normalize(this->target - this->source);
     glm::vec2 w_vec({-l_vec.y, l_vec.x});
+
+//    if (this->bone_length_2d - this->joint_ratio > 0 && this->bone_index != mPoseDef::left_hip_index && this->bone_index != mPoseDef::right_hip_index) {
+//        this->bone_length_2d = this->bone_length_2d - this->joint_ratio;
+//        this->source = -l_vec * this->bone_length_2d + this->target;
+//    }
 
     // clockwise points
     glm::vec2 vertex_1 = this->source - this->rect_width / 2.0f * w_vec;
@@ -73,6 +85,12 @@ void mBone2D::paintOn(cv::Mat &img) {
     // First bone Then joint
     cv::fillConvexPoly(img, vertices, 4, bone_color, cv::LINE_AA);
     cv::circle(img, joint, this->joint_ratio, joint_color, CV_FILLED, cv::LINE_AA);
+
+//    if (this->bone_index == mPoseDef::spine_bone_index) {
+//        // if current bone is spine, then it contain the root joint
+//        cv::Point root_joint = cv::Point(this->raw_source.x, this->raw_source.y);
+//        cv::circle(img, root_joint, this->joint_ratio, cv::Scalar(255, 255, 255), CV_FILLED, cv::LINE_AA);
+//    }
 }
 
 int get_bone_index_from_color(glm::vec3 color) {
@@ -176,7 +194,7 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
         if (!vertexFlags[line[1]]) {
             vertexFlags[line[1]] = true;
 
-            float dert_z = std::abs(raw_joints_3d[line[0]].z) - std::abs(raw_joints_3d[line[1]].z);
+            float dert_z = raw_joints_3d[line[0]].z - raw_joints_3d[line[1]].z;
 
             if (dert_z > relative_position_threshhold) {
                 tmpJointColors[line[1]] = glm::vec3(1.f);
@@ -198,7 +216,10 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
     for (int bone_it = 0 ; bone_it < mPoseDef::num_of_bones; ++bone_it) {
         boost::add_vertex(graph);
         glm::u32vec2 cur_bone_index = mPoseDef::bones_indices[bone_it];
-        bones_array[bone_it].initialize(raw_joints_2d[cur_bone_index.x], raw_joints_2d[cur_bone_index.y], bone_it, mRenderParams::mBoneColors[bone_it], tmpJointColors[cur_bone_index.y], 15, 9);
+        bones_array[bone_it].initialize(raw_joints_2d[cur_bone_index.x], raw_joints_2d[cur_bone_index.y], bone_it, mRenderParams::mBoneColors[bone_it], tmpJointColors[cur_bone_index.y], 16, 10);
+        if (!bones_array[bone_it].is_inited) {
+            std::cout << "Uninitialized bone: " << bone_it << std::endl;
+        }
     }
 
     for (int i = 0; i < mPoseDef::num_of_bones; ++i) {
@@ -228,7 +249,15 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
     std::vector<int> draw_order = get_render_order(graph);
 
     /**************** Then only paint the bone temporarily ***************/
+//    std::cout << draw_order.size() << std::endl;
+//    for (int i = 0; i <  draw_order.size(); ++i) {
+//        std::cout << draw_order[i] << " ";
+//    }
+//    std::cout << std::endl;
     for (int bone_it = 0; bone_it < draw_order.size(); ++bone_it) {
+        if (draw_order[bone_it] < 0) {
+            continue;
+        }
         bones_array[draw_order[bone_it]].paintOn(synthesis_img);
     }
 }

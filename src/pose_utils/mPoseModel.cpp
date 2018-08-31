@@ -156,7 +156,7 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
         else {
             curmodel = glm::rotate(glm::mat4(1.0), angle, glm::normalize(glm::cross(vFrom, vTo)));
         }
-        // TODO Temporary scale the bones and the dot
+        // TODO: Temporary scale the bones and the dot
         glm::mat4 scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(1.0f * mRenderParams::skeleton_style[2*i + 1], length/this->model_size, 1.0f * mRenderParams::skeleton_style[2*i + 1])) * glm::scale(glm::mat4(1.0), glm::vec3(this->model_scale));
 
         curmodel = trans * curmodel * scaleMat;
@@ -185,14 +185,16 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
             cur_vertex_num = i;
         }
 
-        curmodel = glm::scale(glm::mat4(1.f), 1.0f * this->model_scale * glm::vec3(1.3, 1.3, 1.3));
+        curmodel = glm::scale(glm::mat4(1.f), 1.0f * this->model_scale * glm::vec3(mPoseDef::model_joint_bone_ratio, mPoseDef::model_joint_bone_ratio, mPoseDef::model_joint_bone_ratio));
         curmodel = glm::translate(glm::mat4(1.0f), vertexs[cur_vertex_num]) * curmodel;
         shader->setVal("model", curmodel);
         if (render_type == 0) {
             shader->setVal("fragColor", tmpJointColors[cur_vertex_num]);
             shader->setVal("normMat", glm::transpose(glm::inverse(curmodel)));
         }
-//        mesh_reader->render(0);
+        if (this->use_shading) {
+            mesh_reader->render(0);
+        }
     }
 
 }

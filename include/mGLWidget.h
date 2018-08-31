@@ -63,7 +63,7 @@ public slots:
 signals:
     void doubleClickPoseToggleSignal();
     void progressDisplaySignal(int cur_num, int total, bool is_reset);
-    void saveCapturedFrameSignal(cv::Mat & frame, int cur_frame, int cur_num);
+    void saveCapturedFrameSignal(cv::Mat & frame, int cur_frame, int cur_num, QString suffix);
     void saveCapturedLabelSignal(std::vector<glm::vec2> labels_2d, std::vector<glm::vec3> labels_3d, int cur_frame, int cur_num, bool is_raw);
     void changePoseFileSignal();
 protected:

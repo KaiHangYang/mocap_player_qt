@@ -382,7 +382,7 @@ void mMainWindow::bindEvents() {
     connect(this->tool_render_floor_btn, SIGNAL(clicked()), this, SLOT(sceneFloorSlot()));
 
     connect(this->tool_camera_split_btn, SIGNAL(clicked()), this, SLOT(cameraSplitCircleSlot()));
-    connect(this->gl_widget, SIGNAL(saveCapturedFrameSignal(cv::Mat&,int,int)), this, SLOT(saveFramesSlot(cv::Mat&,int,int)));
+    connect(this->gl_widget, SIGNAL(saveCapturedFrameSignal(cv::Mat&,int,int,QString)), this, SLOT(saveFramesSlot(cv::Mat&,int,int,QString)));
     connect(this->gl_widget, SIGNAL(saveCapturedLabelSignal(std::vector<glm::vec2>,std::vector<glm::vec3>,int,int,bool)), this, SLOT(saveLabelsSlot(std::vector<glm::vec2>,std::vector<glm::vec3>,int,int,bool)));
     connect(this->gl_widget, SIGNAL(changePoseFileSignal()), this, SLOT(changeNextPoseSlot()));
     connect(this->tool_pose_change_step_btn, SIGNAL(clicked()), this, SLOT(poseSetChangeSize()));
@@ -985,7 +985,7 @@ void mMainWindow::captureDirSlot() {
     }
 }
 
-void mMainWindow::saveFramesSlot(cv::Mat & frame, int cur_frame, int cur_num) {
+void mMainWindow::saveFramesSlot(cv::Mat & frame, int cur_frame, int cur_num, QString suffix) {
     QString dir_name = this->tool_capture_dir_input->text();
     QFileInfo dir_info(dir_name);
     if (!dir_name.isEmpty() && dir_info.isDir()) {
@@ -1001,7 +1001,7 @@ void mMainWindow::saveFramesSlot(cv::Mat & frame, int cur_frame, int cur_num) {
         }
 
         QString cur_frame_num = QString::number(cur_frame);
-        QString img_name = dir_name + "/" + cur_frame_num + "-" + QString::number(cur_num) + "." + this->tool_capture_img_extension_combox->currentText();
+        QString img_name = dir_name + "/" + cur_frame_num + "-" + QString::number(cur_num) + suffix +"." + this->tool_capture_img_extension_combox->currentText();
         cv::imwrite(img_name.toStdString(), frame);
     }
 }

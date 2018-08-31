@@ -9,8 +9,14 @@ namespace mPoseDef {
     static const int num_of_bones = 14;
     static const int root_of_joints = 14;
     static const float model_size = 30 * 2;
+    static const float model_joint_bone_ratio = 1.3;
+
     static const std::string model_base_dir("/home/kaihang/Projects/QT/mocap_player_qt/models/");
 //    static const std::string model_base_dir("/Users/kaihang/Desktop/Code/Cpp/Qt/mocap_player_qt/models/");
+
+    static const int spine_bone_index = 7;
+    static const int left_hip_index = 8;
+    static const int right_hip_index = 11;
     
     static const std::vector<glm::u32vec2> bones_indices({
             glm::u32vec2(1, 0), // 0

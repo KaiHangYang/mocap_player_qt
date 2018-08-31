@@ -331,11 +331,16 @@ void mGLWidget::draw() {
             this->scene->captureFrame(captured_img);
 
             int cur_frame_num = this->mocap_data->getCurFrame();
-            emit saveCapturedFrameSignal(captured_img, cur_frame_num, cam_num);
+            emit saveCapturedFrameSignal(captured_img, cur_frame_num, cam_num, "");
             emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, cam_num, false);
             if (this->is_ar) {
                 emit saveCapturedLabelSignal(labels_2d_raw, labels_3d_raw, cur_frame_num, cam_num, true);
             }
+
+            // Then Save the synthesised img
+            cv::Mat synthesis_img(cv::Size(1024, 1024), CV_8UC3, cv::Scalar(51, 51, 51));
+            mSynthesisPaint::drawSynthesisData(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, labels_3d, synthesis_img);
+            emit saveCapturedFrameSignal(synthesis_img, cur_frame_num, cam_num, "_synthesis");
         }
         // This frame captured finished, if capture_all then continue, or reset capture.
         // The capture all is stop beyond this file
@@ -356,21 +361,20 @@ void mGLWidget::draw() {
         adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints);
         this->scene->render(this->cur_pose_joints, adjusted_pose_joints);
 
+//        if (this->cur_pose_joints.size() != 0) {
+//            cv::Mat captured_img;
+//            std::vector<glm::vec2> labels_2d;
+//            std::vector<glm::vec3> labels_3d;
 
-        if (this->cur_pose_joints.size() != 0) {
-            cv::Mat captured_img;
-            std::vector<glm::vec2> labels_2d;
-            std::vector<glm::vec3> labels_3d;
+//            this->scene->captureFrame(captured_img);
+//            this->scene->getLabelsFromFrame(this->cur_pose_joints, adjusted_pose_joints, this->scene->getCurCamera(), labels_2d, labels_3d);
 
-            this->scene->captureFrame(captured_img);
-            this->scene->getLabelsFromFrame(this->cur_pose_joints, adjusted_pose_joints, this->scene->getCurCamera(), labels_2d, labels_3d);
+//            cv::Mat synthesis_img(cv::Size(1024, 1024), CV_8UC3, cv::Scalar(51, 51, 51));
 
-            cv::Mat synthesis_img(cv::Size(1024, 1024), CV_8UC3, cv::Scalar(51, 51, 51));
-
-            mSynthesisPaint::drawSynthesisData(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, labels_3d, synthesis_img);
-            cv::imshow("captured_img", synthesis_img);
-            cv::waitKey(0);
-        }
+//            mSynthesisPaint::drawSynthesisData(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, labels_3d, synthesis_img);
+////            cv::imshow("captured_img", synthesis_img);
+////            cv::waitKey(3);
+//        }
 
 
         /******************************************/

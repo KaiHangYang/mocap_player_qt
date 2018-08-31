@@ -29,6 +29,8 @@ typedef boost::geometry::model::box<boost::geometry::model::d2::point_xy<float>>
 struct mBone2D {
     glm::vec2 source;
     glm::vec2 target;
+    glm::vec2 raw_source;
+
     float rect_width;
     float joint_ratio;
     mBonePolygon2D bone_polygon_2d; // from the source to the source used in boost::geometry

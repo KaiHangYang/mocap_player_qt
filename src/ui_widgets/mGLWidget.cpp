@@ -284,7 +284,6 @@ void mGLWidget::setPose(float ratio) {
 }
 
 void mGLWidget::draw() {
-
     /*************** Code for changing the pose *****************/
     // the temp_pose_state is for the prograss bar control
     if (this->pose_state == 1 && this->temp_pose_state) {
@@ -306,6 +305,7 @@ void mGLWidget::draw() {
 
     /*********************** Code for render and captures ********************/
     if (this->is_set_capture_frame) {
+
         for (int cam_num = 0; cam_num < this->cur_capture_cameras.size(); ++cam_num) {
             std::vector<glm::vec2> labels_2d;
             std::vector<glm::vec3> labels_3d;
@@ -327,11 +327,15 @@ void mGLWidget::draw() {
             }
 
             cv::Mat captured_img;
-            this->swapBuffers(); // Important to capture frames
+            // After all the part are renderend
+
+            this->core_func->glFinish();
+            this->makeCurrent();
+            this->swapBuffers(); // Important to capture frames because the this->scene->captureFrame use the GL_FRONT as the frame img.
             this->scene->captureFrame(captured_img);
 
             int cur_frame_num = this->mocap_data->getCurFrame();
-            emit saveCapturedFrameSignal(captured_img, cur_frame_num, cam_num, "");
+            emit saveCapturedFrameSignal(captured_img, cur_frame_num, cam_num, "_gl");
             emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, cam_num, false);
             if (this->is_ar) {
                 emit saveCapturedLabelSignal(labels_2d_raw, labels_3d_raw, cur_frame_num, cam_num, true);
@@ -339,8 +343,11 @@ void mGLWidget::draw() {
 
             // Then Save the synthesised img
             cv::Mat synthesis_img(cv::Size(1024, 1024), CV_8UC3, cv::Scalar(51, 51, 51));
+
+            // Currently the labels_3d is the joints in the real world camera coordinate.
+
             mSynthesisPaint::drawSynthesisData(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, labels_3d, synthesis_img);
-            emit saveCapturedFrameSignal(synthesis_img, cur_frame_num, cam_num, "_synthesis");
+            emit saveCapturedFrameSignal(synthesis_img, cur_frame_num, cam_num, "");
         }
         // This frame captured finished, if capture_all then continue, or reset capture.
         // The capture all is stop beyond this file

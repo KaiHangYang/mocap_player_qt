@@ -8,6 +8,8 @@
 #include <iostream>
 #include <glm/gtx/string_cast.hpp>
 
+#include <boost/graph/graph_utility.hpp>
+
 /******************* Bugs waiting to fixed ********************/
 // 1. When the joints' endpoints are very near, the initialize program has some problems. Waiting to be fixed.
 // 2. The relation of the adjacent joints may made wrong circle in the graph (Solved, I made the bone source a little short(the length of the joint ratio, but the spine is left the raw one))
@@ -157,26 +159,27 @@ std::vector<int> get_render_order(const mGraphType & graph) {
 }
 
 /******************** I may need to handle the special case in report-8-27 ********************/
-void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, const std::vector<glm::vec2> & raw_joints_2d, const std::vector<glm::vec3> & raw_joints_3d, cv::Mat & synthesis_img) {
+void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, const std::vector<glm::vec2> & raw_joints_2d, const std::vector<glm::vec3> & real_joints_3d, cv::Mat & synthesis_img) {
+    // The real_joints_3d is in the real world camera coordinate(the z and y axis is different with the one in the opengl)
     /**************** Calculate the relative position of the joints first ****************/
     std::vector<glm::vec3> tmpJointColors = mRenderParams::mJointColors;
     tmpJointColors[14] = glm::vec3(1.f);
     // use the hip bone as the ruler
 
-    float relative_position_threshhold = ((glm::length(raw_joints_3d[8] - raw_joints_3d[14]) + glm::length(raw_joints_3d[11] - raw_joints_3d[14])) / 2) * 0.1;
+    float relative_position_threshhold = ((glm::length(real_joints_3d[mPoseDef::left_hip_joint_index] - real_joints_3d[mPoseDef::root_of_joints]) + glm::length(real_joints_3d[mPoseDef::right_hip_joint_index] - real_joints_3d[mPoseDef::root_of_joints])) / 2) * 0.1;
     std::vector<bool> vertexFlags(mPoseDef::num_of_joints, false);
     for (unsigned int i = 0; i < mPoseDef::num_of_bones; ++i) {
         unsigned int line[2] = { mPoseDef::bones_indices[i].x, mPoseDef::bones_indices[i].y };
 
         if (!vertexFlags[line[1]]) {
             vertexFlags[line[1]] = true;
+            // NOTICE: The z axis in the real world camera coordinate is opposite with the one in the opengl.
+            float dert_z = (-real_joints_3d[line[0]].z) - (-real_joints_3d[line[1]].z);
 
-            float dert_z = raw_joints_3d[line[0]].z - raw_joints_3d[line[1]].z;
-
-            if (dert_z > relative_position_threshhold) {
+            if (dert_z < -relative_position_threshhold) {
                 tmpJointColors[line[1]] = glm::vec3(1.f);
             }
-            else if (dert_z < -relative_position_threshhold) {
+            else if (dert_z > relative_position_threshhold) {
                 tmpJointColors[line[1]] = glm::vec3(0.f);
             }
             else {
@@ -193,7 +196,7 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
     for (int bone_it = 0 ; bone_it < mPoseDef::num_of_bones; ++bone_it) {
         boost::add_vertex(graph);
         glm::u32vec2 cur_bone_index = mPoseDef::bones_indices[bone_it];
-        bones_array[bone_it].initialize(raw_joints_2d[cur_bone_index.x], raw_joints_2d[cur_bone_index.y], bone_it, mRenderParams::mBoneColors[bone_it], tmpJointColors[cur_bone_index.y], 16, 11);
+        bones_array[bone_it].initialize(raw_joints_2d[cur_bone_index.x], raw_joints_2d[cur_bone_index.y], bone_it, mRenderParams::mBoneColors[bone_it], tmpJointColors[cur_bone_index.y], mSynthesisPaint::mSynthesisBoneWidth, mSynthesisPaint::mSynthesisJointRatio);
         if (!bones_array[bone_it].is_inited) {
             std::cout << "Uninitialized bone: " << bone_it << std::endl;
         }
@@ -208,17 +211,18 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
 
             // if overlapped then check the color to determine the overlap rank.
             if (is_overlapped) {
+
                 std::vector<int> overlap_labels = check_overlap_labels(bone_map_ptr, bone_map_size, bone_overlap);
-                if (overlap_labels[bone_a->bone_index] > overlap_labels[bone_b->bone_index]) {
+                if (overlap_labels[bone_a->bone_index] + overlap_labels[bone_b->bone_index] < mSynthesisPaint::mSynthesisBoneWidth) {
+                    // If the pixel label is very small, then discard it.
+                    continue;
+                }
+                else if (overlap_labels[bone_a->bone_index] > overlap_labels[bone_b->bone_index]) {
                     boost::add_edge(bone_b->bone_index, bone_a->bone_index, graph);
                 }
                 else if (overlap_labels[bone_a->bone_index] < overlap_labels[bone_b->bone_index]) {
                     boost::add_edge(bone_a->bone_index, bone_b->bone_index, graph);
                 }
-//                else if (overlap_labels[bone_a->bone_index] != 0) {
-//                    // when equal, first a then b
-//                    boost::add_edge(bone_a->bone_index, bone_b->bone_index, graph);
-//                }
             }
         }
     }
@@ -231,8 +235,12 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
 //        std::cout << draw_order[i] << " ";
 //    }
 //    std::cout << std::endl;
+
     for (int bone_it = 0; bone_it < draw_order.size(); ++bone_it) {
         if (draw_order[bone_it] < 0) {
+            std::cout << "Something wrong happened!" << std::endl;
+            boost::print_graph(graph);
+            exit(-1);
             continue;
         }
         bones_array[draw_order[bone_it]].paintOn(synthesis_img);

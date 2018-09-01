@@ -4,8 +4,6 @@
 #include "mRenderParameters.h"
 #include <glm/glm.hpp>
 
-//#define TEMP_POSE_RENDER_TYPE_2
-
 mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, float target_model_size, bool is_ar, bool use_shading, int pose_type) {
 
     this->pose_shader = pose_shader;
@@ -81,7 +79,6 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
     shader->setVal("viewPos", glm::vec3(-view_t_mat[3][0], -view_t_mat[3][1], -view_t_mat[3][2]));
     shader->setVal("view", view_mat);
 
-    glm::u32vec2 * indices_ptr = &this->bone_indices[0];
     glm::mat4 trans;
     glm::mat4 curmodel;
 
@@ -91,10 +88,9 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
     std::vector<glm::vec3> tmpJointColors = mRenderParams::mJointColors;
     tmpJointColors[14] = glm::vec3(1.f);
     // use the hip bone as the ruler
-    float relative_position_threshhold = ((glm::length(raw_vertexs[8] - raw_vertexs[14]) + glm::length(raw_vertexs[11] - raw_vertexs[14])) / 2) * 0.1;
+    float relative_position_threshhold = ((glm::length(raw_vertexs[mPoseDef::left_hip_joint_index] - raw_vertexs[mPoseDef::root_of_joints]) + glm::length(raw_vertexs[mPoseDef::right_hip_joint_index] - raw_vertexs[mPoseDef::root_of_joints])) / 2) * 0.1;
     for (unsigned int i = 0; i < lineNum; ++i) {
-        unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
-        indices_ptr ++;
+        unsigned int line[2] = { this->bone_indices[i].x, this->bone_indices[i].y };
         if (!vertexFlags[line[1]]) {
             vertexFlags[line[1]] = true;
             glm::mat4 to_camera_coord = view_mat;
@@ -121,26 +117,12 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
     }
     /*********************************************************************************/
 
-#ifndef TEMP_POSE_RENDER_TYPE_2
     std::sort(camera_coord_vertexs.begin(), camera_coord_vertexs.end(), joint_z_cmp);
-//    qDebug() << "Joints: Use the common render mode.";
-#else
-//    qDebug() << "Joints: Discard the self-occlusion render order";
-#endif
-
-
     // Draw the bones first
-#ifndef TEMP_POSE_RENDER_TYPE_2
     this->core_func->glEnable(GL_DEPTH_TEST);
-//    qDebug() << "Limbs: Use the common render mode.";
-#else
-    this->core_func->glDisable(GL_DEPTH_TEST);
-//    qDebug() << "Limbs: Discard the self-occlusion render order";
-#endif
-    indices_ptr = &this->bone_indices[0];
+
     for (unsigned int i = 0; i < lineNum; ++i) {
-        unsigned int line[2] = { indices_ptr->x, indices_ptr->y };
-        indices_ptr ++;
+        unsigned int line[2] = { this->bone_indices[i].x, this->bone_indices[i].y };
         glm::vec3 lineCen = (vertexs[line[0]] + vertexs[line[1]]) / 2.f;
         float length = glm::length(vertexs[line[0]] - vertexs[line[1]]);
 
@@ -196,7 +178,6 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
             mesh_reader->render(0);
         }
     }
-
 }
 
 void mPoseModel::draw(std::vector<glm::vec3> raw_joints, std::vector<glm::vec3> points, glm::mat4 & cam_ex_mat, glm::mat4 & cam_in_mat, int camera_type, int render_type) {

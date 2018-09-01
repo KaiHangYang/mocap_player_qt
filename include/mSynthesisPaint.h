@@ -26,6 +26,10 @@ typedef boost::adjacency_list<boost::listS, boost::vecS, boost::bidirectionalS> 
 /******** Define the bounding box type ***********/
 typedef boost::geometry::model::box<boost::geometry::model::d2::point_xy<float>> mBoundingBox2D;
 
+static int mSynthesisBoneWidth = 14;
+static int mSynthesisJointRatio = 11;
+static float mSynthesisAdjacentAreaRatio = 0.25;
+
 struct mBone2D {
     glm::vec2 source;
     glm::vec2 target;
@@ -55,5 +59,7 @@ struct mBone2D {
 int get_bone_index_from_color(glm::vec3 color);
 std::vector<int> check_overlap_labels(const unsigned char * bone_map_prt, glm::u32vec3 bone_map_size, const mBonePolygon2D & overlap);
 std::vector<int> get_render_order(const mGraphType & graph);
-void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, const std::vector<glm::vec2>& raw_joints_2d, const std::vector<glm::vec3> & raw_joints_3d, cv::Mat & synthesis_img);
+
+/***** NOTICE: The real_joints_3d must be the joints_3d calculated by mSceneUtils::getLabelsFromFrame *****/
+void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, const std::vector<glm::vec2>& raw_joints_2d, const std::vector<glm::vec3> & real_joints_3d, cv::Mat & synthesis_img);
 }

@@ -15,9 +15,30 @@ namespace mPoseDef {
 //    static const std::string model_base_dir("/Users/kaihang/Desktop/Code/Cpp/Qt/mocap_player_qt/models/");
 
     static const int spine_bone_index = 7;
-    static const int left_hip_index = 8;
-    static const int right_hip_index = 11;
-    
+    static const int left_hip_bone_index = 8;
+    static const int right_hip_bone_index = 11;
+
+    static const int left_hip_joint_index = 8;
+    static const int right_hip_joint_index = 11;
+
+    static const bool bones_adjacence_table[14][14] = {
+        // 0    1       2      3      4      5      6      7      8      9      10     11     12     13
+        {false, true,   false, false, true,  false, false, true,  false, false, false, false, false, false}, // 0
+        {true,  false,  true,  false, true,  false, false, true,  false, false, false, false, false, false}, // 1
+        {false, true,   false, true,  false, false, false, false, false, false, false, false, false, false}, // 2
+        {false, false,  true,  false, false, false, false, false, false, false, false, false, false, false}, // 3
+        {true,  true,   false, false, false, true,  false, true,  false, false, false, false, false, false}, // 4
+        {false, false,  false, false, true,  false, true,  false, false, false, false, false, false, false}, // 5
+        {false, false,  false, false, false, true,  false, false, false, false, false, false, false, false}, // 6
+        {true,  true,   false, false, true,  false, false, false, true,  false, false, true,  false, false}, // 7
+        {false, false,  false, false, false, false, false, true,  false, true,  false, true,  false, false}, // 8
+        {false, false,  false, false, false, false, false, false, true,  false, true,  false, false, false}, // 9
+        {false, false,  false, false, false, false, false, false, false, true,  false, false, false, false}, // 10
+        {false, false,  false, false, false, false, false, true,  true,  false, false, false, true,  false}, // 11
+        {false, false,  false, false, false, false, false, false, false, false, false, true,  false, true},  // 12
+        {false, false,  false, false, false, false, false, false, false, false, false, false, true,  false}  // 13
+    };
+        
     static const std::vector<glm::u32vec2> bones_indices({
             glm::u32vec2(1, 0), // 0
             glm::u32vec2(1, 2), // 1
@@ -34,6 +55,9 @@ namespace mPoseDef {
             glm::u32vec2(11, 12),//12
             glm::u32vec2(12, 13)//13
     });
+
+
+
     static const std::vector<unsigned int> bones_cal_rank({
         7, 8, 11, 9, 10, 12, 13, 0, 1, 4, 2, 3, 5, 6
     });

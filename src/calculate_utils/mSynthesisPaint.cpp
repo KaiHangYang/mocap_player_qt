@@ -9,6 +9,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include <boost/graph/graph_utility.hpp>
+#include <climits>
 
 /******************* Bugs waiting to fixed ********************/
 // 1. When the joints' endpoints are very near, the initialize program has some problems. Waiting to be fixed.
@@ -24,8 +25,8 @@ mBone2D::mBone2D(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 b
 void mBone2D::initialize(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 bone_color, glm::vec3 joint_color, float rect_width, float joint_ratio) {
     this->is_inited = true;
     this->bone_polygon_2d.clear();
-    this->raw_source = source;
-    this->source = this->raw_source;
+
+    this->source = source;
     this->target = target;
     this->rect_width = rect_width;
     this->bone_index = bone_index;
@@ -37,12 +38,10 @@ void mBone2D::initialize(glm::vec2 source, glm::vec2 target, int bone_index, glm
     this->bone_length_2d = glm::length(this->target - this->source);
 
     glm::vec2 l_vec = glm::normalize(this->target - this->source);
-    glm::vec2 w_vec({-l_vec.y, l_vec.x});
 
-//    if (this->bone_length_2d - this->joint_ratio > 0 && this->bone_index != mPoseDef::left_hip_index && this->bone_index != mPoseDef::right_hip_index) {
-//        this->bone_length_2d = this->bone_length_2d - this->joint_ratio;
-//        this->source = -l_vec * this->bone_length_2d + this->target;
-//    }
+    this->target_longer = l_vec * (this->bone_length_2d + this->joint_ratio) + this->source;
+
+    glm::vec2 w_vec({-l_vec.y, l_vec.x});
 
     // clockwise points
     glm::vec2 vertex_1 = this->source - this->rect_width / 2.0f * w_vec;
@@ -50,8 +49,17 @@ void mBone2D::initialize(glm::vec2 source, glm::vec2 target, int bone_index, glm
     glm::vec2 vertex_3 = this->target + this->rect_width / 2.0f * w_vec;
     glm::vec2 vertex_4 = this->target - this->rect_width / 2.0f * w_vec;
 
+    std::vector<glm::vec2> bone_polygon_joints;
+    if (mPoseDef::bone_is_limb[this->bone_index]) {
+
+        bone_polygon_joints = std::vector<glm::vec2>({vertex_1, vertex_2, vertex_3, this->target_longer, vertex_4, vertex_1});
+    }
+    else {
+        bone_polygon_joints = std::vector<glm::vec2>({vertex_1, vertex_2, vertex_3, vertex_4, vertex_1});
+    }
+
     this->bone_points = std::vector<glm::vec2>({vertex_1, vertex_2, vertex_3, vertex_4, vertex_1});
-    boost::geometry::append(this->bone_polygon_2d, bone_points);
+    boost::geometry::append(this->bone_polygon_2d, bone_polygon_joints);
 }
 
 bool mBone2D::getOverlapsWith(const mBone2D &another_bone, mBonePolygon2D &overlap_polygon) {
@@ -88,11 +96,6 @@ void mBone2D::paintOn(cv::Mat &img) {
     cv::fillConvexPoly(img, vertices, 4, bone_color, cv::LINE_AA);
     cv::circle(img, joint, this->joint_ratio, joint_color, CV_FILLED, cv::LINE_AA);
 
-//    if (this->bone_index == mPoseDef::spine_bone_index) {
-//        // if current bone is spine, then it contain the root joint
-//        cv::Point root_joint = cv::Point(this->raw_source.x, this->raw_source.y);
-//        cv::circle(img, root_joint, this->joint_ratio, cv::Scalar(255, 255, 255), CV_FILLED, cv::LINE_AA);
-//    }
 }
 
 int get_bone_index_from_color(glm::vec3 color) {
@@ -213,20 +216,49 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
             if (is_overlapped) {
 
                 std::vector<int> overlap_labels = check_overlap_labels(bone_map_ptr, bone_map_size, bone_overlap);
-                if (overlap_labels[bone_a->bone_index] + overlap_labels[bone_b->bone_index] < mSynthesisPaint::mSynthesisBoneWidth) {
+                // Use for break the cycle in the graph
+                float total_valid_label = overlap_labels[bone_a->bone_index] + overlap_labels[bone_b->bone_index];
+                //if (overlap_labels[bone_a->bone_index] + overlap_labels[bone_b->bone_index] < mSynthesisPaint::mSynthesisBoneWidth) {
                     // If the pixel label is very small, then discard it.
-                    continue;
-                }
-                else if (overlap_labels[bone_a->bone_index] > overlap_labels[bone_b->bone_index]) {
-                    boost::add_edge(bone_b->bone_index, bone_a->bone_index, graph);
+                //    continue;
+                //}
+                if (overlap_labels[bone_a->bone_index] > overlap_labels[bone_b->bone_index]) {
+                    boost::add_edge(bone_b->bone_index, bone_a->bone_index, total_valid_label, graph);
                 }
                 else if (overlap_labels[bone_a->bone_index] < overlap_labels[bone_b->bone_index]) {
-                    boost::add_edge(bone_a->bone_index, bone_b->bone_index, graph);
+                    boost::add_edge(bone_a->bone_index, bone_b->bone_index, total_valid_label, graph);
                 }
             }
         }
     }
     /**************** Calculate the drawing order ****************/
+
+    // Test the cycle first
+    bool has_cycle = false;
+    std::vector<int> cycle_arr;
+    do {
+        has_cycle = false;
+        cycle_arr.clear();
+        dfs_cycle_detector dfs_vis(has_cycle, cycle_arr);
+        boost::depth_first_search(graph, boost::visitor(dfs_vis));
+
+        if (has_cycle) {
+            int start_index = std::find(cycle_arr.begin(), cycle_arr.end(), cycle_arr.back()) - cycle_arr.begin();
+            mGraphType::edge_descriptor edge_to_delete;
+            float min_weight = FLT_MAX;
+            for (; start_index < cycle_arr.size() - 1; ++start_index) {
+                std::pair<mGraphType::edge_descriptor, bool> cur_edge = boost::edge(cycle_arr[start_index], cycle_arr[start_index + 1], graph);
+                assert(cur_edge.second);
+                float edge_weight = boost::get(boost::edge_weight_t(), graph, cur_edge.first);
+                if (edge_weight < min_weight) {
+                    min_weight = edge_weight;
+                    edge_to_delete = cur_edge.first;
+                }
+            }
+            boost::remove_edge(edge_to_delete, graph);
+        }
+    } while (has_cycle);
+
     std::vector<int> draw_order = get_render_order(graph);
 
     /**************** Then only paint the bone temporarily ***************/

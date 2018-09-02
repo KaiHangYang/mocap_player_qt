@@ -5,6 +5,7 @@
 #include <boost/foreach.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/copy.hpp>
+#include <boost/graph/depth_first_search.hpp>
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -22,7 +23,9 @@ namespace mSynthesisPaint {
 /************* Define the rect type **************/
 typedef boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<float>> mBonePolygon2D;
 /******** About The calculate graph ********/
-typedef boost::adjacency_list<boost::listS, boost::vecS, boost::bidirectionalS> mGraphType;
+typedef boost::property<boost::edge_weight_t, float> mGraphEdgeWeightProperty;
+typedef boost::adjacency_list<boost::listS, boost::vecS, boost::bidirectionalS, boost::no_property, mGraphEdgeWeightProperty> mGraphType;
+
 /******** Define the bounding box type ***********/
 typedef boost::geometry::model::box<boost::geometry::model::d2::point_xy<float>> mBoundingBox2D;
 
@@ -33,7 +36,8 @@ static float mSynthesisAdjacentAreaRatio = 0.25;
 struct mBone2D {
     glm::vec2 source;
     glm::vec2 target;
-    glm::vec2 raw_source;
+
+    glm::vec2 target_longer;
 
     float rect_width;
     float joint_ratio;
@@ -55,6 +59,31 @@ struct mBone2D {
     void paintOn(cv::Mat & img);
 };
 
+/************ depth_first_search visitor to detector a cycle from the graph *************/
+struct dfs_cycle_detector: public boost::dfs_visitor<> {
+    dfs_cycle_detector(bool & has_cycle, std::vector<int> & cycle_arr): _has_cycle(has_cycle), _cycle_arr(cycle_arr) {}
+    template <class Vertex, class Graph>
+    void discover_vertex(Vertex v, const Graph & g) {
+        this->_vis_arr.push_back(v);
+    }
+
+    template <class Vertex, class Graph>
+    void finish_vertex(Vertex v, const Graph & g) {
+        this->_vis_arr.erase(this->_vis_arr.end() - 1);
+    }
+
+    template <class Edge, class Graph>
+    void back_edge(Edge e, const Graph & g) {
+        this->_has_cycle = true;
+        this->_cycle_arr = this->_vis_arr;
+        this->_cycle_arr.push_back(boost::target(e, g));
+    }
+protected:
+    bool & _has_cycle;
+    std::vector<int> _vis_arr;
+    std::vector<int> & _cycle_arr;
+
+};
 
 int get_bone_index_from_color(glm::vec3 color);
 std::vector<int> check_overlap_labels(const unsigned char * bone_map_prt, glm::u32vec3 bone_map_size, const mBonePolygon2D & overlap);

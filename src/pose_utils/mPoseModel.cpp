@@ -86,31 +86,33 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
     // the raw_vertex is used for calcualte.
 
     std::vector<glm::vec3> tmpJointColors = mRenderParams::mJointColors;
-    tmpJointColors[14] = glm::vec3(1.f);
-    // use the hip bone as the ruler
-    float relative_position_threshhold = ((glm::length(raw_vertexs[mPoseDef::left_hip_joint_index] - raw_vertexs[mPoseDef::root_of_joints]) + glm::length(raw_vertexs[mPoseDef::right_hip_joint_index] - raw_vertexs[mPoseDef::root_of_joints])) / 2) * 0.1;
-    for (unsigned int i = 0; i < lineNum; ++i) {
-        unsigned int line[2] = { this->bone_indices[i].x, this->bone_indices[i].y };
-        if (!vertexFlags[line[1]]) {
-            vertexFlags[line[1]] = true;
-            glm::mat4 to_camera_coord = view_mat;
+    if (this->use_shading) {
+        tmpJointColors[14] = glm::vec3(1.f);
+        // use the hip bone as the ruler
+        float relative_position_threshhold = ((glm::length(raw_vertexs[mPoseDef::left_hip_joint_index] - raw_vertexs[mPoseDef::root_of_joints]) + glm::length(raw_vertexs[mPoseDef::right_hip_joint_index] - raw_vertexs[mPoseDef::root_of_joints])) / 2) * 0.1;
+        for (unsigned int i = 0; i < lineNum; ++i) {
+            unsigned int line[2] = { this->bone_indices[i].x, this->bone_indices[i].y };
+            if (!vertexFlags[line[1]]) {
+                vertexFlags[line[1]] = true;
+                glm::mat4 to_camera_coord = view_mat;
 
-            if (render_type == 0) {
-                // the vertex is in the global coordinate, so I only need to use the view_mat
-                camera_coord_vertexs[line[0]].first = to_camera_coord * glm::vec4(raw_vertexs[line[0]], 1.f);
-                camera_coord_vertexs[line[0]].second = line[0];
-                camera_coord_vertexs[line[1]].first = to_camera_coord * glm::vec4(raw_vertexs[line[1]], 1.f);
-                camera_coord_vertexs[line[1]].second = line[1];
-                float dert_z = std::abs((camera_coord_vertexs[line[0]].first).z) - std::abs((camera_coord_vertexs[line[1]].first).z);
+                if (render_type == 0) {
+                    // the vertex is in the global coordinate, so I only need to use the view_mat
+                    camera_coord_vertexs[line[0]].first = to_camera_coord * glm::vec4(raw_vertexs[line[0]], 1.f);
+                    camera_coord_vertexs[line[0]].second = line[0];
+                    camera_coord_vertexs[line[1]].first = to_camera_coord * glm::vec4(raw_vertexs[line[1]], 1.f);
+                    camera_coord_vertexs[line[1]].second = line[1];
+                    float dert_z = std::abs((camera_coord_vertexs[line[0]].first).z) - std::abs((camera_coord_vertexs[line[1]].first).z);
 
-                if (dert_z > relative_position_threshhold) {
-                    tmpJointColors[line[1]] = glm::vec3(1.f);
-                }
-                else if (dert_z < -relative_position_threshhold) {
-                    tmpJointColors[line[1]] = glm::vec3(0.f);
-                }
-                else {
-                    tmpJointColors[line[1]] = glm::vec3(0.5f);
+                    if (dert_z > relative_position_threshhold) {
+                        tmpJointColors[line[1]] = glm::vec3(1.f);
+                    }
+                    else if (dert_z < -relative_position_threshhold) {
+                        tmpJointColors[line[1]] = glm::vec3(0.f);
+                    }
+                    else {
+                        tmpJointColors[line[1]] = glm::vec3(0.5f);
+                    }
                 }
             }
         }
@@ -123,11 +125,15 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
 
     for (unsigned int i = 0; i < lineNum; ++i) {
         unsigned int line[2] = { this->bone_indices[i].x, this->bone_indices[i].y };
-        glm::vec3 lineCen = (vertexs[line[0]] + vertexs[line[1]]) / 2.f;
-        float length = glm::length(vertexs[line[0]] - vertexs[line[1]]);
+
+        glm::vec3 joint_source = vertexs[line[0]];
+        glm::vec3 joint_target = vertexs[line[1]];
+
+        glm::vec3 lineCen = (joint_source + joint_target) / 2.f;
+        float length = glm::length(joint_source - joint_target);
 
         glm::vec3 vFrom(0, 1, 0);
-        glm::vec3 vTo = glm::normalize(vertexs[line[0]] - vertexs[line[1]]);
+        glm::vec3 vTo = glm::normalize(joint_source - joint_target);
 
         trans = glm::translate(glm::mat4(1.0), lineCen);
         float angle = (float)glm::acos(glm::dot(vFrom, vTo));
@@ -153,30 +159,31 @@ void mPoseModel::renderPose(std::vector<glm::vec3> raw_vertexs, std::vector<glm:
     }
 
     // Then draw the joints
+    // TODO: TO BE MODIFIED, what a mess now
     /*********************** Draw the root first ***************************/
-    if (!this->use_shading) {
-        this->core_func->glDisable(GL_DEPTH_TEST);
-    }
+//    if (!this->use_shading) {
+//        this->core_func->glDisable(GL_DEPTH_TEST);
+//    }
 
     for (unsigned int i = 0; i < vertexNum; ++i) {
-        int cur_vertex_num;
-        if (!this->use_shading) {
-            cur_vertex_num = camera_coord_vertexs[i].second;
-        }
-        else {
-            cur_vertex_num = i;
-        }
+        int cur_vertex_num = i;
 
         curmodel = glm::scale(glm::mat4(1.f), 1.0f * this->model_scale * glm::vec3(mPoseDef::model_joint_bone_ratio, mPoseDef::model_joint_bone_ratio, mPoseDef::model_joint_bone_ratio));
+//        curmodel = glm::scale(glm::mat4(1.f), 1.0f * this->model_scale * glm::vec3(1.f));
         curmodel = glm::translate(glm::mat4(1.0f), vertexs[cur_vertex_num]) * curmodel;
         shader->setVal("model", curmodel);
         if (render_type == 0) {
             shader->setVal("fragColor", tmpJointColors[cur_vertex_num]);
             shader->setVal("normMat", glm::transpose(glm::inverse(curmodel)));
         }
-        if (this->use_shading) {
+        if (i == mPoseDef::neck_joint_index || i == mPoseDef::root_of_joints) {
+            // Don't draw the neck and root joint
+            continue;
+        }
+        else {
             mesh_reader->render(0);
         }
+
     }
 }
 

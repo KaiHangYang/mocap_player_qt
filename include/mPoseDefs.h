@@ -20,6 +20,10 @@ namespace mPoseDef {
 
     static const int left_hip_joint_index = 8;
     static const int right_hip_joint_index = 11;
+    static const int neck_joint_index = 1;
+
+    static const bool joint_is_endpoint[15] = {true, false, false, false, true, false, false, true, false, false, true, false, false, true, false};
+    static const bool bone_is_limb[14] = {true, false, false, true, false, false, true, false, false, false, true, false, false, true};
 
     static const bool bones_adjacence_table[14][14] = {
         // 0    1       2      3      4      5      6      7      8      9      10     11     12     13

@@ -87,7 +87,7 @@ if __name__ == "__main__":
     if is_ar:
         camera_num = 1
     else:
-        camera_num = 42
+        camera_num = 36
 
     # train_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/train"
     # test_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/valid"
@@ -98,11 +98,11 @@ if __name__ == "__main__":
     # train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_train.tfrecord")
     # test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_valid.tfrecord")
 
-    train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/bone_2/train"
-    test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/bone_2/valid"
+    train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/train/"
+    test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/valid/"
 
-    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_2.tfrecord")
-    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_2.tfrecord")
+    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_syn.tfrecord")
+    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_syn.tfrecord")
 
     train_dataset_list = os.listdir(train_data_path)
     valid_dataset_list = os.listdir(test_data_path)
@@ -138,8 +138,6 @@ if __name__ == "__main__":
                 labels_3d = labels[1].copy()
 
                 ###### Visualize the data ######
-                # labels_3d[:, 1:3] = -1 * labels_3d[:, 1:3] # TODO This is the temporary
-
                 # img = display_utils.drawLines(img, labels_2d)
                 # img = display_utils.drawPoints(img, labels_2d)
 

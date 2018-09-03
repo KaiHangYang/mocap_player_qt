@@ -335,7 +335,7 @@ void mGLWidget::draw() {
             this->scene->captureFrame(captured_img);
 
             int cur_frame_num = this->mocap_data->getCurFrame();
-            emit saveCapturedFrameSignal(captured_img, cur_frame_num, cam_num, "_gl");
+//            emit saveCapturedFrameSignal(captured_img, cur_frame_num, cam_num, "_gl");
             emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, cam_num, false);
             if (this->is_ar) {
                 emit saveCapturedLabelSignal(labels_2d_raw, labels_3d_raw, cur_frame_num, cam_num, true);

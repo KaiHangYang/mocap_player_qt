@@ -1,6 +1,8 @@
 #include "mSynthesisPaint.h"
 #include "mPoseDefs.h"
 #include "mRenderParameters.h"
+#include "mBBXCal.h"
+
 #include <cassert>
 #include <algorithm>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -29,25 +31,25 @@ void mBone2D::initialize(glm::vec2 source, glm::vec2 target, int bone_index, glm
     this->source = source;
     this->target = target;
     this->rect_width = rect_width;
-    this->bone_index = bone_index;
+    this->draw_rect_width = rect_width;
+    this->joint_ratio = joint_ratio;
+    this->draw_joint_ratio = this->joint_ratio;
 
+    this->bone_index = bone_index;
     this->bone_color = bone_color;
     this->joint_color = joint_color;
-    this->joint_ratio = joint_ratio;
+
 
     this->bone_length_2d = glm::length(this->target - this->source);
-
-    glm::vec2 l_vec = glm::normalize(this->target - this->source);
-
+    this->l_vec = glm::normalize(this->target - this->source);
     this->target_longer = l_vec * (this->bone_length_2d + this->joint_ratio) + this->source;
-
-    glm::vec2 w_vec({-l_vec.y, l_vec.x});
+    this->w_vec = glm::vec2({-l_vec.y, l_vec.x});
 
     // clockwise points
-    glm::vec2 vertex_1 = this->source - this->rect_width / 2.0f * w_vec;
-    glm::vec2 vertex_2 = this->source + this->rect_width / 2.0f * w_vec;
-    glm::vec2 vertex_3 = this->target + this->rect_width / 2.0f * w_vec;
-    glm::vec2 vertex_4 = this->target - this->rect_width / 2.0f * w_vec;
+    glm::vec2 vertex_1 = this->source - this->rect_width / 2.0f * this->w_vec;
+    glm::vec2 vertex_2 = this->source + this->rect_width / 2.0f * this->w_vec;
+    glm::vec2 vertex_3 = this->target + this->rect_width / 2.0f * this->w_vec;
+    glm::vec2 vertex_4 = this->target - this->rect_width / 2.0f * this->w_vec;
 
     std::vector<glm::vec2> bone_polygon_joints;
     if (mPoseDef::bone_is_limb[this->bone_index]) {
@@ -79,22 +81,30 @@ bool mBone2D::getOverlapsWith(const mBone2D &another_bone, mBonePolygon2D &overl
     }
 }
 
-void mBone2D::paintOn(cv::Mat &img) {
+void mBone2D::paintOn(cv::Mat &img, glm::vec3 offset_n_scale) {
     assert(this->is_inited);
     // The color in cv::Mat is bgr
     cv::Scalar bone_color = cv::Scalar(static_cast<unsigned char>(255*this->bone_color.b), static_cast<unsigned char>(255 * this->bone_color.g), static_cast<unsigned char>(255 * this->bone_color.r));
     cv::Scalar joint_color = cv::Scalar(static_cast<unsigned char>(255*this->joint_color.b), static_cast<unsigned char>(255 * this->joint_color.g), static_cast<unsigned char>(255 * this->joint_color.r));
 
-    cv::Point joint = cv::Point(this->target.x, this->target.y);
 
-    cv::Point vertices[4];
-    for (int i = 0; i < 4; ++i) {
-        vertices[i] = cv::Point(this->bone_points[i].x, this->bone_points[i].y);
-    }
+    glm::vec2 draw_source = (this->source - glm::vec2(offset_n_scale)) * offset_n_scale.z;
+    glm::vec2 draw_target = (this->target - glm::vec2(offset_n_scale)) * offset_n_scale.z;
+    cv::Point joint = cv::Point(std::round(draw_target.x), std::round(draw_target.y));
+    // clockwise points
+    glm::vec2 vertex_1 = draw_source - this->draw_rect_width / 2.0f * this->w_vec;
+    glm::vec2 vertex_2 = draw_source + this->draw_rect_width / 2.0f * this->w_vec;
+    glm::vec2 vertex_3 = draw_target + this->draw_rect_width / 2.0f * this->w_vec;
+    glm::vec2 vertex_4 = draw_target - this->draw_rect_width / 2.0f * this->w_vec;
+
+    cv::Point vertices[4] = {cv::Point(std::round(vertex_1.x), std::round(vertex_1.y)),
+                             cv::Point(std::round(vertex_2.x), std::round(vertex_2.y)),
+                             cv::Point(std::round(vertex_3.x), std::round(vertex_3.y)),
+                             cv::Point(std::round(vertex_4.x), std::round(vertex_4.y))};
 
     // First bone Then joint
+    cv::circle(img, joint, this->draw_joint_ratio, joint_color, CV_FILLED, cv::LINE_AA);
     cv::fillConvexPoly(img, vertices, 4, bone_color, cv::LINE_AA);
-    cv::circle(img, joint, this->joint_ratio, joint_color, CV_FILLED, cv::LINE_AA);
 
 }
 
@@ -268,6 +278,9 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
 //    }
 //    std::cout << std::endl;
 
+    // Get the draw offset and scale
+    glm::vec3 offset_n_scale = mBBXCal::crop_n_resize_joints(raw_joints_2d, 0.2, synthesis_img.size().width);
+
     for (int bone_it = 0; bone_it < draw_order.size(); ++bone_it) {
         if (draw_order[bone_it] < 0) {
             std::cout << "Something wrong happened!" << std::endl;
@@ -275,7 +288,7 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
             exit(-1);
             continue;
         }
-        bones_array[draw_order[bone_it]].paintOn(synthesis_img);
+        bones_array[draw_order[bone_it]].paintOn(synthesis_img, offset_n_scale);
     }
 }
 

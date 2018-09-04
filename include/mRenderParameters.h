@@ -15,7 +15,8 @@
 /******************************************************************/
 
 namespace mRenderParams {
-
+static int cropTargetSize = 368;
+static glm::vec3 mBgColor(0.2, 0.2, 0.2);
 /********************* Window parameters ***********************/
 //static int mWindowWidth = 2048;
 //static int mWindowHeight = 2048;

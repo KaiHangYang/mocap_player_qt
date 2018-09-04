@@ -40,13 +40,17 @@ struct mBone2D {
     glm::vec2 target_longer;
 
     float rect_width;
+    float draw_rect_width;
     float joint_ratio;
+    float draw_joint_ratio;
     mBonePolygon2D bone_polygon_2d; // from the source to the source used in boost::geometry
     int bone_index;
     bool is_inited;
     glm::vec3 bone_color;
     glm::vec3 joint_color;
     std::vector<glm::vec2> bone_points;
+    glm::vec2 w_vec;
+    glm::vec2 l_vec;
     float bone_length_2d;
 
     mBone2D(): is_inited(false) {}
@@ -56,7 +60,7 @@ struct mBone2D {
 
     // The function can be called only after the is_inited is true.
     bool getOverlapsWith(const mBone2D &another_bone, mBonePolygon2D &overlap_polygon);
-    void paintOn(cv::Mat & img);
+    void paintOn(cv::Mat & img, glm::vec3 offset_n_scale = glm::vec3(0.f, 0.f, 1.f));
 };
 
 /************ depth_first_search visitor to detector a cycle from the graph *************/

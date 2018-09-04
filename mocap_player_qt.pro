@@ -43,7 +43,8 @@ SOURCES += \
     src/optimize_utils/mOurOpt.cpp \
     src/optimize_utils/mIKOpt.cpp \
     src/scene_utils/mCamera.cpp \
-    src/calculate_utils/mSynthesisPaint.cpp
+    src/calculate_utils/mSynthesisPaint.cpp \
+    src/calculate_utils/mBBXCal.cpp
 
 
 HEADERS += \
@@ -68,7 +69,8 @@ HEADERS += \
     include/mOurOpt.h \
     include/mIKOpt.h \
     include/mCamera.h \
-    include/mSynthesisPaint.h
+    include/mSynthesisPaint.h \
+    include/mBBXCal.h
 
 
 INCLUDEPATH += ./include/ \

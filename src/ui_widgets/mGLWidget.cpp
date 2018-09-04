@@ -342,7 +342,7 @@ void mGLWidget::draw() {
             }
 
             // Then Save the synthesised img
-            cv::Mat synthesis_img(cv::Size(1024, 1024), CV_8UC3, cv::Scalar(51, 51, 51));
+            cv::Mat synthesis_img(cv::Size(mRenderParams::cropTargetSize, mRenderParams::cropTargetSize), CV_8UC3, cv::Scalar(mRenderParams::mBgColor.x * 255, mRenderParams::mBgColor.y * 255, mRenderParams::mBgColor.z * 255));
 
             // Currently the labels_3d is the joints in the real world camera coordinate.
 

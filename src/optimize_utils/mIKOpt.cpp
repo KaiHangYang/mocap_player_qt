@@ -62,7 +62,6 @@ const double bone_rel_pos[m_bones_num][3] = {
 const int angle_params_indices[m_bones_num] = {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
 };
-std::vector<double> bones_length = mPoseDef::bones_length_dbl;
 std::vector<unsigned int> bones_length_index = mPoseDef::bones_length_index;
 /************************************* Parameters of the Optimizers ***************************************/
 const int num_of_residuals = 3 * m_joints_num + 3; // the extra 3 is that the root must be the center of the two hip points
@@ -144,7 +143,7 @@ void mat4_p_multi(double const * mat1, T * p, T * result) {
 
 
 template<typename T>
-std::vector<T> points_from_angles(const T * const param) {
+std::vector<T> points_from_angles(const T * const param, const std::vector<double> & bones_length) {
 
     T cur_rotate[9];
     T initial_rotate[9];
@@ -154,9 +153,6 @@ std::vector<T> points_from_angles(const T * const param) {
     T tmp_rel_cur_point[3];
 
     // The first three elements is the global rotate
-    // TODO I disabled some theta
-    int num_of_theta = m_bones_num - discard_bones;
-
     const T * theta = &param[3];
     std::vector<T> result_points(3 * m_joints_num, T(0));
     /*************** Fill the known joints *****************/
@@ -216,10 +212,11 @@ std::vector<T> points_from_angles(const T * const param) {
 struct IKCost {
 private:
     std::vector<double> points_3d;
+    std::vector<double> bone_length;
 public:
-    IKCost(std::vector<double> points_3d): points_3d(points_3d) {}
+    IKCost(std::vector<double> points_3d, std::vector<double> bone_length): points_3d(points_3d), bone_length(bone_length) {}
     template<typename T> bool operator() (const T * const param, T * residuals) const {
-        std::vector<T> new_points = points_from_angles(param);
+        std::vector<T> new_points = points_from_angles(param, this->bone_length);
         
         T * r_ptr = residuals;
         T * np_ptr = &new_points[0];
@@ -244,16 +241,17 @@ public:
         return true;
     }
     // first is the redisuals, then the size of parameters
-    static ceres::CostFunction * Create(std::vector<double> points_3d) {
-        return (new ceres::AutoDiffCostFunction<IKCost, num_of_residuals, num_of_parameters>(new IKCost(points_3d)));
+    static ceres::CostFunction * Create(std::vector<double> points_3d, std::vector<double> bone_length) {
+        return (new ceres::AutoDiffCostFunction<IKCost, num_of_residuals, num_of_parameters>(new IKCost(points_3d, bone_length)));
     }
 };
 
-std::vector<double> optimizeIK(std::vector<double> points_3d, const std::vector<double> & i_bones_length) {
+struct
 
-    bones_length = i_bones_length;
+std::vector<double> optimizeIK(std::vector<double> points_3d, const std::vector<double> & bone_length) {
+
     ceres::Problem problem;
-    ceres::CostFunction * o_cost = IKCost::Create(points_3d);
+    ceres::CostFunction * o_cost = IKCost::Create(points_3d, bone_length);
     std::vector<double> params(num_of_parameters, 0);
 
     problem.AddResidualBlock(o_cost, NULL, &params[0]);

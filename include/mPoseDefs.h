@@ -7,6 +7,7 @@
 namespace mPoseDef {
     static const int num_of_joints = 15;
     static const int num_of_bones = 14;
+    static const int num_of_bonelength = 8;
     static const int root_of_joints = 14;
     static const float model_size = 30 * 2;
     static const float model_joint_bone_ratio = 1.3;
@@ -42,6 +43,7 @@ namespace mPoseDef {
         {false, false,  false, false, false, false, false, false, false, false, false, true,  false, true},  // 12
         {false, false,  false, false, false, false, false, false, false, false, false, false, true,  false}  // 13
     };
+    static const int angle_index_from_joint[15] = {1, 8, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13 , 14, 0};
         
     static const std::vector<glm::u32vec2> bones_indices({
             glm::u32vec2(1, 0), // 0

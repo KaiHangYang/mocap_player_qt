@@ -98,6 +98,8 @@ void mMainWindow::buildToolBoxs() {
     this->tool_box_tabs->addTab(this->tool_box, "Pose Control");
     this->buildToolBoxTab2();
     this->tool_box_tabs->addTab(this->tool_box_2, "Cameras Control");
+    this->buildToolBoxTab3();
+    this->tool_box_tabs->addTab(this->tool_box_3, "Pose Changer");
 }
 void mMainWindow::buildToolBoxTab1() {
     this->tool_box_layout = new QGridLayout;
@@ -337,6 +339,29 @@ void mMainWindow::buildToolBoxTab2() {
 
     this->cameraTypeChangeSlot(this->cur_camera_type);
 }
+
+void mMainWindow::buildToolBoxTab3() {
+    this->tool_box_3_layout = new QGridLayout;
+    this->tool_box_3 = new QWidget(this->tool_box_tabs);
+    this->tool_box_3->setLayout(this->tool_box_3_layout);
+
+    this->pose_changer_box = new QGroupBox("Pose Changer:", this->tool_box_3);
+    this->pose_changer_box_layout = new QGridLayout;
+    this->pose_changer_box->setLayout(this->pose_changer_box_layout);
+
+    this->tool_pose_changer_start_lbl = new QLabel("Start/End:", this->pose_changer_box);
+    this->tool_pose_changer_start_btn = new QPushButton("Start", this->pose_changer_box);
+    this->tool_pose_changer_reset_lbl = new QLabel("Reset Pose:", this->pose_changer_box);
+    this->tool_pose_changer_reset_btn = new QPushButton("Reset", this->pose_changer_box);
+
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_start_lbl, 0, 0, 1, 2);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_start_btn, 0, 2, 1, 2);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_reset_lbl, 1, 0, 1, 2);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_reset_btn, 1, 2, 1, 2);
+
+    this->tool_box_3_layout->addWidget(this->pose_changer_box, 0, 0, 4, 1);
+}
+
 void mMainWindow::bindEvents() {
     // Set the events
     connect(this->ui->openAct, SIGNAL(triggered()), this, SLOT(fileAddSlot()));
@@ -391,6 +416,8 @@ void mMainWindow::bindEvents() {
     connect(this->tool_render_type_btn, SIGNAL(clicked()), this, SLOT(renderSetUseShading()));
     connect(this->tool_capture_stop, SIGNAL(clicked()), this, SLOT(captureStop()));
     connect(this->tool_render_camera_type_btn, SIGNAL(clicked()), this, SLOT(renderCameraTypeChange()));
+    connect(this->tool_pose_changer_start_btn, SIGNAL(clicked()), this, SLOT(poseChangerStartSlot()));
+    connect(this->tool_pose_changer_reset_btn, SIGNAL(clicked()), this, SLOT(poseChangerResetSlot()));
 }
 
 
@@ -1202,4 +1229,22 @@ void mMainWindow::renderSetUseShading() {
         this->tool_render_type_btn->setText("True");
         this->gl_widget->setUseShading(true);
     }
+}
+
+void mMainWindow::poseChangerStartSlot() {
+    QString is_changing_pose_str = this->tool_pose_changer_start_btn->text();
+    bool is_changing_pose = false;
+    if (is_changing_pose_str == "Start") {
+        this->tool_pose_changer_start_btn->setText("Stop");
+        is_changing_pose = true;
+    }
+    else {
+        this->tool_pose_changer_start_btn->setText("Start");
+        is_changing_pose = false;
+    }
+    this->gl_widget->setIsChangingPose(is_changing_pose);
+}
+
+void mMainWindow::poseChangerResetSlot() {
+    this->gl_widget->resetChangingPose();
 }

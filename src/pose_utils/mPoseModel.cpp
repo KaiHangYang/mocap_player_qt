@@ -4,13 +4,11 @@
 #include "mRenderParameters.h"
 #include <glm/glm.hpp>
 
-mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, float target_model_size, bool is_ar, bool use_shading, int pose_type) {
+mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, float target_model_size, bool is_ar, bool & use_shading, int pose_type): use_shading(use_shading) {
 
     this->pose_shader = pose_shader;
     this->depth_shader = depth_shader;
 
-    this->is_ar = is_ar;
-    this->use_shading = use_shading;
     this->core_func = core_func;
 
     this->VAO = vao;
@@ -31,14 +29,13 @@ mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core
     this->mesh_reader = new mMeshReader(this->VAO, this->core_func);
     this->mesh_reader->addMesh(mPoseDef::model_base_dir + "sphere-30.ply");
     this->mesh_reader->addMesh(mPoseDef::model_base_dir + "cylinder-30.ply");
+
+    /************** State parameters ***************/
+    this->is_ar = is_ar;
 }
 
 mPoseModel::~mPoseModel() {
     this->mesh_reader->~mMeshReader();
-}
-
-void mPoseModel::setUseShading(bool use_shading) {
-    this->use_shading = use_shading;
 }
 
 bool joint_z_cmp(std::pair<glm::vec3, int> a, std::pair<glm::vec3, int> b) {

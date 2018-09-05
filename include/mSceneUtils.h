@@ -16,7 +16,7 @@
 
 class mSceneUtils {
 public:
-    mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, int camera_type, bool is_ar=false, int pose_type=0);
+    mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, int camera_type, bool & is_with_floor, bool & use_shading, bool is_ar=false, int pose_type=0);
     ~mSceneUtils();
 
     void render(std::vector<glm::vec3> points_3d_raw, std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), const mCamera * camera=nullptr);
@@ -42,9 +42,10 @@ public:
 
     void getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw, const std::vector<glm::vec3> & joints_adjusted, const mCamera * camera, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
 
+    void get2DJointsOnCurCamera(const std::vector<glm::vec3> & joints_3d, std::vector<glm::vec2> & joints_2d);
+
     void moveCamera(int move_type, QMouseEvent * event = NULL);
     void rotateCamera(glm::mat4 rotate_mat);
-    void setFloor(bool is_with_floor=true);
 
     void setFollowPerson(bool is_follow);
     void setFocusOnCenter(bool is_focus_on_center);
@@ -52,7 +53,6 @@ public:
     bool getFocusOnCenter();
     void captureFrame(cv::Mat & cur_frame);
 
-    void setUseShading(bool use_shading);
     void setVerticalAngle(float angle);
     void setPoseCenter(glm::vec3 pose_center);
 
@@ -82,9 +82,6 @@ private:
     int array_size;
     float ground_size;
     float move_step_scale;
-    bool is_with_floor;
-    bool is_ar;
-    bool use_shading;
 
     QOpenGLVertexArrayObject * VAO;
 
@@ -108,6 +105,11 @@ private:
     mPoseModel * pose_model;
     mCamera * cur_camera; // The inner camera
     mMeshReader * camera_mesh;
+
+    bool is_ar;
+    /********************** State parameter need to share **********************/
+    bool & is_with_floor;
+    bool & use_shading;
 };
 
 #endif

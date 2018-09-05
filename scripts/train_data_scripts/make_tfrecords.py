@@ -78,6 +78,23 @@ def data_resize_with_cropped(img, joints2d, num_of_joints=15):
 
     return img, points, offset_cropped, scale, False
 
+def crop_n_resize_joints(joints_2d, pad_scale=0.2, target_size = 368):
+    max_x = np.max(joints_2d[:, 0])
+    min_x = np.min(joints_2d[:, 0])
+
+    max_y = np.max(joints_2d[:, 1])
+    min_y = np.min(joints_2d[:, 1])
+
+    center = np.array([(min_x + max_x) / 2.0, (min_y + max_y) / 2.0])
+    size = max((max_x - min_x), (max_y - min_y)) * (1 + pad_scale)
+
+    result = [0, 0, 1.0]
+    result[0] = center[0] - size / 2
+    result[1] = center[1] - size / 2
+    result[2] = target_size / size
+
+    return result
+
 
 if __name__ == "__main__":
 
@@ -101,8 +118,8 @@ if __name__ == "__main__":
     train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/train/"
     test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/valid/"
 
-    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_syn.tfrecord")
-    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_syn.tfrecord")
+    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_syn_2.tfrecord")
+    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_syn_2.tfrecord")
 
     train_dataset_list = os.listdir(train_data_path)
     valid_dataset_list = os.listdir(test_data_path)
@@ -145,9 +162,9 @@ if __name__ == "__main__":
                 # cv2.waitKey(0)
                 ################################
 
-                img, labels_2d_raw, offset, scale, _ = data_resize_with_cropped(img, labels_2d_raw)
-                labels_2d -= offset[0:2]
-                labels_2d /= scale
+                offset_n_scale = crop_n_resize_joints(labels_2d_raw, pad_scale = pad_scale, target_size = target_image_size)
+                labels_2d -= offset_n_scale[0:2]
+                labels_2d *= offset_n_scale[2]
 
                 example = tf.train.Example(features=tf.train.Features(
                     feature={
@@ -180,10 +197,11 @@ if __name__ == "__main__":
 
                 labels_2d = labels[0].copy()
                 labels_3d = labels[1].copy()
-                img, labels_2d_raw, offset, scale, _ = data_resize_with_cropped(img, labels_2d_raw)
 
-                labels_2d -= offset[0:2]
-                labels_2d /= scale
+                offset_n_scale = crop_n_resize_joints(labels_2d_raw, pad_scale = pad_scale, target_size = target_image_size)
+
+                labels_2d -= offset_n_scale[0:2]
+                labels_2d *= offset_n_scale[2]
 
                 example = tf.train.Example(features=tf.train.Features(
                     feature={

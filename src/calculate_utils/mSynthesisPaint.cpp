@@ -103,9 +103,8 @@ void mBone2D::paintOn(cv::Mat &img, glm::vec3 offset_n_scale) {
                              cv::Point(std::round(vertex_4.x), std::round(vertex_4.y))};
 
     // First bone Then joint
-    cv::circle(img, joint, this->draw_joint_ratio, joint_color, CV_FILLED, cv::LINE_AA);
     cv::fillConvexPoly(img, vertices, 4, bone_color, cv::LINE_AA);
-
+    cv::circle(img, joint, this->draw_joint_ratio, joint_color, CV_FILLED, cv::LINE_AA);
 }
 
 int get_bone_index_from_color(glm::vec3 color) {

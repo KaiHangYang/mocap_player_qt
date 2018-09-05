@@ -1,6 +1,7 @@
 #include "mGLWidget.h"
 #include <QtWidgets>
 #include <QDebug>
+#include <climits>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -10,26 +11,34 @@
 
 #include "mRenderParameters.h"
 #include "mSynthesisPaint.h"
+#include "mIKOpt.h"
 
 mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int wnd_height) : QGLWidget(gl_format, parent) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
     // set cam_in_mat cam_ex_mat and is_ar here
     this->cur_capture_cameras = std::vector<const mCamera *>();
-    this->is_set_capture_frame = false;
-    this->is_capture_all = false;
 
-    this->is_with_floor = true;
-    this->pose_state = -1;
-    this->temp_pose_state = 1;
-
-    this->is_has_pose = false;
     this->cur_pose_joints = std::vector<glm::vec3>();
     this->pose_change_step = 200;
     this->pose_jitter_range = 0;
     this->pose_angle_jitter_range = 0;
 
+    /*********** State Parameters ***********/
+    this->is_set_capture_frame = false;
+    this->is_capture_all = false;
+
+    this->pose_state = -1;
+    this->temp_pose_state = 1;
+
+    this->use_shading = true;
+    this->is_with_floor = true;
+    this->is_changing_pose = false;
+
+    this->is_has_pose = false;
     this->is_ar = mRenderParams::m_is_ar;
+    /****************************************/
+
     if (mRenderParams::m_camera_type == 0) {
         this->cam_in_mat = mRenderParams::m_cam_in_mat_perspective;
     }
@@ -57,7 +66,7 @@ void mGLWidget::initializeGL() {
     this->core_func->initializeOpenGLFunctions();
     this->VAO->create();
 
-    this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, this->cam_in_mat, this->cam_ex_mat, mRenderParams::m_camera_type, this->is_ar);
+    this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, this->cam_in_mat, this->cam_ex_mat, mRenderParams::m_camera_type, this->is_with_floor, this->use_shading, this->is_ar);
     glViewport(0, 0, this->wnd_width, this->wnd_height);
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
@@ -76,6 +85,13 @@ void mGLWidget::resizeGL(int width, int height) {
 void mGLWidget::mousePressEvent(QMouseEvent * event) {
     mCamRotate::mouse_button_callback(event);
     this->scene->moveCamera(1, event);
+    if (this->is_changing_pose && event->button() == Qt::RightButton) {
+        glm::vec2 clicked_pos(event->x(), event->y());
+        this->cur_click_pos = clicked_pos;
+        int index = this->getClickJointIndexOnCurPose(clicked_pos);
+        this->cur_selected_joint_index = index;
+    }
+
 }
 
 void mGLWidget::mouseMoveEvent(QMouseEvent *event) {
@@ -83,33 +99,62 @@ void mGLWidget::mouseMoveEvent(QMouseEvent *event) {
     this->scene->moveCamera(2, event);
 }
 void mGLWidget::mouseDoubleClickEvent(QMouseEvent *event) {
-    emit doubleClickPoseToggleSignal();
+    if (!this->is_changing_pose) {
+        emit doubleClickPoseToggleSignal();
+    }
 }
 void mGLWidget::keyPressEvent(QKeyEvent *event) {
-//    switch (event->key()) {
-//        case Qt::Key_W:
-//            // go up
-//            this->scene->moveCamera(2);
-//            break;
-//        case Qt::Key_S:
-//            // go down
-//            this->scene->moveCamera(-2);
-//            break;
-//        case Qt::Key_A:
-//            this->scene->moveCamera(1);
-//            break;
-//        case Qt::Key_D:
-//            this->scene->moveCamera(-1);
-//            break;
-//    }
+    float move_dert = 8.0;
+    if (this->is_changing_pose) {
+        if (event->key() == Qt::Key_W || event->key() == Qt::Key_S || event->key() == Qt::Key_A || event->key() == Qt::Key_D || event->key() == Qt::Key_Q || event->key() == Qt::Key_E) {
+            float alpha_move=0, beta_move=0, gama_move=0;
+            switch (event->key()) {
+                case Qt::Key_W:
+                    alpha_move = move_dert / this->wnd_width;
+                    break;
+                case Qt::Key_S:
+                    alpha_move = -move_dert / this->wnd_width;
+                    break;
+                case Qt::Key_A:
+                    beta_move = move_dert / this->wnd_width;
+                    break;
+                case Qt::Key_D:
+                    beta_move = -move_dert / this->wnd_width;
+                    break;
+                case Qt::Key_Q:
+                    gama_move = move_dert / this->wnd_width;
+                    break;
+                case Qt::Key_E:
+                    gama_move = -move_dert / this->wnd_width;
+                    break;
+            }
+
+
+            int angle_index = mPoseDef::angle_index_from_joint[this->cur_selected_joint_index];
+            float dert_alpha = alpha_move * M_PI;
+            float dert_beta = beta_move * M_PI;
+            float dert_gama = gama_move * M_PI;
+
+            this->cur_pose_angles[3*angle_index + 0] += dert_alpha;
+            this->cur_pose_angles[3*angle_index + 1] += dert_beta;
+            this->cur_pose_angles[3*angle_index + 2] += dert_gama;
+
+            std::vector<double> tmp_joints = mIKOpt::points_from_angles<double>(&this->cur_pose_angles[0], this->cur_pose_bonelengths);
+            for (int i = 0; i < this->cur_pose_joints.size(); ++i) {
+                this->cur_pose_joints[i] = glm::vec3(tmp_joints[3*i+0], tmp_joints[3*i+1], tmp_joints[3*i+2]) + this->cur_pose_joint_root;
+            }
+        }
+    }
 }
 void mGLWidget::wheelEvent(QWheelEvent *event) {
+
     if (event->angleDelta().y() > 0) {
         this->scene->moveCamera(-3);
     }
     else if (event->angleDelta().y() < 0) {
         this->scene->moveCamera(3);
     }
+
 }
 void mGLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -117,9 +162,29 @@ void mGLWidget::paintGL() {
         glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     }
     else {
-        glClearColor(0.2f, 0.2f, 0.2f, 1.f);
+        glClearColor(mRenderParams::mBgColor.x, mRenderParams::mBgColor.y, mRenderParams::mBgColor.z, 1.f);
     }
     this->draw();
+}
+
+int mGLWidget::getClickJointIndexOnCurPose(glm::vec2 click_pos) {
+    int min_index = 0;
+    if (this->is_has_pose) {
+        std::vector<glm::vec2> joints_2d;
+        this->scene->get2DJointsOnCurCamera(this->cur_pose_joints, joints_2d);
+
+        float min_value = FLT_MAX;
+        float tmp_value;
+        for (int i = 0; i < joints_2d.size(); ++i) {
+            tmp_value = glm::length(click_pos - joints_2d[i]);
+            if (tmp_value < min_value) {
+                min_value = tmp_value;
+                min_index = i;
+            }
+        }
+    }
+
+    return min_index;
 }
 
 int mGLWidget::getPoseState() {
@@ -175,7 +240,6 @@ void mGLWidget::setPoseChangeStep(float change_step) {
     this->pose_change_step = change_step;
 }
 void mGLWidget::setUseFloor(bool is_with_floor) {
-    this->scene->setFloor(is_with_floor);
     this->is_with_floor = is_with_floor;
 }
 void mGLWidget::setJitter(float jitter_size) {
@@ -185,7 +249,7 @@ void mGLWidget::setAngleJitter(float jitter_size) {
     this->pose_angle_jitter_range = jitter_size;
 }
 void mGLWidget::setUseShading(bool use_shading) {
-    this->scene->setUseShading(use_shading);
+    this->use_shading = use_shading;
 }
 void mGLWidget::setVerticalAngle(float angle) {
     this->scene->setVerticalAngle(angle);
@@ -200,6 +264,46 @@ int mGLWidget::getCurCameraType() {
 }
 void mGLWidget::setCurCameraType(int camera_type) {
     this->scene->setCurCameraType(camera_type);
+}
+
+void mGLWidget::setIsChangingPose(bool is_changing) {
+    if (this->is_has_pose) {
+        this->is_changing_pose = is_changing;
+        if (this->is_changing_pose) {
+            // If I begin to change the pose, I will get the angle representation of the pose first
+            this->cur_pose_bonelengths = std::vector<double>(mPoseDef::num_of_bonelength, 0);
+            std::vector<double> cur_pose_joints_3d(3*mPoseDef::num_of_joints, 0);
+
+            for (int i = 0; i < mPoseDef::num_of_bones; ++i) {
+                glm::vec2 cur_bone = mPoseDef::bones_indices[i];
+                float cur_length = glm::length(this->cur_pose_joints[cur_bone.x] - this->cur_pose_joints[cur_bone.y]);
+                if (this->cur_pose_bonelengths[mPoseDef::bones_length_index[i]] == 0) {
+                    this->cur_pose_bonelengths[mPoseDef::bones_length_index[i]] = cur_length;
+                }
+                else {
+                    this->cur_pose_bonelengths[mPoseDef::bones_length_index[i]] += cur_length;
+                    this->cur_pose_bonelengths[mPoseDef::bones_length_index[i]] /= 2;
+                }
+            }
+            for (int i = 0; i < mPoseDef::num_of_joints; ++i) {
+                glm::vec3 cur_rel_joint = this->cur_pose_joints[i] - this->cur_pose_joints[mPoseDef::root_of_joints];
+                cur_pose_joints_3d[3*i + 0] = cur_rel_joint.x;
+                cur_pose_joints_3d[3*i + 1] = cur_rel_joint.y;
+                cur_pose_joints_3d[3*i + 2] = cur_rel_joint.z;
+            }
+            this->cur_pose_angles = mIKOpt::optimizeIK(cur_pose_joints_3d, this->cur_pose_bonelengths);
+            this->_cur_pose_angles = this->cur_pose_angles;
+            this->cur_pose_joint_root = this->cur_pose_joints[mPoseDef::root_of_joints];
+        }
+    }
+}
+
+void mGLWidget::resetChangingPose() {
+    this->cur_pose_angles = this->_cur_pose_angles;
+    std::vector<double> tmp_joints = mIKOpt::points_from_angles<double>(&this->cur_pose_angles[0], this->cur_pose_bonelengths);
+    for (int i = 0; i < this->cur_pose_joints.size(); ++i) {
+        this->cur_pose_joints[i] = glm::vec3(tmp_joints[3*i+0], tmp_joints[3*i+1], tmp_joints[3*i+2]) + this->cur_pose_joint_root;
+    }
 }
 
 void mGLWidget::captureAllFrames(std::vector<const mCamera *> cameras) {

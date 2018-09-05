@@ -83,6 +83,8 @@ public slots:
     void poseSetJitterSize();
     void poseSetAngleJitterSize();
     void renderSetUseShading();
+    void poseChangerStartSlot();
+    void poseChangerResetSlot();
 private:
     /************** Functions for build the GUI *************/
     void buildGLView();
@@ -90,6 +92,7 @@ private:
     void buildToolBoxs();
     void buildToolBoxTab1();
     void buildToolBoxTab2();
+    void buildToolBoxTab3();
     void bindEvents();
     void setFileListControlState(bool is_disable);
 
@@ -136,19 +139,24 @@ private:
 
     QWidget * tool_box;
     QWidget * tool_box_2;
+    QWidget * tool_box_3;
     QGroupBox * file_box;
     QGroupBox * pose_box;
     QGroupBox * render_box;
     QWidget * video_box;
     QGroupBox * camera_box;
+    QGroupBox * pose_changer_box;
 
     QGridLayout * tool_box_layout;
     QGridLayout * tool_box_2_layout;
+    QGridLayout * tool_box_3_layout;
+
     QGridLayout * file_box_layout;
     QGridLayout * pose_box_layout;
     QGridLayout * render_box_layout;
     QGridLayout * video_box_layout;
     QGridLayout * camera_box_layout;
+    QGridLayout * pose_changer_box_layout;
 
     QPushButton * tool_file_add_btn;
     QPushButton * tool_file_remove_btn;
@@ -221,6 +229,12 @@ private:
     QLabel * tool_camera_dialog_mat_lbl;
     QTextEdit * tool_camera_dialog_mat_show;
     QPushButton * tool_camera_dialog_add_btn;
+
+    // Pose Changer box
+    QPushButton * tool_pose_changer_start_btn;
+    QLabel * tool_pose_changer_start_lbl;
+    QPushButton * tool_pose_changer_reset_btn;
+    QLabel * tool_pose_changer_reset_lbl;
 
     // capture box
     QGroupBox * capture_box;

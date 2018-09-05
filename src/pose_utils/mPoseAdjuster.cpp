@@ -75,7 +75,7 @@ void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, 
         std::vector<double> params = mIKOpt::optimizeIK(joints_dbl, cur_bones_length_dbl);
         // put jitters to the euler angles
         this->jitterParams(params, angle_jitter_range);
-        joints_dbl = mIKOpt::points_from_angles<double>(&params[0]);
+        joints_dbl = mIKOpt::points_from_angles<double>(&params[0], cur_bones_length_dbl);
         for (int i = 0; i < joints.size(); ++i) {
             joints[i] = glm::vec3(joints_dbl[3*i+0] + root_joint.x, joints_dbl[3*i+1] + root_joint.y, joints_dbl[3*i+2] + root_joint.z);
         }

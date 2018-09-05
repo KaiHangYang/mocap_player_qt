@@ -16,6 +16,9 @@ class mGLWidget : public QGLWidget {
 public:
     explicit mGLWidget(QWidget * parent=0, QGLFormat gl_format=QGLFormat(), int wnd_width=960, int wnd_height=720);
     ~mGLWidget();
+
+    int getClickJointIndexOnCurPose(glm::vec2 click_pos);
+
     int getPoseState();
     bool getIsHasPose();
 
@@ -49,6 +52,8 @@ public:
     void setUseShading(bool use_shading);
     void setVerticalAngle(float angle);
     void setVisualizeCameras(std::vector<const mCamera *> cameras_arr);
+    void setIsChangingPose(bool is_changing);
+    void resetChangingPose();
 
 public slots:
     void changePoseFile(QString & file_name, int cur_dataset_num);
@@ -78,11 +83,23 @@ protected:
     void wheelEvent(QWheelEvent *event);
 private:
     void draw();
+    /**************** Progress control **************/
+    void sendProgress(bool is_reset);
+    /************************************************/
 
     glm::mat4 cam_in_mat;
     glm::mat4 cam_ex_mat;
     bool is_ar;
     bool is_with_floor;
+    bool use_shading;
+    bool is_changing_pose;
+    int cur_selected_joint_index;
+
+    std::vector<double> cur_pose_angles;
+    std::vector<double> _cur_pose_angles;
+    std::vector<double> cur_pose_bonelengths;
+    glm::vec3 cur_pose_joint_root;
+    glm::vec2 cur_click_pos;
 
     int wnd_width;
     int wnd_height;
@@ -103,10 +120,6 @@ private:
     float pose_change_step;
     float pose_jitter_range;
     float pose_angle_jitter_range;
-    /************************************************/
-
-    /**************** Progress control **************/
-    void sendProgress(bool is_reset);
     /************************************************/
 
     /**************** Camera visualization **************/

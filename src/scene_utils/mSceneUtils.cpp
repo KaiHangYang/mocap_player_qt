@@ -13,17 +13,16 @@
 
 static float move_step = 80.0;
 
-mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, int camera_type, bool is_ar, int pose_type) {
+mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, int camera_type, bool & is_with_floor, bool & use_shading, bool is_ar, int pose_type):is_with_floor(is_with_floor), use_shading(use_shading) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
     this->is_ar = is_ar;
     this->VAO = vao;
     this->core_func = core_func;
-    this->is_with_floor = true;
+
     this->person_center_pos = glm::vec3(0.f);
     this->prev_mouse_pos = glm::vec2(-1.f);
-
-    this->use_shading = true;
+    /******************************************************************/
 
     // The parameter maybe changed as reality make sure the ground_col and ground_row is even
     this->ground_col = 100;
@@ -282,14 +281,6 @@ void mSceneUtils::captureFrame(cv::Mat & cur_frame) {
     this->core_func->glReadPixels(0, 0, this->wnd_width, this->wnd_height, GL_BGR, GL_UNSIGNED_BYTE, cur_frame.ptr<unsigned char>());
     cv::flip(cur_frame, cur_frame, 0);
 }
-void mSceneUtils::setFloor(bool is_with_floor) {
-    this->is_with_floor = is_with_floor;
-}
-
-void mSceneUtils::setUseShading(bool use_shading) {
-    this->use_shading = use_shading;
-    this->pose_model->setUseShading(this->use_shading);
-}
 
 void mSceneUtils::getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras) {
     this->cur_camera->getSplittedCameras(camera_num, this->person_center_pos, splitted_cameras);
@@ -345,6 +336,20 @@ void mSceneUtils::getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw, 
     glm::mat4 view_mat = camera->getViewMat(this->person_center_pos);
     glm::mat4 proj_mat = camera->getProjMat();
     this->_getLabelsFromFrame(joints_raw, joints_adjusted, view_mat, proj_mat, labels_2d, labels_3d);
+}
+
+void mSceneUtils::get2DJointsOnCurCamera(const std::vector<glm::vec3> &adjusted_joints_3d, std::vector<glm::vec2> &joints_2d) {
+    joints_2d = std::vector<glm::vec2>(adjusted_joints_3d.size(), glm::vec2(0.f));
+
+    glm::mat4 view_mat = this->cur_camera->getViewMat(this->person_center_pos);
+    glm::mat4 proj_mat = this->cur_camera->getProjMat();
+
+    for (int i = 0; i < adjusted_joints_3d.size(); ++i) {
+        glm::vec4 cur_joint(adjusted_joints_3d[i], 1.0);
+        cur_joint = proj_mat * view_mat * cur_joint;
+        cur_joint /= cur_joint.w;
+        joints_2d[i] = glm::vec2(this->wnd_width * (cur_joint.x + 1.f) / 2.f, this->wnd_height * (1.f - cur_joint.y) / 2.f);
+    }
 }
 
 void mSceneUtils::_setDepthShaderUniforms(int light_num) {

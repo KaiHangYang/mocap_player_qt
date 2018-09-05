@@ -171,7 +171,7 @@ std::vector<int> get_render_order(const mGraphType & graph) {
 }
 
 /******************** I may need to handle the special case in report-8-27 ********************/
-void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, const std::vector<glm::vec2> & raw_joints_2d, const std::vector<glm::vec3> & real_joints_3d, cv::Mat & synthesis_img) {
+void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, std::vector<glm::vec2> & raw_joints_2d, const std::vector<glm::vec3> & real_joints_3d, cv::Mat & synthesis_img) {
     // The real_joints_3d is in the real world camera coordinate(the z and y axis is different with the one in the opengl)
     /**************** Calculate the relative position of the joints first ****************/
     std::vector<glm::vec3> tmpJointColors = mRenderParams::mJointColors;
@@ -279,6 +279,9 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
 
     // Get the draw offset and scale
     glm::vec3 offset_n_scale = mBBXCal::crop_n_resize_joints(raw_joints_2d, 0.2, synthesis_img.size().width);
+    for (int i = 0; i < raw_joints_2d.size(); ++i) {
+        raw_joints_2d[i] = ( raw_joints_2d[i] - glm::vec2(offset_n_scale) ) * offset_n_scale.z;
+    }
 
     for (int bone_it = 0; bone_it < draw_order.size(); ++bone_it) {
         if (draw_order[bone_it] < 0) {

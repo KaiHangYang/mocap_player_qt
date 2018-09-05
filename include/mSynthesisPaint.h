@@ -94,5 +94,6 @@ std::vector<int> check_overlap_labels(const unsigned char * bone_map_prt, glm::u
 std::vector<int> get_render_order(const mGraphType & graph);
 
 /***** NOTICE: The real_joints_3d must be the joints_3d calculated by mSceneUtils::getLabelsFromFrame *****/
-void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, const std::vector<glm::vec2>& raw_joints_2d, const std::vector<glm::vec3> & real_joints_3d, cv::Mat & synthesis_img);
+/***** NOTICE: The outputs of the function include the 'cropped' img for bones, 'cropped' label_2d *****/
+void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, std::vector<glm::vec2> & raw_joints_2d, const std::vector<glm::vec3> & real_joints_3d, cv::Mat & synthesis_img);
 }

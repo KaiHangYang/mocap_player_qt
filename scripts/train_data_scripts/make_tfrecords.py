@@ -115,11 +115,14 @@ if __name__ == "__main__":
     # train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_train.tfrecord")
     # test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_valid.tfrecord")
 
-    train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/train/"
-    test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/valid/"
+    # train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/train/"
+    # test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/valid/"
 
-    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_syn_2.tfrecord")
-    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_syn_2.tfrecord")
+    train_data_path = "/home/kaihang/Desktop/test_dir"
+    test_data_path = "/home/kaihang/Desktop/test_dir"
+
+    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_test.tfrecord")
+    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_test.tfrecord")
 
     train_dataset_list = os.listdir(train_data_path)
     valid_dataset_list = os.listdir(test_data_path)
@@ -155,16 +158,16 @@ if __name__ == "__main__":
                 labels_3d = labels[1].copy()
 
                 ###### Visualize the data ######
-                # img = display_utils.drawLines(img, labels_2d)
-                # img = display_utils.drawPoints(img, labels_2d)
+                img = display_utils.drawLines(img, labels_2d)
+                img = display_utils.drawPoints(img, labels_2d)
 
-                # cv2.imshow("test", img)
-                # cv2.waitKey(0)
+                cv2.imshow("test", img)
+                cv2.waitKey(0)
                 ################################
 
-                offset_n_scale = crop_n_resize_joints(labels_2d_raw, pad_scale = pad_scale, target_size = target_image_size)
-                labels_2d -= offset_n_scale[0:2]
-                labels_2d *= offset_n_scale[2]
+                # offset_n_scale = crop_n_resize_joints(labels_2d_raw, pad_scale = pad_scale, target_size = target_image_size)
+                # labels_2d -= offset_n_scale[0:2]
+                # labels_2d *= offset_n_scale[2]
 
                 example = tf.train.Example(features=tf.train.Features(
                     feature={
@@ -198,10 +201,10 @@ if __name__ == "__main__":
                 labels_2d = labels[0].copy()
                 labels_3d = labels[1].copy()
 
-                offset_n_scale = crop_n_resize_joints(labels_2d_raw, pad_scale = pad_scale, target_size = target_image_size)
+                # offset_n_scale = crop_n_resize_joints(labels_2d_raw, pad_scale = pad_scale, target_size = target_image_size)
 
-                labels_2d -= offset_n_scale[0:2]
-                labels_2d *= offset_n_scale[2]
+                # labels_2d -= offset_n_scale[0:2]
+                # labels_2d *= offset_n_scale[2]
 
                 example = tf.train.Example(features=tf.train.Features(
                     feature={

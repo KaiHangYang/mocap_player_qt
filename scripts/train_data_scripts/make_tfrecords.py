@@ -98,129 +98,77 @@ def crop_n_resize_joints(joints_2d, pad_scale=0.2, target_size = 368):
 
 if __name__ == "__main__":
 
-    # Then write the tfrecords
-    is_ar = False
+    settings = {
+            "is_ar": False,
+            "camera_num": 36,
+            "train_data_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/type_4/test_dir/",
+            "valid_data_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/type_4/test_dir/",
+            "train_tfrecord_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_syn_together.tfrecord",
+            "valid_tfrecord_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_syn_together.tfrecord"
+            }
 
-    if is_ar:
-        camera_num = 1
-    else:
-        camera_num = 36
+    dataset_name = ["train", "valid"]
 
-    # train_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/train"
-    # test_data_path = "/home/kaihang/DataSet_2/MocapData/mpi_mocap/raw_data/valid"
+    for dn in dataset_name:
 
-    # train_data_path = "/home/kaihang/DataSet_2/MocapData/cmu_mocap/raw_datas/train/"
-    # test_data_path = "/home/kaihang/DataSet_2/MocapData/cmu_mocap/raw_datas/valid/"
+        is_ar = settings["is_ar"]
+        camera_num = settings["camera_num"]
+        data_path = settings[dn + "_data_path"]
+        tfr_writer = tf.python_io.TFRecordWriter(settings[dn + "_tfrecord_path"])
+        dataset_list = os.listdir(data_path)
+        dataset_list.sort()
 
-    # train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_train.tfrecord")
-    # test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/cmu_mocap/tfrecords/sfu_valid.tfrecord")
+        print(dataset_list)
 
-    # train_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/train/"
-    # test_data_path = "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/valid/"
+        dir_lists = [os.path.join(data_path, i) for i in dataset_list]
 
-    train_data_path = "/home/kaihang/Desktop/test_dir"
-    test_data_path = "/home/kaihang/Desktop/test_dir"
+        reader = data_reader.mDataReader(is_ar)
+        # generate data
+        data_sum = 0
+        for cur_dir in dir_lists:
+            reader.parse(cur_dir, camera_num)
+            for cur_camera in range(camera_num):
+                reader.reset()
+                while reader.cur_frame_index < reader.total_frame_num:
+                    is_valid, img_path, labels, labels_raw = reader.getOneData(camera_num = cur_camera)
+                    img = cv2.imread(img_path)
 
-    train_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_test.tfrecord")
-    test_writer = tf.python_io.TFRecordWriter("/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_test.tfrecord")
+                    if is_ar:
+                        labels_2d_raw = labels_raw[0].copy()
+                    else:
+                        labels_2d_raw = labels[0].copy()
 
-    train_dataset_list = os.listdir(train_data_path)
-    valid_dataset_list = os.listdir(test_data_path)
+                    labels_2d = labels[0].copy()
+                    labels_3d = labels[1].copy()
 
-    train_dataset_list.sort()
-    valid_dataset_list.sort()
+                    ###### Visualize the data ######
+                    # show_img = display_utils.drawLines(img, labels_2d)
+                    # show_img = display_utils.drawPoints(img, labels_2d)
 
-    print(train_dataset_list)
-    print(valid_dataset_list)
+                    # cv2.imshow("together", show_img)
+                    # cv2.waitKey(0)
+                    ################################
 
-    train_dir_lists = [os.path.join(train_data_path, i) for i in train_dataset_list]
-    test_dir_lists = [os.path.join(test_data_path, i) for i in valid_dataset_list]
+                    # offset_n_scale = crop_n_resize_joints(labels_2d_raw, pad_scale = pad_scale, target_size = target_image_size)
+                    # labels_2d -= offset_n_scale[0:2]
+                    # labels_2d *= offset_n_scale[2]
 
-    reader = data_reader.mDataReader(is_ar)
+                    example = tf.train.Example(features=tf.train.Features(
+                        feature={
+                            "image": tf.train.Feature(bytes_list=tf.train.BytesList(value=[img.tobytes()])),
+                            "labels_2d": tf.train.Feature(float_list=tf.train.FloatList(value=labels_2d.flatten().tolist())),
+                            "labels_3d": tf.train.Feature(float_list=tf.train.FloatList(value=labels_3d.flatten().tolist()))
+                            }
+                        ))
 
-    # generate train data
-    train_data_sum = 0
-    for train_file in train_dir_lists:
-        reader.parse(train_file, camera_num)
+                    tfr_writer.write(example.SerializeToString())
+                    sys.stderr.write("\r%s data size: %d" % (dn, data_sum))
+                    data_sum += 1
 
-        for cur_camera in range(camera_num):
-            reader.reset()
-            while reader.cur_frame_index < reader.total_frame_num:
-                is_valid, img_path, labels, labels_raw = reader.getOneData(camera_num = cur_camera)
-                img = cv2.imread(img_path)
+        tfr_writer.close()
 
-                if is_ar:
-                    labels_2d_raw = labels_raw[0].copy()
-                else:
-                    labels_2d_raw = labels[0].copy()
-
-                labels_2d = labels[0].copy()
-                labels_3d = labels[1].copy()
-
-                ###### Visualize the data ######
-                img = display_utils.drawLines(img, labels_2d)
-                img = display_utils.drawPoints(img, labels_2d)
-
-                cv2.imshow("test", img)
-                cv2.waitKey(0)
-                ################################
-
-                # offset_n_scale = crop_n_resize_joints(labels_2d_raw, pad_scale = pad_scale, target_size = target_image_size)
-                # labels_2d -= offset_n_scale[0:2]
-                # labels_2d *= offset_n_scale[2]
-
-                example = tf.train.Example(features=tf.train.Features(
-                    feature={
-                        "image": tf.train.Feature(bytes_list=tf.train.BytesList(value=[img.tobytes()])),
-                        "labels_2d": tf.train.Feature(float_list=tf.train.FloatList(value=labels_2d.flatten().tolist())),
-                        "labels_3d": tf.train.Feature(float_list=tf.train.FloatList(value=labels_3d.flatten().tolist()))
-                        }
-                    ))
-
-                train_writer.write(example.SerializeToString())
-                sys.stderr.write("\rtraining data size: %d" % train_data_sum)
-                train_data_sum += 1
-
-    sys.stderr.write("\n")
-    # generate test data
-    test_data_sum = 0
-    for test_file in test_dir_lists:
-        reader.parse(test_file, camera_num)
-
-        for cur_camera in range(camera_num):
-            reader.reset()
-            while reader.cur_frame_index < reader.total_frame_num:
-                is_valid, img_path, labels, labels_raw = reader.getOneData(camera_num = cur_camera)
-                img = cv2.imread(img_path)
-
-                if is_ar:
-                    labels_2d_raw = labels_raw[0].copy()
-                else:
-                    labels_2d_raw = labels[0].copy()
-
-                labels_2d = labels[0].copy()
-                labels_3d = labels[1].copy()
-
-                # offset_n_scale = crop_n_resize_joints(labels_2d_raw, pad_scale = pad_scale, target_size = target_image_size)
-
-                # labels_2d -= offset_n_scale[0:2]
-                # labels_2d *= offset_n_scale[2]
-
-                example = tf.train.Example(features=tf.train.Features(
-                    feature={
-                        "image": tf.train.Feature(bytes_list=tf.train.BytesList(value=[img.tobytes()])),
-                        "labels_2d": tf.train.Feature(float_list=tf.train.FloatList(value=labels_2d.flatten().tolist())),
-                        "labels_3d": tf.train.Feature(float_list=tf.train.FloatList(value=labels_3d.flatten().tolist()))
-                        }
-                    ))
-
-                test_writer.write(example.SerializeToString())
-                test_data_sum
-                sys.stderr.write("\rvalid data size: %d" % test_data_sum)
-                test_data_sum += 1
-
+        sys.stderr.write("\n")
     sys.stderr.write("\n")
 
-    train_writer.close()
-    test_writer.close()
     print("Finished")
+

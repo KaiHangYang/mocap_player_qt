@@ -94,12 +94,12 @@ class mDataReader:
             labels_list.sort(label_file_cmp)
             labels_raw_list.sort(label_file_cmp)
 
-            self.data_labels = [self.parseLables(i) for i in labels_list]
-            self.data_labels_raw = [self.parseLables(i) for i in labels_raw_list]
+            self.data_labels = [self.parseLabels(i) for i in labels_list]
+            self.data_labels_raw = [self.parseLabels(i) for i in labels_raw_list]
 
             self.total_frame_num = len(self.data_labels)
 
-    def parseLables(self, data_file):
+    def parseLabels(self, data_file):
         with open(data_file) as f:
             datas = f.readlines()
             frame_labels = []

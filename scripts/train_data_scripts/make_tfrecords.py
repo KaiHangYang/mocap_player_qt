@@ -101,10 +101,10 @@ if __name__ == "__main__":
     settings = {
             "is_ar": False,
             "camera_num": 36,
-            "train_data_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/type_4/test_dir/",
-            "valid_data_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/type_4/test_dir/",
-            "train_tfrecord_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_syn_together.tfrecord",
-            "valid_tfrecord_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_syn_together.tfrecord"
+            "train_data_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/type_3/train",
+            "valid_data_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/datas/synthesis/type_3/valid",
+            "train_tfrecord_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/train_mpii_syn_368_together.tfrecord",
+            "valid_tfrecord_path": "/home/kaihang/DataSet_2/MocapData/sfu_mocap/sfu_mocap_result/36_camera/tfrecords/valid_mpii_syn_368_together.tfrecord"
             }
 
     dataset_name = ["train", "valid"]

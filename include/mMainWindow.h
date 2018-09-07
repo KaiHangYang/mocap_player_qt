@@ -84,7 +84,15 @@ public slots:
     void poseSetAngleJitterSize();
     void renderSetUseShading();
     void poseChangerStartSlot();
+
     void poseChangerResetSlot();
+    void poseChangerResetCounterSlot();
+    void poseChangerAddSlot();
+    void poseChangerRemoveSlot();
+    void poseChangerUseSlot();
+    void poseChangerSaveSlot();
+    void poseChangerLoadSlot();
+    void poseChangerEditNameSlot(QModelIndex topleft, QModelIndex bottomright, QVector<int> roles);
 private:
     /************** Functions for build the GUI *************/
     void buildGLView();
@@ -95,6 +103,9 @@ private:
     void buildToolBoxTab3();
     void bindEvents();
     void setFileListControlState(bool is_disable);
+
+    void _poseChangerStart(bool is_start);
+    void _poseChangerAdd(QString pose_name, const std::vector<glm::vec3> & pose_joints);
 
     /********************************************************/
 
@@ -129,6 +140,10 @@ private:
     QIcon icon_redo;
 
     QString split_camera_prefix;
+    int pose_changer_pose_num;
+
+    std::vector<std::pair<QString, std::vector<glm::vec3>>> pose_changer_pose_arr;
+    QString pose_data_file_header;
     /******** Main widget ******/
     mProgressBarWidget * progress_bar;
     QWidget * grid_widget;
@@ -232,9 +247,16 @@ private:
 
     // Pose Changer box
     QPushButton * tool_pose_changer_start_btn;
-    QLabel * tool_pose_changer_start_lbl;
-    QPushButton * tool_pose_changer_reset_btn;
-    QLabel * tool_pose_changer_reset_lbl;
+    QPushButton * tool_pose_changer_reset_pose_btn;
+    QPushButton * tool_pose_changer_add_btn;
+    QPushButton * tool_pose_changer_remove_btn;
+    QPushButton * tool_pose_changer_save_btn;
+    QPushButton * tool_pose_changer_load_btn;
+    QPushButton * tool_pose_changer_use_btn;
+    QPushButton * tool_pose_changer_reset_counter_btn;
+
+    QListView * tool_pose_changer_listview;
+    QStringListModel * tool_pose_changer_listview_model;
 
     // capture box
     QGroupBox * capture_box;

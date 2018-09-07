@@ -6,10 +6,12 @@
 #include <QAbstractItemView>
 #include <QFileInfo>
 #include <QFile>
+#include <QDir>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
 
 
 mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString title) : QMainWindow(parent), ui(new Ui::mMainWindow) {
@@ -18,6 +20,8 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->file_dialog_extension = "MoCap Files(*.bvh *.mpi *.h36)";
     this->file_dialog_initial_dir = "/home/kaihang/DataSet/MoCap";
     this->camera_data_file_header = std::vector<QString>({"#M_CAMERA_DATA", "#M_CAMERA_FOLLOW_DATA"});
+    this->pose_data_file_header = "#M_POSE_DATA";
+
     this->split_camera_prefix = "splitted_camera";
 
     this->ui->setupUi(this);
@@ -30,6 +34,7 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->cur_pose_file_index[0] = 0;
     this->cur_pose_file_index[1] = 0;
     this->cur_dataset_num = 0;
+    this->pose_changer_pose_num = 0;
 
     // Set the grid widget to contain the widgets
     this->grid_widget = new QWidget(this);
@@ -349,15 +354,31 @@ void mMainWindow::buildToolBoxTab3() {
     this->pose_changer_box_layout = new QGridLayout;
     this->pose_changer_box->setLayout(this->pose_changer_box_layout);
 
-    this->tool_pose_changer_start_lbl = new QLabel("Start/End:", this->pose_changer_box);
-    this->tool_pose_changer_start_btn = new QPushButton("Start", this->pose_changer_box);
-    this->tool_pose_changer_reset_lbl = new QLabel("Reset Pose:", this->pose_changer_box);
-    this->tool_pose_changer_reset_btn = new QPushButton("Reset", this->pose_changer_box);
 
-    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_start_lbl, 0, 0, 1, 2);
-    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_start_btn, 0, 2, 1, 2);
-    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_reset_lbl, 1, 0, 1, 2);
-    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_reset_btn, 1, 2, 1, 2);
+    this->tool_pose_changer_start_btn = new QPushButton("Start", this->pose_changer_box);
+    this->tool_pose_changer_reset_pose_btn = new QPushButton("Reset Pose", this->pose_changer_box);
+    this->tool_pose_changer_add_btn = new QPushButton("Add", this->pose_changer_box);
+    this->tool_pose_changer_remove_btn = new QPushButton("Remove", this->pose_changer_box);
+    this->tool_pose_changer_save_btn = new QPushButton("Save", this->pose_changer_box);
+    this->tool_pose_changer_load_btn = new QPushButton("Load", this->pose_changer_box);
+    this->tool_pose_changer_use_btn = new QPushButton("Use", this->pose_changer_box);
+    this->tool_pose_changer_reset_counter_btn = new QPushButton("Reset Counter", this->pose_changer_box);
+
+    this->tool_pose_changer_listview = new QListView(this->pose_changer_box);
+    this->tool_pose_changer_listview_model = new QStringListModel(this->tool_pose_changer_listview);
+    this->tool_pose_changer_listview->setModel(this->tool_pose_changer_listview_model);
+    this->tool_pose_changer_listview->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_start_btn, 0, 0, 1, 1);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_reset_pose_btn, 0, 1, 1, 1);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_reset_counter_btn, 0, 2, 1, 1);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_add_btn, 1, 0, 1, 1);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_remove_btn, 1, 1, 1, 1);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_use_btn, 1, 2, 1, 1);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_listview, 2, 0, 4, 3);
+
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_load_btn, 6, 1, 1, 1);
+    this->pose_changer_box_layout->addWidget(this->tool_pose_changer_save_btn, 6, 2, 1, 1);
 
     this->tool_box_3_layout->addWidget(this->pose_changer_box, 0, 0, 4, 1);
 }
@@ -417,9 +438,15 @@ void mMainWindow::bindEvents() {
     connect(this->tool_capture_stop, SIGNAL(clicked()), this, SLOT(captureStop()));
     connect(this->tool_render_camera_type_btn, SIGNAL(clicked()), this, SLOT(renderCameraTypeChange()));
     connect(this->tool_pose_changer_start_btn, SIGNAL(clicked()), this, SLOT(poseChangerStartSlot()));
-    connect(this->tool_pose_changer_reset_btn, SIGNAL(clicked()), this, SLOT(poseChangerResetSlot()));
+    connect(this->tool_pose_changer_reset_pose_btn, SIGNAL(clicked()), this, SLOT(poseChangerResetSlot()));
+    connect(this->tool_pose_changer_reset_counter_btn, SIGNAL(clicked()), this, SLOT(poseChangerResetCounterSlot()));
+    connect(this->tool_pose_changer_add_btn, SIGNAL(clicked()), this, SLOT(poseChangerAddSlot()));
+    connect(this->tool_pose_changer_remove_btn, SIGNAL(clicked()), this, SLOT(poseChangerRemoveSlot()));
+    connect(this->tool_pose_changer_use_btn, SIGNAL(clicked()), this, SLOT(poseChangerUseSlot()));
+    connect(this->tool_pose_changer_save_btn, SIGNAL(clicked()), this, SLOT(poseChangerSaveSlot()));
+    connect(this->tool_pose_changer_load_btn, SIGNAL(clicked()), this, SLOT(poseChangerLoadSlot()));
+    connect(this->tool_pose_changer_listview_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(poseChangerEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
 }
-
 
 void mMainWindow::setFileListControlState(bool is_disabled) {
     this->tool_file_add_btn->setDisabled(is_disabled);
@@ -1231,20 +1258,151 @@ void mMainWindow::renderSetUseShading() {
     }
 }
 
-void mMainWindow::poseChangerStartSlot() {
-    QString is_changing_pose_str = this->tool_pose_changer_start_btn->text();
-    bool is_changing_pose = false;
-    if (is_changing_pose_str == "Start") {
+void mMainWindow::_poseChangerStart(bool is_start) {
+    if (is_start) {
         this->tool_pose_changer_start_btn->setText("Stop");
-        is_changing_pose = true;
     }
     else {
         this->tool_pose_changer_start_btn->setText("Start");
-        is_changing_pose = false;
     }
-    this->gl_widget->setIsChangingPose(is_changing_pose);
+
+    this->gl_widget->setIsChangingPose(is_start);
+}
+
+void mMainWindow::poseChangerStartSlot() {
+    if (this->gl_widget->getIsHasPose()) {
+        QString is_changing_pose_str = this->tool_pose_changer_start_btn->text();
+        bool is_changing_pose = false;
+        if (is_changing_pose_str == "Start") {
+            is_changing_pose = true;
+        }
+        else {
+            is_changing_pose = false;
+        }
+
+        this->_poseChangerStart(is_changing_pose);
+    }
 }
 
 void mMainWindow::poseChangerResetSlot() {
-    this->gl_widget->resetChangingPose();
+    if (this->gl_widget->getIsHasPose()) {
+        this->gl_widget->resetChangingPose();
+    }
+}
+
+void mMainWindow::poseChangerResetCounterSlot() {
+    this->pose_changer_pose_num = 0;
+}
+
+void mMainWindow::_poseChangerAdd(QString pose_name, const std::vector<glm::vec3> & pose_joints) {
+    int cur_row = 0;
+    this->tool_pose_changer_listview_model->insertRow(cur_row);
+    QModelIndex index = this->tool_pose_changer_listview_model->index(cur_row);
+
+    this->tool_pose_changer_listview_model->setData(index, pose_name);
+    std::pair<QString, std::vector<glm::vec3>> pose_to_add;
+    pose_to_add.first = index.data().toString();
+    pose_to_add.second = pose_joints;
+    this->pose_changer_pose_arr.insert(this->pose_changer_pose_arr.begin(), pose_to_add);
+    this->tool_pose_changer_listview->setCurrentIndex(index);
+    this->pose_changer_pose_num++;
+}
+
+void mMainWindow::poseChangerAddSlot() {
+    if (this->gl_widget->getIsHasPose()) {
+        QString pose_name = QString::number(this->pose_changer_pose_num);
+        std::vector<glm::vec3> pose_joints = this->gl_widget->getCurPoseJoints();
+        this->_poseChangerAdd(pose_name, pose_joints);
+    }
+    else {
+        QMessageBox::critical(this, "Pose Error", "There is no pose in the scene!");
+    }
+}
+
+void mMainWindow::poseChangerRemoveSlot() {
+    QModelIndexList index_list = this->tool_pose_changer_listview->selectionModel()->selectedIndexes();
+    while (!index_list.isEmpty()) {
+        int cur_row = index_list[0].row();
+        this->tool_pose_changer_listview_model->removeRow(cur_row);
+        this->pose_changer_pose_arr.erase(this->pose_changer_pose_arr.begin() + cur_row, this->pose_changer_pose_arr.begin() + cur_row + 1);
+        index_list = this->tool_pose_changer_listview->selectionModel()->selectedIndexes();
+    }
+}
+
+void mMainWindow::poseChangerUseSlot() {
+    QModelIndexList index_list = this->tool_pose_changer_listview->selectionModel()->selectedIndexes();
+    if (!index_list.isEmpty()) {
+        int cur_row = index_list[0].row();
+        this->_poseChangerStart(false);
+        this->gl_widget->setCurPoseJoints(this->pose_changer_pose_arr[cur_row].second);
+    }
+}
+
+void mMainWindow::poseChangerLoadSlot() {
+    QString file_name = QFileDialog::getOpenFileName(this, "Open file pose list file", this->file_dialog_initial_dir, "*");
+    QFileInfo file_info(file_name);
+    if (file_info.isFile()) {
+        QFile pose_list(file_name);
+        if (pose_list.open(QIODevice::ReadOnly)) {
+            QTextStream pose_list_stream(&pose_list);
+            QString file_line = pose_list_stream.readLine();
+            if (file_line == this->pose_data_file_header) {
+                while (!pose_list_stream.atEnd()) {
+                    file_line = pose_list_stream.readLine();
+                    QTextStream file_line_stream(&file_line);
+
+                    QString cur_pose_name;
+                    std::vector<glm::vec3> cur_pose_joints(mPoseDef::num_of_joints);
+                    file_line_stream >> cur_pose_name;
+
+                    for (int j_n = 0; j_n < cur_pose_joints.size(); ++j_n) {
+                        file_line_stream >> cur_pose_joints[j_n].x >> cur_pose_joints[j_n].y >> cur_pose_joints[j_n].z;
+                    }
+                    this->_poseChangerAdd(cur_pose_name, cur_pose_joints);
+                }
+            }
+            else {
+                QMessageBox::critical(this, "Path Error", "Pose list file is not valid!");
+            }
+            pose_list.close();
+        }
+        else {
+            QMessageBox::critical(this, "Path Error", "Pose list file is not valid!");
+        }
+    }
+}
+
+void mMainWindow::poseChangerSaveSlot() {
+    QString file_name = QFileDialog::getSaveFileName(this, "Save file list file save", this->file_dialog_initial_dir, "*");
+    if (!file_name.isEmpty()) {
+        QFile pose_list_file(file_name);
+        if (pose_list_file.open(QIODevice::WriteOnly)) {
+            QTextStream pose_list_stream(&pose_list_file);
+            pose_list_stream << this->pose_data_file_header << "\n";
+            for (int p_n = 0; p_n < this->pose_changer_pose_arr.size(); ++p_n) {
+                pose_list_stream << this->pose_changer_pose_arr[p_n].first;
+                for (int j_n = 0; j_n < this->pose_changer_pose_arr[p_n].second.size(); ++j_n) {
+                    pose_list_stream << " " << this->pose_changer_pose_arr[p_n].second[j_n].x << " " << this->pose_changer_pose_arr[p_n].second[j_n].y << " " << this->pose_changer_pose_arr[p_n].second[j_n].z;
+                }
+                pose_list_stream << "\n";
+            }
+            pose_list_file.close();
+        }
+        else {
+            QMessageBox::critical(this, "Path Error", "Pose list file is not valid!");
+        }
+    }
+}
+
+void mMainWindow::poseChangerEditNameSlot(QModelIndex cur_index, QModelIndex bottomright, QVector<int> roles) {
+
+    if (this->tool_pose_changer_listview_model->rowCount() != this->pose_changer_pose_arr.size()) {
+        return;
+    }
+    else {
+        int cur_row = cur_index.row();
+        if (cur_index.data().toString() != this->pose_changer_pose_arr[cur_row].first) {
+            this->pose_changer_pose_arr[cur_row].first = cur_index.data().toString();
+        }
+    }
 }

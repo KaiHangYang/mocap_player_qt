@@ -129,7 +129,6 @@ void mGLWidget::keyPressEvent(QKeyEvent *event) {
                     break;
             }
 
-
             int angle_index = mPoseDef::angle_index_from_joint[this->cur_selected_joint_index];
             float dert_alpha = alpha_move * M_PI;
             float dert_beta = beta_move * M_PI;
@@ -266,17 +265,35 @@ void mGLWidget::setCurCameraType(int camera_type) {
     this->scene->setCurCameraType(camera_type);
 }
 
-void mGLWidget::setIsChangingPose(bool is_changing) {
+std::vector<glm::vec3> mGLWidget::getCurPoseJoints() {
+    if (this->is_has_pose) {
+        return this->cur_pose_joints;
+    }
+    else {
+        return std::vector<glm::vec3>();
+    }
+}
+
+void mGLWidget::setCurPoseJoints(const std::vector<glm::vec3> &cur_pose) {
+    if (this->is_has_pose) {
+        this->cur_pose_joints = cur_pose;
+    }
+}
+
+void mGLWidget::setIsChangingPose(bool is_changing, std::vector<glm::vec3> cur_pose) {
     if (this->is_has_pose) {
         this->is_changing_pose = is_changing;
         if (this->is_changing_pose) {
+            if (cur_pose.size() == 0) {
+                cur_pose = this->cur_pose_joints;
+            }
             // If I begin to change the pose, I will get the angle representation of the pose first
             this->cur_pose_bonelengths = std::vector<double>(mPoseDef::num_of_bonelength, 0);
             std::vector<double> cur_pose_joints_3d(3*mPoseDef::num_of_joints, 0);
 
             for (int i = 0; i < mPoseDef::num_of_bones; ++i) {
                 glm::vec2 cur_bone = mPoseDef::bones_indices[i];
-                float cur_length = glm::length(this->cur_pose_joints[cur_bone.x] - this->cur_pose_joints[cur_bone.y]);
+                float cur_length = glm::length(cur_pose[cur_bone.x] - cur_pose[cur_bone.y]);
                 if (this->cur_pose_bonelengths[mPoseDef::bones_length_index[i]] == 0) {
                     this->cur_pose_bonelengths[mPoseDef::bones_length_index[i]] = cur_length;
                 }
@@ -286,14 +303,14 @@ void mGLWidget::setIsChangingPose(bool is_changing) {
                 }
             }
             for (int i = 0; i < mPoseDef::num_of_joints; ++i) {
-                glm::vec3 cur_rel_joint = this->cur_pose_joints[i] - this->cur_pose_joints[mPoseDef::root_of_joints];
+                glm::vec3 cur_rel_joint = cur_pose[i] - cur_pose[mPoseDef::root_of_joints];
                 cur_pose_joints_3d[3*i + 0] = cur_rel_joint.x;
                 cur_pose_joints_3d[3*i + 1] = cur_rel_joint.y;
                 cur_pose_joints_3d[3*i + 2] = cur_rel_joint.z;
             }
             this->cur_pose_angles = mIKOpt::optimizeIK(cur_pose_joints_3d, this->cur_pose_bonelengths);
             this->_cur_pose_angles = this->cur_pose_angles;
-            this->cur_pose_joint_root = this->cur_pose_joints[mPoseDef::root_of_joints];
+            this->cur_pose_joint_root = cur_pose[mPoseDef::root_of_joints];
         }
     }
 }

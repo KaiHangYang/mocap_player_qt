@@ -52,8 +52,10 @@ public:
     void setUseShading(bool use_shading);
     void setVerticalAngle(float angle);
     void setVisualizeCameras(std::vector<const mCamera *> cameras_arr);
-    void setIsChangingPose(bool is_changing);
+    void setIsChangingPose(bool is_changing, std::vector<glm::vec3> cur_pose=std::vector<glm::vec3>());
     void resetChangingPose();
+    std::vector<glm::vec3> getCurPoseJoints();
+    void setCurPoseJoints(const std::vector<glm::vec3> & cur_pose);
 
 public slots:
     void changePoseFile(QString & file_name, int cur_dataset_num);

@@ -11,7 +11,6 @@ mCamera::mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int camera_type, int wn
     this->wnd_width = wnd_width;
     this->is_ar = is_ar;
     this->is_focus = false;
-    this->is_focus = false;
 
     this->setCameraType(camera_type);
 
@@ -241,6 +240,7 @@ glm::vec3 mCamera::getCameraPos(glm::vec3 pose_center) const {
     return glm::vec3(-cur_view_t_mat[3][0], -cur_view_t_mat[3][1], -cur_view_t_mat[3][2]);
 }
 
+// To display the camera pos
 glm::mat4 mCamera::getAffineMatrix(glm::vec3 pose_center) const {
     float e = 0.00005;
 

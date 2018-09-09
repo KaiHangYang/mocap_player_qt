@@ -35,6 +35,7 @@ mMainWindow::mMainWindow(QWidget *parent, int wnd_width, int wnd_height, QString
     this->cur_pose_file_index[1] = 0;
     this->cur_dataset_num = 0;
     this->pose_changer_pose_num = 0;
+    this->is_setting_camera_focus_on_root = false;
 
     // Set the grid widget to contain the widgets
     this->grid_widget = new QWidget(this);

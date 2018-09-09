@@ -144,6 +144,8 @@ private:
 
     std::vector<std::pair<QString, std::vector<glm::vec3>>> pose_changer_pose_arr;
     QString pose_data_file_header;
+
+    bool is_setting_camera_focus_on_root;
     /******** Main widget ******/
     mProgressBarWidget * progress_bar;
     QWidget * grid_widget;

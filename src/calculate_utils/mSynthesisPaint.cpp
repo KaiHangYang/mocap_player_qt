@@ -266,7 +266,7 @@ std::vector<int> get_render_order(const mGraphType & graph) {
 //    }
     return render_order;
 }
-bool drawCroppedSynthesisData(const std::vector<glm::f64vec2> & raw_joints_2d, const std::vector<glm::f64vec3> & raw_joints_3d, const glm::vec4 & proj_vec, std::vector<glm::vec2> & labels_2d_cropped, cv::Mat & synthesis_img) {
+bool drawCroppedSynthesisData(const std::vector<glm::f64vec2> & raw_joints_2d, const std::vector<glm::f64vec3> & raw_joints_3d, const glm::vec4 & proj_vec, std::vector<glm::vec2> & labels_2d_cropped, cv::Mat & synthesis_img, cv::Mat & cropped_n_resized_rendered_img) {
     bool is_syn_ok = true;
     std::vector<glm::vec3> tmpJointColors = mRenderParams::mJointColors;
     /********************* TODO Calculate the joints position relation ***********************/
@@ -294,10 +294,16 @@ bool drawCroppedSynthesisData(const std::vector<glm::f64vec2> & raw_joints_2d, c
     /*****************************************************************************************/
 
     /**************** First calculate the scaled joints_2d and joints_2d_f64 ****************/
-    glm::f64vec3 offset_n_scale = mBBXCal::crop_n_resize_joints<glm::f64vec2, glm::f64vec3, double>(raw_joints_2d, 0.2, synthesis_img.size().width);
+    int target_img_size = synthesis_img.size().width;
+    glm::f64vec3 offset_n_scale = mBBXCal::crop_n_resize_joints<glm::f64vec2, glm::f64vec3, double>(raw_joints_2d, 0.2, target_img_size);
     // crop the labels for save
     for (int i = 0; i < labels_2d_cropped.size(); ++i) {
         labels_2d_cropped[i] = ( labels_2d_cropped[i] - glm::vec2(offset_n_scale) ) * static_cast<float>(offset_n_scale.z);
+    }
+    // resize and crop the rendered img if necessary
+    if (cropped_n_resized_rendered_img.size().width > 0) {
+        int crop_size = target_img_size / offset_n_scale.z;
+        cv::resize(cropped_n_resized_rendered_img(cv::Rect(std::round(offset_n_scale.x), std::round(offset_n_scale.y), crop_size, crop_size)), cropped_n_resized_rendered_img, cv::Size(target_img_size, target_img_size));
     }
     /**************** Then initialize the draw order graph ******************/
     mGraphType graph;

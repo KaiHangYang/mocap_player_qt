@@ -17,6 +17,7 @@
 #include <QTabWidget>
 #include <QIcon>
 #include <QComboBox>
+#include <QCheckBox>
 
 #include "mProgressBarWidget.h"
 #include "mLineEditWidget.h"
@@ -95,6 +96,7 @@ public slots:
     void poseChangerEditNameSlot(QModelIndex topleft, QModelIndex bottomright, QVector<int> roles);
 
     void showJittersToggleSlot();
+    void captureWithRenderedImgToggle(bool);
 private:
     /************** Functions for build the GUI *************/
     void buildGLView();
@@ -279,6 +281,8 @@ private:
 
     QLabel * tool_capture_img_extension_label;
     QComboBox * tool_capture_img_extension_combox;
+
+    QCheckBox * tool_capture_with_rendered_img_cb;
 
     /**************************/
 

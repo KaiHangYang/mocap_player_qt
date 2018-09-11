@@ -58,6 +58,7 @@ public:
     std::vector<glm::vec3> getCurPoseJoints();
     void setCurPoseJoints(const std::vector<glm::vec3> & cur_pose);
     void setIsShowingJitters(bool is_showing_jitters);
+    void setWithRenderedImg(bool is_with);
 public slots:
     void changePoseFile(QString & file_name, int cur_dataset_num);
     void togglePose();
@@ -123,6 +124,7 @@ private:
     float pose_jitter_range;
     float pose_angle_jitter_range;
     mPoseAdjuster * pose_adjuster;
+    bool is_with_rendered_img;
     /************************************************/
 
     /**************** Camera visualization **************/

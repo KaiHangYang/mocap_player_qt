@@ -97,6 +97,6 @@ protected:
 };
 
 std::vector<int> get_render_order(const mGraphType & graph);
-bool drawCroppedSynthesisData(const std::vector<glm::f64vec2> & raw_joints_2d, const std::vector<glm::f64vec3> & raw_joints_3d, const glm::vec4 & proj_vec, std::vector<glm::vec2> & labels_2d_cropped, cv::Mat & synthesis_img);
+bool drawCroppedSynthesisData(const std::vector<glm::f64vec2> & raw_joints_2d, const std::vector<glm::f64vec3> & raw_joints_3d, const glm::vec4 & proj_vec, std::vector<glm::vec2> & labels_2d_cropped, cv::Mat & synthesis_img, cv::Mat & cropped_n_resized_rendered_img);
 
 }

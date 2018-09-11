@@ -40,6 +40,7 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
 
     this->is_has_pose = false;
     this->is_showing_jitters = false;
+    this->is_with_rendered_img = false;
     /****************************************/
 
     this->setFocusPolicy(Qt::StrongFocus);
@@ -311,6 +312,10 @@ void mGLWidget::setIsShowingJitters(bool is_showing_jitters) {
     this->is_showing_jitters = is_showing_jitters;
 }
 
+void mGLWidget::setWithRenderedImg(bool is_with) {
+    this->is_with_rendered_img = is_with;
+}
+
 void mGLWidget::resetChangingPose() {
     this->cur_pose_angles = this->_cur_pose_angles;
     std::vector<double> tmp_joints = mIKOpt::points_from_angles<double>(&this->cur_pose_angles[0], this->cur_pose_bonelengths);
@@ -431,6 +436,7 @@ void mGLWidget::draw() {
 
             std::vector<glm::vec3> adjusted_pose_joints;
             cv::Mat synthesis_img;
+            cv::Mat rendered_img;
             int cur_frame_num = this->mocap_data->getCurFrame();
             bool is_syn_ok = false;
 
@@ -446,16 +452,22 @@ void mGLWidget::draw() {
                 this->core_func->glFinish();
                 this->makeCurrent();
                 this->swapBuffers(); // Important to capture frames because the this->scene->captureFrame use the GL_FRONT as the frame img.
+                if (this->is_with_rendered_img) {
+                    this->scene->captureFrame(rendered_img);
+                }
 
                 // Then Save the synthesised img
                 this->scene->getJointsInViewCoord_64f(c_joints, this->cur_capture_cameras[cam_num], labels_2d_forsyn, labels_3d_forsyn);
 
                 // Currently the labels_3d is the joints in the real world camera coordinate, and to get information from the raw 1024x1024 rendered img, the labels_2d need to be the joints in 1024x1024.
-                is_syn_ok = mSynthesisPaint::drawCroppedSynthesisData(labels_2d_forsyn, labels_3d_forsyn, this->cur_capture_cameras[cam_num]->getProjVec(), labels_2d_forsave, synthesis_img);
+                is_syn_ok = mSynthesisPaint::drawCroppedSynthesisData(labels_2d_forsyn, labels_3d_forsyn, this->cur_capture_cameras[cam_num]->getProjVec(), labels_2d_forsave, synthesis_img, rendered_img);
 
             } while (!is_syn_ok);
 
             emit saveCapturedFrameSignal(synthesis_img, cur_frame_num, cam_num, "");
+            if (rendered_img.size().width > 0) {
+                emit saveCapturedFrameSignal(rendered_img, cur_frame_num, cam_num, "_r");
+            }
             // NOTICE: the labels_2d is changed in the mSynthesisPaint::drawSynthesisData.
             emit saveCapturedLabelSignal(labels_2d_forsave, labels_3d_forsave, cur_frame_num, cam_num, false);
         }

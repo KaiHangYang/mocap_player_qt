@@ -335,11 +335,14 @@ void mMainWindow::buildToolBoxTab2() {
     this->tool_capture_img_extension_combox->addItem("jpg");
     this->tool_capture_img_extension_combox->addItem("png");
 
+    this->tool_capture_with_rendered_img_cb = new QCheckBox("With Rendered", this->capture_box);
 
     this->capture_box_layout->addWidget(this->tool_capture_dir_label, 0, 0, 1, 1);
     this->capture_box_layout->addWidget(this->tool_capture_dir_input, 0, 1, 1, 3);
-    this->capture_box_layout->addWidget(this->tool_capture_img_extension_label, 1, 0, 1, 1);
-    this->capture_box_layout->addWidget(this->tool_capture_img_extension_combox, 1, 1, 1, 1);
+    this->capture_box_layout->addWidget(this->tool_capture_with_rendered_img_cb, 1, 0, 1, 2);
+    this->capture_box_layout->addWidget(this->tool_capture_img_extension_label, 1, 2, 1, 1);
+    this->capture_box_layout->addWidget(this->tool_capture_img_extension_combox, 1, 3, 1, 1);
+
 
     this->capture_box_layout->addWidget(this->tool_capture_capture_one, 2, 0, 1, 2);
     this->capture_box_layout->addWidget(this->tool_capture_capture_all, 2, 2, 1, 2);
@@ -455,6 +458,7 @@ void mMainWindow::bindEvents() {
     connect(this->tool_pose_changer_listview_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(poseChangerEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
 
     connect(this->tool_render_show_jitters_btn, SIGNAL(clicked()), this, SLOT(showJittersToggleSlot()));
+    connect(this->tool_capture_with_rendered_img_cb, SIGNAL(clicked(bool)), this, SLOT(captureWithRenderedImgToggle(bool)));
 }
 
 void mMainWindow::setFileListControlState(bool is_disabled) {
@@ -1426,4 +1430,8 @@ void mMainWindow::showJittersToggleSlot() {
         this->tool_render_show_jitters_btn->setText("Show");
         this->gl_widget->setIsShowingJitters(false);
     }
+}
+
+void mMainWindow::captureWithRenderedImgToggle(bool is_with) {
+    this->gl_widget->setWithRenderedImg(is_with);
 }

@@ -1,101 +1,232 @@
 #include "mSynthesisPaint.h"
+
 #include "mPoseDefs.h"
 #include "mRenderParameters.h"
 #include "mBBXCal.h"
+#include "mGeometryHelper.hpp"
 
 #include <cassert>
 #include <algorithm>
 #include <opencv2/imgproc/imgproc.hpp>
-
 #include <iostream>
 #include <glm/gtx/string_cast.hpp>
-
-#include <boost/graph/graph_utility.hpp>
 #include <climits>
-
-/******************* Bugs waiting to fixed ********************/
-// 1. When the joints' endpoints are very near, the initialize program has some problems. Waiting to be fixed.
-// 2. The relation of the adjacent joints may made wrong circle in the graph (Solved, I made the bone source a little short(the length of the joint ratio, but the spine is left the raw one))
-/**************************************************************/
+#include <boost/graph/graph_utility.hpp>
+#include <QDebug>
 
 namespace mSynthesisPaint {
 
-mBone2D::mBone2D(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 bone_color, glm::vec3 joint_color, float rect_width, float joint_ratio) {
+mBone2D::mBone2D(const glm::f64vec2 &source_2d, const glm::f64vec2 &target_2d, const glm::f64vec3 &source_3d, const glm::f64vec3 &target_3d, glm::f64vec3 offset_n_scale, int bone_index, int source_index, int target_index, const glm::vec3 &bone_color, const glm::vec3 &joint_color, float bone_width, float joint_ratio) {
     this->is_inited = false;
-    this->initialize(source, target, bone_index, bone_color, joint_color, rect_width, joint_ratio);
+    this->initialize(source_2d, target_2d, source_3d, target_3d, offset_n_scale, bone_index, source_index, target_index, bone_color, joint_color, bone_width, joint_ratio);
 }
-void mBone2D::initialize(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 bone_color, glm::vec3 joint_color, float rect_width, float joint_ratio) {
-    this->is_inited = true;
-    this->bone_polygon_2d.clear();
 
-    this->source = source;
-    this->target = target;
-    this->rect_width = rect_width;
-    this->draw_rect_width = rect_width;
-    this->joint_ratio = joint_ratio;
-    this->draw_joint_ratio = this->joint_ratio;
+/****** The joints_2d is calculate from the joins_3d by the projection matrix ******/
+void mBone2D::initialize(const glm::f64vec2 &source_2d, const glm::f64vec2 &target_2d, const glm::f64vec3 &source_3d, const glm::f64vec3 &target_3d, glm::f64vec3 offset_n_scale, int bone_index, int source_index, int target_index, const glm::vec3 &bone_color, const glm::vec3 &joint_color, float bone_width, float joint_ratio) {
+    this->is_inited = true;
+    this->source_2d_cropped = (source_2d - glm::f64vec2(offset_n_scale)) * offset_n_scale.z;
+    this->target_2d_cropped = (target_2d - glm::f64vec2(offset_n_scale)) * offset_n_scale.z;
+    this->source_2d = source_2d;
+    this->target_2d = target_2d;
+    this->source_3d = source_3d;
+    this->target_3d = target_3d;
 
     this->bone_index = bone_index;
     this->bone_color = bone_color;
     this->joint_color = joint_color;
+    this->bone_width = bone_width;
+    this->joint_ratio = joint_ratio;
 
+    this->bone_width_scaled = this->bone_width / offset_n_scale.z;
+    this->joint_ratio_scaled = this->joint_ratio / offset_n_scale.z;
 
-    this->bone_length_2d = glm::length(this->target - this->source);
-    this->l_vec = glm::normalize(this->target - this->source);
-    this->target_longer = l_vec * (this->bone_length_2d + this->joint_ratio) + this->source;
-    this->w_vec = glm::vec2({-l_vec.y, l_vec.x});
+    this->source_index = source_index;
+    this->target_index = target_index;
 
-    // clockwise points
-    glm::vec2 vertex_1 = this->source - this->rect_width / 2.0f * this->w_vec;
-    glm::vec2 vertex_2 = this->source + this->rect_width / 2.0f * this->w_vec;
-    glm::vec2 vertex_3 = this->target + this->rect_width / 2.0f * this->w_vec;
-    glm::vec2 vertex_4 = this->target - this->rect_width / 2.0f * this->w_vec;
+    this->dir_2d_cropped = glm::normalize(this->target_2d_cropped - this->source_2d_cropped);
+    this->dir_2d = glm::normalize(this->target_2d - this->source_2d);
+    this->dir_3d = glm::normalize(this->target_3d - this->source_3d);
 
-    std::vector<glm::vec2> bone_polygon_joints;
-    if (mPoseDef::bone_is_limb[this->bone_index]) {
+    this->bone_length_3d = glm::length(this->target_3d - this->source_3d);
+    this->bone_length_2d = glm::length(this->target_2d - this->source_2d);
 
-        bone_polygon_joints = std::vector<glm::vec2>({vertex_1, vertex_2, vertex_3, this->target_longer, vertex_4, vertex_1});
-    }
-    else {
-        bone_polygon_joints = std::vector<glm::vec2>({vertex_1, vertex_2, vertex_3, vertex_4, vertex_1});
-    }
-
-    this->bone_points = std::vector<glm::vec2>({vertex_1, vertex_2, vertex_3, vertex_4, vertex_1});
-    boost::geometry::append(this->bone_polygon_2d, bone_polygon_joints);
 }
 
-bool mBone2D::getOverlapsWith(const mBone2D &another_bone, mBonePolygon2D &overlap_polygon) {
+int mBone2D::_checkAdjacent(const mBone2D * bone_a, const mBone2D * bone_b, int bones_joint_index) {
+    glm::f64vec3 judge_point_1;
+    glm::f64vec3 judge_point_2;
 
-    assert(this->is_inited);
+    double judge_len = std::min(bone_a->bone_length_3d * 0.1, bone_b->bone_length_3d * 0.1);
 
-    std::deque<mBonePolygon2D> cur_overlaps;
-    boost::geometry::intersection(this->bone_polygon_2d, another_bone.bone_polygon_2d, cur_overlaps);
-    if (cur_overlaps.empty()) {
-        overlap_polygon.clear();
+    if (bone_a->target_index == bones_joint_index) {
+        judge_point_1 = bone_a->target_3d - judge_len * bone_a->dir_3d;
+    }
+    else if (bone_a->source_index == bones_joint_index) {
+        judge_point_1 = bone_a->source_3d + judge_len * bone_a->dir_3d;
+    }
+    else {
+        qDebug() << "Wrong adjancent table!";
+        exit(-1);
+    }
+
+    if (bone_b->target_index == bones_joint_index) {
+        judge_point_2 = bone_b->target_3d - judge_len * bone_b->dir_3d;
+    }
+    else if (bone_b->source_index == bones_joint_index) {
+        judge_point_2 = bone_b->source_3d + judge_len * bone_b->dir_3d;
+    }
+    else {
+        qDebug() << "Wrong adjancent table!";
+        exit(-1);
+    }
+
+    if (judge_point_1.z - judge_point_2.z > M_EPSILON) {
+        return 1;
+    }
+    else {
+        return -1;
+    }
+}
+// don't mind the 2D joint overlap, cause It will be handled by the `min distance of the segments`.
+// In 3D, however, the overlap will cause no intersection of the `cross screen line` and the bone line.
+// This must be handled.
+
+bool mBone2D::_checkCropped2DOverlap(const std::vector<glm::f64vec2> & line_seg_1, const std::vector<glm::f64vec2> & line_seg_2, double threshhold, glm::f64vec2 & closest_joint_seg_1, glm::f64vec2 & closest_joint_seg_2, bool & is_parallel) {
+    // check with joint_ratio_scaled.
+    double min_distance;
+    min_distance = mGeo::getMinDistanceBetweenLineSeg2D<glm::f64vec2, double>(line_seg_1[0], line_seg_1[1], line_seg_2[0], line_seg_2[1], closest_joint_seg_1, closest_joint_seg_2, is_parallel);
+
+    if (min_distance >= threshhold) {
+        // discard the not overlap bone. (not mind)
         return false;
     }
     else {
-        // cause the rectangle may only have one overlap.
-        overlap_polygon = cur_overlaps.at(0);
         return true;
     }
 }
 
-void mBone2D::paintOn(cv::Mat &img, glm::vec3 offset_n_scale) {
+int mBone2D::checkInFrontOf(const mBone2D &another_bone, const glm::vec4 & proj_vec) {
+
+    assert(this->is_inited);
+    /*********** The nearby bones can be determined by the middle point's z ***********/
+    int bones_joint_index = mPoseDef::bones_adjacence_table[this->bone_index][another_bone.bone_index];
+    if (bones_joint_index > 0) {
+        // The two bone is adjacent.
+        return this->_checkAdjacent(this, &another_bone, bones_joint_index);
+    }
+    std::vector<glm::f64vec2> bone_line_seg_1({this->source_2d, this->target_2d});
+    std::vector<glm::f64vec2> bone_line_seg_2({another_bone.source_2d, another_bone.target_2d});
+    glm::f64vec2 closest_joint_seg_1, closest_joint_seg_2;
+    bool is_segs_parallel;
+    if (this->_checkCropped2DOverlap(bone_line_seg_1, bone_line_seg_2, this->joint_ratio_scaled * 2, closest_joint_seg_1, closest_joint_seg_2, is_segs_parallel)) {
+        /**************** Check the bad parallel case ****************/
+        if (is_segs_parallel) {
+            qDebug() << "Parallel cases";
+            double min_z_1 = std::min(this->source_3d.z, this->target_3d.z);
+            double max_z_1 = std::max(this->source_3d.z, this->target_3d.z);
+
+            double min_z_2 = std::min(another_bone.source_3d.z, another_bone.target_3d.z);
+            double max_z_2 = std::max(another_bone.source_3d.z, another_bone.target_3d.z);
+
+            if (min_z_1 > max_z_2) {
+                return 1;
+            }
+            else if (min_z_2 > max_z_1) {
+                return -1;
+            }
+            else {
+                // the bad case
+                qDebug() << "Bad parallel cases";
+                return 0;
+            }
+        }
+        else {
+            double f_h = std::tan(proj_vec.x / 2.0f) * proj_vec.z;
+            double f_w = f_h * proj_vec.y;
+            // Make the cross_point [-1, 1]
+            closest_joint_seg_1.x = 2 * closest_joint_seg_1.x / mRenderParams::mWindowWidth - 1;
+            closest_joint_seg_1.y = 2 * (mRenderParams::mWindowHeight - 1 - closest_joint_seg_1.y) / mRenderParams::mWindowHeight - 1;
+            closest_joint_seg_1.x *= f_w;
+            closest_joint_seg_1.y *= f_h;
+
+            closest_joint_seg_2.x = 2 * closest_joint_seg_2.x / mRenderParams::mWindowWidth - 1;
+            closest_joint_seg_2.y = 2 * (mRenderParams::mWindowHeight - 1 - closest_joint_seg_2.y) / mRenderParams::mWindowHeight - 1;
+            closest_joint_seg_2.x *= f_w;
+            closest_joint_seg_2.y *= f_h;
+
+            glm::f64vec3 cross_line_vec = glm::normalize(glm::f64vec3(0, 0, -proj_vec.z) + glm::f64vec3(closest_joint_seg_1.x, closest_joint_seg_1.y, 0));
+            glm::f64vec3 a1 = this->dir_3d;
+            glm::f64vec3 b1 = cross_line_vec;
+            glm::f64vec3 c1 = glm::f64vec3(0) - this->source_3d;
+
+            // handle the 2D joint overlap case
+            glm::f64vec3 cross_point_3d_1;
+            double denominator_1 = std::pow(glm::length(glm::cross(a1, b1)), 2);
+
+            if (denominator_1 <= M_PARALLEL_EPSILON) {
+                // the two may be parallel
+                // then the cross point is the one near the screen
+                if (this->source_3d.z > this->target_3d.z) {
+                    cross_point_3d_1 = this->source_3d;
+                }
+                else {
+                    cross_point_3d_1 = this->target_3d;
+                }
+            }
+            else {
+                double l1_3d = glm::dot(glm::cross(c1, b1), glm::cross(a1, b1)) / denominator_1;
+                cross_point_3d_1 = this->source_3d + this->dir_3d * l1_3d;
+            }
+
+            cross_line_vec = glm::normalize(glm::f64vec3(0, 0, -proj_vec.z) + glm::f64vec3(closest_joint_seg_2.x, closest_joint_seg_2.y, 0));
+            glm::f64vec3 a2 = another_bone.dir_3d;
+            glm::f64vec3 b2 = cross_line_vec;
+            glm::f64vec3 c2 = glm::f64vec3(0) - another_bone.source_3d;
+
+            double denominator_2 = std::pow(glm::length(glm::cross(a2, b2)), 2);
+            glm::f64vec3 cross_point_3d_2;
+
+            if (denominator_2 <= M_PARALLEL_EPSILON) {
+                if (another_bone.source_3d.z > another_bone.target_3d.z) {
+                    cross_point_3d_2 = another_bone.source_3d;
+                }
+                else {
+                    cross_point_3d_2 = another_bone.target_3d;
+                }
+
+            }
+            else {
+                double l2_3d = glm::dot(glm::cross(c2, b2), glm::cross(a2, b2)) / denominator_2;
+                cross_point_3d_2 = another_bone.source_3d + another_bone.dir_3d * l2_3d;
+            }
+
+            if (cross_point_3d_1.z > cross_point_3d_2.z) {
+                return 1;
+            }
+            else {
+                return -1;
+            }
+        }
+
+    }
+    return 2;
+}
+void mBone2D::paintOn(cv::Mat &img) {
     assert(this->is_inited);
     // The color in cv::Mat is bgr
     cv::Scalar bone_color = cv::Scalar(static_cast<unsigned char>(255*this->bone_color.b), static_cast<unsigned char>(255 * this->bone_color.g), static_cast<unsigned char>(255 * this->bone_color.r));
     cv::Scalar joint_color = cv::Scalar(static_cast<unsigned char>(255*this->joint_color.b), static_cast<unsigned char>(255 * this->joint_color.g), static_cast<unsigned char>(255 * this->joint_color.r));
 
+    glm::vec2 draw_source(this->source_2d_cropped);
+    glm::vec2 draw_target(this->target_2d_cropped);
 
-    glm::vec2 draw_source = (this->source - glm::vec2(offset_n_scale)) * offset_n_scale.z;
-    glm::vec2 draw_target = (this->target - glm::vec2(offset_n_scale)) * offset_n_scale.z;
     cv::Point joint = cv::Point(std::round(draw_target.x), std::round(draw_target.y));
+    glm::vec2 w_vec(this->dir_2d.y, -this->dir_2d.x);
     // clockwise points
-    glm::vec2 vertex_1 = draw_source - this->draw_rect_width / 2.0f * this->w_vec;
-    glm::vec2 vertex_2 = draw_source + this->draw_rect_width / 2.0f * this->w_vec;
-    glm::vec2 vertex_3 = draw_target + this->draw_rect_width / 2.0f * this->w_vec;
-    glm::vec2 vertex_4 = draw_target - this->draw_rect_width / 2.0f * this->w_vec;
+    glm::vec2 vertex_1 = draw_source - this->bone_width / 2.0f * w_vec;
+    glm::vec2 vertex_2 = draw_source + this->bone_width / 2.0f * w_vec;
+    glm::vec2 vertex_3 = draw_target + this->bone_width / 2.0f * w_vec;
+    glm::vec2 vertex_4 = draw_target - this->bone_width / 2.0f * w_vec;
 
     cv::Point vertices[4] = {cv::Point(std::round(vertex_1.x), std::round(vertex_1.y)),
                              cv::Point(std::round(vertex_2.x), std::round(vertex_2.y)),
@@ -104,48 +235,7 @@ void mBone2D::paintOn(cv::Mat &img, glm::vec3 offset_n_scale) {
 
     // First bone Then joint
     cv::fillConvexPoly(img, vertices, 4, bone_color, cv::LINE_AA);
-    cv::circle(img, joint, this->draw_joint_ratio, joint_color, CV_FILLED, cv::LINE_AA);
-}
-
-int get_bone_index_from_color(glm::vec3 color) {
-    std::vector<float> color_distance(mPoseDef::num_of_bones, 0);
-    glm::vec3 tmp_vec;
-    for (int i = 0; i < mPoseDef::num_of_bones; ++i) {
-        tmp_vec = color - mRenderParams::mBoneColors[i];
-        color_distance[i] = tmp_vec.x*tmp_vec.x + tmp_vec.y*tmp_vec.y + tmp_vec.z*tmp_vec.z;
-    }
-
-    return std::distance(&color_distance[0], std::min_element(&color_distance[0], &color_distance[0] + 14));
-}
-
-// TODO: The check process can be made parallel
-std::vector<int> check_overlap_labels(const unsigned char * bone_map_prt, glm::u32vec3 bone_map_size, const mBonePolygon2D & overlap) {
-    std::vector<int> rank(mPoseDef::num_of_bones, 0);
-
-    mBoundingBox2D bbx;
-    boost::geometry::envelope(overlap, bbx);
-//    std::cout << "Overlap: " << boost::geometry::dsv(overlap) << "\n aabb: " << boost::geometry::dsv(bbx) << std::endl;
-
-    glm::i32vec2 min_corner({std::ceil(bbx.min_corner().x()), std::ceil(bbx.min_corner().y())});
-    glm::i32vec2 max_corner({std::floor(bbx.max_corner().x()), std::floor(bbx.max_corner().y())});
-
-    for (int y = min_corner.y + 1; y < max_corner.y; ++y) {
-        for (int x = min_corner.x + 1; x < max_corner.x; ++x) {
-            boost::geometry::model::d2::point_xy<float> cur_point({x, y});
-            if (boost::geometry::within(cur_point, overlap)) {
-                // Use RGB, the data in cv::Mat is bgr
-
-                glm::vec3 cur_point_color({bone_map_prt[bone_map_size.z * bone_map_size.x * y + 3 * x + 2] / 255.0f,
-                                           bone_map_prt[bone_map_size.z * bone_map_size.x * y + 3 * x + 1] / 255.0f,
-                                           bone_map_prt[bone_map_size.z * bone_map_size.x * y + 3 * x + 0] / 255.0f});
-
-                int cur_label = get_bone_index_from_color(cur_point_color);
-                rank[cur_label] += 1;
-            }
-        }
-    }
-
-    return rank;
+    cv::circle(img, joint, this->joint_ratio, joint_color, CV_FILLED, cv::LINE_AA);
 }
 
 std::vector<int> get_render_order(const mGraphType & graph) {
@@ -167,26 +257,28 @@ std::vector<int> get_render_order(const mGraphType & graph) {
             }
         }
     }
+    // For debug
+//    for (int i = 0; i < render_order.size(); ++i) {
+//        if (render_order[i] == -1) {
+//            boost::print_graph(cur_graph);
+//            break;
+//        }
+//    }
     return render_order;
 }
-
-/******************** I may need to handle the special case in report-8-27 ********************/
-void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, std::vector<glm::vec2> & raw_joints_2d, const std::vector<glm::vec3> & real_joints_3d, cv::Mat & synthesis_img) {
-    // The real_joints_3d is in the real world camera coordinate(the z and y axis is different with the one in the opengl)
-    /**************** Calculate the relative position of the joints first ****************/
+bool drawCroppedSynthesisData(const std::vector<glm::f64vec2> & raw_joints_2d, const std::vector<glm::f64vec3> & raw_joints_3d, const glm::vec4 & proj_vec, std::vector<glm::vec2> & labels_2d_cropped, cv::Mat & synthesis_img) {
+    bool is_syn_ok = true;
     std::vector<glm::vec3> tmpJointColors = mRenderParams::mJointColors;
+    /********************* TODO Calculate the joints position relation ***********************/
     tmpJointColors[14] = glm::vec3(1.f);
-    // use the hip bone as the ruler
-
-    float relative_position_threshhold = ((glm::length(real_joints_3d[mPoseDef::left_hip_joint_index] - real_joints_3d[mPoseDef::root_of_joints]) + glm::length(real_joints_3d[mPoseDef::right_hip_joint_index] - real_joints_3d[mPoseDef::root_of_joints])) / 2) * 0.1;
     std::vector<bool> vertexFlags(mPoseDef::num_of_joints, false);
+
+    double relative_position_threshhold = ((glm::length(raw_joints_3d[mPoseDef::left_hip_joint_index] - raw_joints_3d[mPoseDef::root_of_joints]) + glm::length(raw_joints_3d[mPoseDef::right_hip_joint_index] - raw_joints_3d[mPoseDef::root_of_joints])) / 2) * 0.1;
     for (unsigned int i = 0; i < mPoseDef::num_of_bones; ++i) {
         unsigned int line[2] = { mPoseDef::bones_indices[i].x, mPoseDef::bones_indices[i].y };
-
         if (!vertexFlags[line[1]]) {
             vertexFlags[line[1]] = true;
-            // NOTICE: The z axis in the real world camera coordinate is opposite with the one in the opengl.
-            float dert_z = (-real_joints_3d[line[0]].z) - (-real_joints_3d[line[1]].z);
+            float dert_z = raw_joints_3d[line[0]].z - raw_joints_3d[line[1]].z;
 
             if (dert_z < -relative_position_threshhold) {
                 tmpJointColors[line[1]] = glm::vec3(1.f);
@@ -199,16 +291,22 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
             }
         }
     }
-    /*************************************************************************************/
+    /*****************************************************************************************/
 
-    /**************** Initialize the draw order graph first ******************/
+    /**************** First calculate the scaled joints_2d and joints_2d_f64 ****************/
+    glm::f64vec3 offset_n_scale = mBBXCal::crop_n_resize_joints<glm::f64vec2, glm::f64vec3, double>(raw_joints_2d, 0.2, synthesis_img.size().width);
+    // crop the labels for save
+    for (int i = 0; i < labels_2d_cropped.size(); ++i) {
+        labels_2d_cropped[i] = ( labels_2d_cropped[i] - glm::vec2(offset_n_scale) ) * static_cast<float>(offset_n_scale.z);
+    }
+    /**************** Then initialize the draw order graph ******************/
     mGraphType graph;
     // Initialize the bone2d first
     std::vector<mBone2D> bones_array(mPoseDef::num_of_bones);
     for (int bone_it = 0 ; bone_it < mPoseDef::num_of_bones; ++bone_it) {
         boost::add_vertex(graph);
         glm::u32vec2 cur_bone_index = mPoseDef::bones_indices[bone_it];
-        bones_array[bone_it].initialize(raw_joints_2d[cur_bone_index.x], raw_joints_2d[cur_bone_index.y], bone_it, mRenderParams::mBoneColors[bone_it], tmpJointColors[cur_bone_index.y], mSynthesisPaint::mSynthesisBoneWidth, mSynthesisPaint::mSynthesisJointRatio);
+        bones_array[bone_it].initialize(raw_joints_2d[cur_bone_index.x], raw_joints_2d[cur_bone_index.y], raw_joints_3d[cur_bone_index.x], raw_joints_3d[cur_bone_index.y], offset_n_scale, bone_it, cur_bone_index.x, cur_bone_index.y, mRenderParams::mBoneColors[bone_it], tmpJointColors[cur_bone_index.y], mSynthesisPaint::mSynthesisBoneWidth, mSynthesisPaint::mSynthesisJointRatio);
         if (!bones_array[bone_it].is_inited) {
             std::cout << "Uninitialized bone: " << bone_it << std::endl;
         }
@@ -218,81 +316,35 @@ void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map
         mBone2D * bone_a = &bones_array[i];
         for (int j = i + 1; j < mPoseDef::num_of_bones; ++j) {
             mBone2D * bone_b = &bones_array[j];
-            mBonePolygon2D bone_overlap;
-            bool is_overlapped = bone_a->getOverlapsWith(*bone_b, bone_overlap);
-
-            // if overlapped then check the color to determine the overlap rank.
-            if (is_overlapped) {
-
-                std::vector<int> overlap_labels = check_overlap_labels(bone_map_ptr, bone_map_size, bone_overlap);
-                // Use for break the cycle in the graph
-                float total_valid_label = overlap_labels[bone_a->bone_index] + overlap_labels[bone_b->bone_index];
-                //if (overlap_labels[bone_a->bone_index] + overlap_labels[bone_b->bone_index] < mSynthesisPaint::mSynthesisBoneWidth) {
-                    // If the pixel label is very small, then discard it.
-                //    continue;
-                //}
-                if (overlap_labels[bone_a->bone_index] > overlap_labels[bone_b->bone_index]) {
-                    boost::add_edge(bone_b->bone_index, bone_a->bone_index, total_valid_label, graph);
-                }
-                else if (overlap_labels[bone_a->bone_index] < overlap_labels[bone_b->bone_index]) {
-                    boost::add_edge(bone_a->bone_index, bone_b->bone_index, total_valid_label, graph);
-                }
+            int position_flag = bone_a->checkInFrontOf(*bone_b, proj_vec);
+            if (position_flag == 1) {
+                boost::add_edge(bone_b->bone_index, bone_a->bone_index, 0, graph);
+            }
+            else if (position_flag == -1) {
+                boost::add_edge(bone_a->bone_index, bone_b->bone_index, 0, graph);
+            }
+            else if (position_flag == 0) {
+                // the bad parallel case
+                is_syn_ok = false;
+                return is_syn_ok;
             }
         }
     }
-    /**************** Calculate the drawing order ****************/
-
-    // Test the cycle first
-    bool has_cycle = false;
-    std::vector<int> cycle_arr;
-    do {
-        has_cycle = false;
-        cycle_arr.clear();
-        dfs_cycle_detector dfs_vis(has_cycle, cycle_arr);
-        boost::depth_first_search(graph, boost::visitor(dfs_vis));
-
-        if (has_cycle) {
-            int start_index = std::find(cycle_arr.begin(), cycle_arr.end(), cycle_arr.back()) - cycle_arr.begin();
-            mGraphType::edge_descriptor edge_to_delete;
-            float min_weight = FLT_MAX;
-            for (; start_index < cycle_arr.size() - 1; ++start_index) {
-                std::pair<mGraphType::edge_descriptor, bool> cur_edge = boost::edge(cycle_arr[start_index], cycle_arr[start_index + 1], graph);
-                assert(cur_edge.second);
-                float edge_weight = boost::get(boost::edge_weight_t(), graph, cur_edge.first);
-                if (edge_weight < min_weight) {
-                    min_weight = edge_weight;
-                    edge_to_delete = cur_edge.first;
-                }
-            }
-            boost::remove_edge(edge_to_delete, graph);
-        }
-    } while (has_cycle);
 
     std::vector<int> draw_order = get_render_order(graph);
-
-    /**************** Then only paint the bone temporarily ***************/
-//    std::cout << draw_order.size() << std::endl;
-//    for (int i = 0; i <  draw_order.size(); ++i) {
-//        std::cout << draw_order[i] << " ";
-//    }
-//    std::cout << std::endl;
-
-    // Get the draw offset and scale
-    glm::vec3 offset_n_scale = mBBXCal::crop_n_resize_joints(raw_joints_2d, 0.2, synthesis_img.size().width);
-    for (int i = 0; i < raw_joints_2d.size(); ++i) {
-        raw_joints_2d[i] = ( raw_joints_2d[i] - glm::vec2(offset_n_scale) ) * offset_n_scale.z;
+    for (int bone_it = 0; bone_it < draw_order.size(); ++bone_it) {
+        // check the cycle
+        if (draw_order[bone_it] < 0) {
+            is_syn_ok = false;
+            return is_syn_ok; // Here the synthesis is failed deal to the cycle in the graph
+        }
     }
 
     for (int bone_it = 0; bone_it < draw_order.size(); ++bone_it) {
-        if (draw_order[bone_it] < 0) {
-            std::cout << "Something wrong happened!" << std::endl;
-            boost::print_graph(graph);
-            exit(-1);
-            continue;
-        }
-        bones_array[draw_order[bone_it]].paintOn(synthesis_img, offset_n_scale);
+        bones_array[draw_order[bone_it]].paintOn(synthesis_img);
     }
-}
 
+    return is_syn_ok;
+}
 
 }

@@ -4,7 +4,7 @@
 #include "mRenderParameters.h"
 #include <glm/glm.hpp>
 
-mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, float target_model_size, bool is_ar, bool & use_shading, int pose_type): use_shading(use_shading) {
+mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, mShader * pose_shader, mShader * depth_shader, float target_model_size, bool & use_shading, int pose_type): use_shading(use_shading) {
 
     this->pose_shader = pose_shader;
     this->depth_shader = depth_shader;
@@ -30,8 +30,6 @@ mPoseModel::mPoseModel(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core
     this->mesh_reader->addMesh(mPoseDef::model_base_dir + "sphere-30.ply");
     this->mesh_reader->addMesh(mPoseDef::model_base_dir + "cylinder-30.ply");
 
-    /************** State parameters ***************/
-    this->is_ar = is_ar;
 }
 
 mPoseModel::~mPoseModel() {

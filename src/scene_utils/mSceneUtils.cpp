@@ -10,13 +10,14 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 #include "mPoseDefs.h"
+#include <glm/gtx/string_cast.hpp>
 
 static float move_step = 80.0;
 
-mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, int camera_type, bool & is_with_floor, bool & use_shading, bool is_ar, int pose_type):is_with_floor(is_with_floor), use_shading(use_shading) {
+mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::vec4 cam_in_vec, glm::mat4 cam_ex_mat, int camera_type, bool & is_with_floor, bool & use_shading, int pose_type):is_with_floor(is_with_floor), use_shading(use_shading) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
-    this->is_ar = is_ar;
+
     this->VAO = vao;
     this->core_func = core_func;
 
@@ -29,26 +30,20 @@ mSceneUtils::mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Co
     this->ground_row = 100;
 
     float target_model_size;
-    if (is_ar) {
-        target_model_size = 26 * 2;
-        this->ground_size = 2000.0f;
-        this->move_step_scale = 1.f;
-        this->m_move_dir[0] = 1;this->m_move_dir[1] = -1;this->m_move_dir[2] = 1;
-        this->m_rotate_dir[0] = 1;this->m_rotate_dir[1] = -1;
-    }
-    else {
-        target_model_size = 2 * 1;
-        this->ground_size = 20.f;
-        this->move_step_scale = 0.03f;
-        this->m_move_dir[0] = 1;this->m_move_dir[1] = 1;this->m_move_dir[2] = 1;
-        this->m_rotate_dir[0] = 1; this->m_rotate_dir[1] = 1;
-    }
+
+
+    target_model_size = 2 * 1;
+    this->ground_size = 20.f;
+    this->move_step_scale = 0.03f;
+    this->m_move_dir[0] = 1;this->m_move_dir[1] = 1;this->m_move_dir[2] = 1;
+    this->m_rotate_dir[0] = 1; this->m_rotate_dir[1] = 1;
+
 
     this->scene_shader = new mShader(mRenderParams::mPoseShaderFiles[0], mRenderParams::mPoseShaderFiles[1]);
     this->depth_shader = new mShader(mRenderParams::mDepthShaderFiles[0], mRenderParams::mDepthShaderFiles[1], mRenderParams::mDepthShaderFiles[2]);
 
-    this->cur_camera = new mCamera(cam_in_mat, cam_ex_mat, camera_type, this->wnd_width, this->wnd_height, this->is_ar);
-    this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, target_model_size, is_ar, this->use_shading, pose_type);
+    this->cur_camera = new mCamera(cam_in_vec, cam_ex_mat, camera_type, this->wnd_width, this->wnd_height);
+    this->pose_model = new mPoseModel(this->VAO, this->core_func, this->scene_shader, this->depth_shader, target_model_size, this->use_shading, pose_type);
 
     this->initScene();
 
@@ -296,13 +291,28 @@ void mSceneUtils::setPoseCenter(glm::vec3 pose_center) {
     this->person_center_pos = pose_center;
 }
 
-void mSceneUtils::setCurInMat(glm::mat4 proj_mat) {
-    this->cur_camera->setProjMat(proj_mat);
+void mSceneUtils::setCurInMat(glm::vec4 proj_vec) {
+    this->cur_camera->setProjMat(proj_vec);
 }
 
 
 // TODO: The 3D view coordinate labels need to be checked.
 //       THe 2D is right, after visualized.
+
+void mSceneUtils::getJointsInViewCoord_64f(const std::vector<glm::vec3> & joints_3d_raw, const mCamera * camera, std::vector<glm::f64vec2> & labels_2d_f64, std::vector<glm::f64vec3> & labels_3d_f64) {
+    glm::f64mat4 view_mat(camera->getViewMat(this->person_center_pos));
+    glm::f64mat4 proj_mat(camera->getProjMat());
+
+    labels_2d_f64 = std::vector<glm::f64vec2>(joints_3d_raw.size());
+    labels_3d_f64 = std::vector<glm::f64vec3>(joints_3d_raw.size());
+    for (int i = 0; i < joints_3d_raw.size(); ++i) {
+        glm::f64vec4 cur_2d = proj_mat * view_mat * glm::f64vec4(joints_3d_raw[i], 1.0);
+        cur_2d /= cur_2d.w;
+        labels_2d_f64[i] = glm::f64vec2(this->wnd_width * (cur_2d.x + 1.0) / 2.0 , this->wnd_height * (1.0 - cur_2d.y) / 2.0);
+        labels_3d_f64[i] = glm::f64vec3(view_mat * glm::f64vec4(joints_3d_raw[i], 1.0));
+    }
+}
+
 void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw, const std::vector<glm::vec3> & joints_adjusted, const glm::mat4 & view_mat, const glm::mat4 & proj_mat, std::vector<glm::vec2> & labels_2d, std::vector<glm::vec3> & labels_3d) {
     if (joints_raw.size() != 0) {
         labels_2d = std::vector<glm::vec2>(joints_raw.size());
@@ -322,10 +332,9 @@ void mSceneUtils::_getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw,
             labels_3d[i] = glm::vec3(cur_view_mat * glm::vec4(joints_raw[i], 1.f)) - root_joint;
 
             // Cause the camera in the real word
-            if (!this->is_ar) {
-                labels_3d[i].y *= -1;
-                labels_3d[i].z *= -1;
-            }
+
+            labels_3d[i].y *= -1;
+            labels_3d[i].z *= -1;
         }
         mPoseDef::scalePose(labels_3d);
     }
@@ -353,20 +362,12 @@ void mSceneUtils::get2DJointsOnCurCamera(const std::vector<glm::vec3> &adjusted_
 }
 
 void mSceneUtils::_setDepthShaderUniforms(int light_num) {
-    if (this->is_ar) {
-        for (int i = 0; i < 6; ++i) {
-            this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mRenderParams::mShadowTransforms_AR[light_num][i]);
-        }
-        this->depth_shader->setVal("far_plane", mRenderParams::mShadowFarPlane_AR);
-        this->depth_shader->setVal("lightPos", mRenderParams::mLightPos_AR[light_num]);
+    for (int i = 0; i < 6; ++i) {
+        this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mRenderParams::mShadowTransforms[light_num][i]);
     }
-    else {
-        for (int i = 0; i < 6; ++i) {
-            this->depth_shader->setVal(("shadow_mat["+std::to_string(i)+"]").c_str(), mRenderParams::mShadowTransforms[light_num][i]);
-        }
-        this->depth_shader->setVal("far_plane", mRenderParams::mShadowFarPlane);
-        this->depth_shader->setVal("lightPos", mRenderParams::mLightPos[light_num]);
-    }
+    this->depth_shader->setVal("far_plane", mRenderParams::mShadowFarPlane);
+    this->depth_shader->setVal("lightPos", mRenderParams::mLightPos[light_num]);
+
     this->depth_shader->setVal("model", glm::mat4(1.f));
 }
 void mSceneUtils::_setSceneShaderUnoforms(glm::mat4 model_mat, glm::mat4 view_mat, glm::mat4 proj_mat, bool is_use_shadow) {
@@ -381,25 +382,15 @@ void mSceneUtils::_setSceneShaderUnoforms(glm::mat4 model_mat, glm::mat4 view_ma
     this->scene_shader->setVal("model", model_mat);
     this->scene_shader->setVal("normMat", glm::transpose(glm::inverse(model_mat)));
 
-    if (this->is_ar) {
-        this->scene_shader->setVal("far_plane", mRenderParams::mShadowFarPlane_AR);
-        this->scene_shader->setVal("shadow_bias", mRenderParams::mBias_AR);
-    }
-    else {
-        this->scene_shader->setVal("far_plane", mRenderParams::mShadowFarPlane);
-        this->scene_shader->setVal("shadow_bias", mRenderParams::mBias);
-    }
+    this->scene_shader->setVal("far_plane", mRenderParams::mShadowFarPlane);
+    this->scene_shader->setVal("shadow_bias", mRenderParams::mBias);
 
     for (int light_num = 0; light_num < mRenderParams::mLightSum; ++light_num) {
         this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].ambient").c_str(), mRenderParams::mAmbient);
         this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].diffuse").c_str(), mRenderParams::mDiffuse);
         this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].specular").c_str(), mRenderParams::mSpecular);
-        if (this->is_ar) {
-            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mRenderParams::mLightPos_AR[light_num]);
-        }
-        else {
-            this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mRenderParams::mLightPos[light_num]);
-        }
+
+        this->scene_shader->setVal(("pointLights[" + std::to_string(light_num) + "].position").c_str(), mRenderParams::mLightPos[light_num]);
 
         this->scene_shader->setVal(("depth_cube["+ std::to_string(light_num) + "]").c_str(), 1 + light_num);
 
@@ -427,32 +418,32 @@ void mSceneUtils::_drawFloor() {
 std::vector<glm::vec3> mSceneUtils::adjustPoseAccordingToCamera(std::vector<glm::vec3> joints_3d, const mCamera *camera) {
     std::vector<glm::vec3> result_joints_3d = joints_3d;
 
-    this->_beforeRender(joints_3d);
-    glm::mat4 cur_cam_ex_mat, cur_cam_in_mat;
-    int camera_type;
-    if (camera != nullptr) {
-        cur_cam_ex_mat = camera->getViewMat(this->person_center_pos);
-        cur_cam_in_mat = camera->getProjMat();
-        camera_type = camera->getCameraType();
-    }
-    else {
-        cur_cam_ex_mat = this->cur_camera->getViewMat(this->person_center_pos);
-        cur_cam_in_mat = this->cur_camera->getProjMat();
-        camera_type = this->cur_camera->getCameraType();
-    }
+//    this->_beforeRender(joints_3d);
+//    glm::mat4 cur_cam_ex_mat, cur_cam_in_mat;
+//    int camera_type;
+//    if (camera != nullptr) {
+//        cur_cam_ex_mat = camera->getViewMat(this->person_center_pos);
+//        cur_cam_in_mat = camera->getProjMat();
+//        camera_type = camera->getCameraType();
+//    }
+//    else {
+//        cur_cam_ex_mat = this->cur_camera->getViewMat(this->person_center_pos);
+//        cur_cam_in_mat = this->cur_camera->getProjMat();
+//        camera_type = this->cur_camera->getCameraType();
+//    }
 
     // When the capture camera is ortho, then use the adjusted joints to render(Only used for renderring).
-    if (camera_type == 1) {
-        /****************** Change the joint position if the camera is ortho *******************/
-        /****************** This is why when I change the z of the camera, the size of the model will change. ****************/
-        for (int i = 0; i < joints_3d.size(); ++i) {
-            glm::vec4 cur_vertex(joints_3d[i], 1.0);
-            cur_vertex = glm::transpose(mRenderParams::m_cam_in_mat_perspective) * cur_cam_ex_mat * glm::mat4(1.f) * cur_vertex;
-            cur_vertex /= cur_vertex.w;
-            cur_vertex = glm::inverse(cur_cam_ex_mat) * glm::inverse(cur_cam_in_mat) * cur_vertex;
-            result_joints_3d[i] = glm::vec3(cur_vertex);
-        }
-    }
+//    if (camera_type == 1) {
+//        /****************** Change the joint position if the camera is ortho *******************/
+//        /****************** This is why when I change the z of the camera, the size of the model will change. ****************/
+//        for (int i = 0; i < joints_3d.size(); ++i) {
+//            glm::vec4 cur_vertex(joints_3d[i], 1.0);
+//            cur_vertex = glm::transpose(mRenderParams::m_cam_in_mat_perspective) * cur_cam_ex_mat * glm::mat4(1.f) * cur_vertex;
+//            cur_vertex /= cur_vertex.w;
+//            cur_vertex = glm::inverse(cur_cam_ex_mat) * glm::inverse(cur_cam_in_mat) * cur_vertex;
+//            result_joints_3d[i] = glm::vec3(cur_vertex);
+//        }
+//    }
 
     return result_joints_3d;
 }
@@ -479,6 +470,9 @@ void mSceneUtils::render(std::vector<glm::vec3> points_3d_raw, std::vector<glm::
         cur_cam_in_mat = this->cur_camera->getProjMat();
         camera_type = this->cur_camera->getCameraType();
     }
+
+
+
     this->_render(points_3d_raw, points_3d, cur_cam_ex_mat, cur_cam_in_mat, camera_type);
 }
 

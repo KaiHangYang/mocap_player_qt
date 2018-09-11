@@ -1,67 +1,74 @@
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/geometries/box.hpp>
+#include <glm/glm.hpp>
+#include <vector>
+#include <opencv2/core/core.hpp>
 #include <boost/foreach.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/copy.hpp>
 #include <boost/graph/depth_first_search.hpp>
 
-#include <glm/glm.hpp>
-#include <vector>
-
 #include <opencv2/core/core.hpp>
 
-/************* Register the point 2d to boost **************/
-//#include <boost/geometry/geometries/adapted/c_array.hpp>
-//BOOST_GEOMETRY_REGISTER_C_ARRAY_CS(boost::geometry::cs::cartesian)
-#include <boost/geometry/geometries/register/point.hpp>
-BOOST_GEOMETRY_REGISTER_POINT_2D(glm::vec2, float, boost::geometry::cs::cartesian, x, y)
 
 namespace mSynthesisPaint {
-#define MY_EPSILON 0.1
-/************* Define the rect type **************/
-typedef boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<float>> mBonePolygon2D;
+
+#define M_EPSILON 0.0000001
+#define M_PARALLEL_EPSILON 0.001
+//static int mSynthesisBoneWidth = 14;
+//static int mSynthesisJointRatio = 11;
+static int mSynthesisBoneWidth = 10;
+static int mSynthesisJointRatio = 7;
 /******** About The calculate graph ********/
 typedef boost::property<boost::edge_weight_t, float> mGraphEdgeWeightProperty;
 typedef boost::adjacency_list<boost::listS, boost::vecS, boost::bidirectionalS, boost::no_property, mGraphEdgeWeightProperty> mGraphType;
 
-/******** Define the bounding box type ***********/
-typedef boost::geometry::model::box<boost::geometry::model::d2::point_xy<float>> mBoundingBox2D;
-
-static int mSynthesisBoneWidth = 14;
-static int mSynthesisJointRatio = 11;
-static float mSynthesisAdjacentAreaRatio = 0.25;
+inline double m_cross_2d(const glm::f64vec2 & a, const glm::f64vec2 & b) {
+    return a.x * b.y - b.x * a.y;
+}
 
 struct mBone2D {
-    glm::vec2 source;
-    glm::vec2 target;
 
-    glm::vec2 target_longer;
+    glm::f64vec2 source_2d_cropped;
+    glm::f64vec2 target_2d_cropped;
 
-    float rect_width;
-    float draw_rect_width;
+    glm::f64vec2 source_2d;
+    glm::f64vec2 target_2d;
+    glm::f64vec3 source_3d;
+    glm::f64vec3 target_3d;
+
+    float bone_width;
     float joint_ratio;
-    float draw_joint_ratio;
-    mBonePolygon2D bone_polygon_2d; // from the source to the source used in boost::geometry
+
+    float bone_width_scaled;
+    float joint_ratio_scaled;
+
     int bone_index;
-    bool is_inited;
     glm::vec3 bone_color;
     glm::vec3 joint_color;
-    std::vector<glm::vec2> bone_points;
-    glm::vec2 w_vec;
-    glm::vec2 l_vec;
-    float bone_length_2d;
+
+    glm::f64vec2 dir_2d_cropped;
+    glm::f64vec3 dir_3d;
+    glm::f64vec2 dir_2d;
+
+    int source_index;
+    int target_index;
+
+    bool is_inited;
+
+    double bone_length_3d;
+    double bone_length_2d;
 
     mBone2D(): is_inited(false) {}
-    mBone2D(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 bone_color, glm::vec3 joint_color, float rect_width=10, float joint_ratio=12);
+    mBone2D(const glm::f64vec2 & source_2d, const glm::f64vec2 & target_2d, const glm::f64vec3 & source_3d, const glm::f64vec3 & target_3d, glm::f64vec3 offset_n_scale, int bone_index, int source_index, int target_index, const glm::vec3 & bone_color, const glm::vec3 & joint_color, float bone_width=mSynthesisBoneWidth, float joint_ratio=mSynthesisJointRatio);
+    void initialize(const glm::f64vec2 & source_2d, const glm::f64vec2 & target_2d, const glm::f64vec3 & source_3d, const glm::f64vec3 & target_3d, glm::f64vec3 offset_n_scale, int bone_index, int source_index, int target_index, const glm::vec3 & bone_color, const glm::vec3 & joint_color, float bone_width=mSynthesisBoneWidth, float joint_ratio=mSynthesisJointRatio);
+    // is_discard is true, if the bone_width is not fit for the pose. (The bone_rect is too wide)
+    // 2 is not mind,  1 is ahead, 0 is not valid, -1 is behind,
+    int checkInFrontOf(const mBone2D & another_bone, const glm::vec4 & proj_vec);
+    void paintOn(cv::Mat & img);
 
-    void initialize(glm::vec2 source, glm::vec2 target, int bone_index, glm::vec3 bone_color, glm::vec3 joint_color, float rect_width=10, float joint_ratio=12);
-
-    // The function can be called only after the is_inited is true.
-    bool getOverlapsWith(const mBone2D &another_bone, mBonePolygon2D &overlap_polygon);
-    void paintOn(cv::Mat & img, glm::vec3 offset_n_scale = glm::vec3(0.f, 0.f, 1.f));
+    static int _checkAdjacent(const mBone2D * bone_a, const mBone2D * bone_b, int bones_joint_index);
+    static bool _checkCropped2DOverlap(const std::vector<glm::f64vec2> & line_seg_1, const std::vector<glm::f64vec2> & line_set_2, double threshhold, glm::f64vec2 & closest_joint_seg_1, glm::f64vec2 & closest_joint_seg_2, bool & is_parallel);
 };
+
 
 /************ depth_first_search visitor to detector a cycle from the graph *************/
 struct dfs_cycle_detector: public boost::dfs_visitor<> {
@@ -89,11 +96,7 @@ protected:
 
 };
 
-int get_bone_index_from_color(glm::vec3 color);
-std::vector<int> check_overlap_labels(const unsigned char * bone_map_prt, glm::u32vec3 bone_map_size, const mBonePolygon2D & overlap);
 std::vector<int> get_render_order(const mGraphType & graph);
+bool drawCroppedSynthesisData(const std::vector<glm::f64vec2> & raw_joints_2d, const std::vector<glm::f64vec3> & raw_joints_3d, const glm::vec4 & proj_vec, std::vector<glm::vec2> & labels_2d_cropped, cv::Mat & synthesis_img);
 
-/***** NOTICE: The real_joints_3d must be the joints_3d calculated by mSceneUtils::getLabelsFromFrame *****/
-/***** NOTICE: The outputs of the function include the 'cropped' img for bones, 'cropped' label_2d *****/
-void drawSynthesisData(const unsigned char * bone_map_ptr, glm::u32vec3 bone_map_size, std::vector<glm::vec2> & raw_joints_2d, const std::vector<glm::vec3> & real_joints_3d, cv::Mat & synthesis_img);
 }

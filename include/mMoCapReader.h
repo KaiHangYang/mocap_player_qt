@@ -10,7 +10,7 @@
 
 class mMoCapData {
 public:
-    mMoCapData():total_frame_num(0), cur_frame_num(0), num_of_joints(0), cur_dataset_num(0) {}
+    mMoCapData(mPoseAdjuster * pose_adjuster):total_frame_num(0), cur_frame_num(0), num_of_joints(0), cur_dataset_num(0), pose_adjuster(pose_adjuster){}
     void setData(std::vector<std::vector<glm::vec3>> data, int total_frame_num, int num_of_joints, int cur_dataset_num) {
         this->data = data;
         this->cur_dataset_num = cur_dataset_num;
@@ -18,14 +18,9 @@ public:
         this->total_frame_num = total_frame_num;
         this->num_of_joints = num_of_joints;
         this->prev_choosed_data = std::vector<glm::vec3>(this->num_of_joints, glm::vec3(0.f));
-        this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length, mPoseDef::bones_length_index, mPoseDef::bones_indices,mPoseDef::bones_cal_rank);
     }
 
-    mMoCapData(std::vector<std::vector<glm::vec3>> data, int total_frame_num, int num_of_joints, int cur_dataset_num) : data(data), cur_frame_num(0), total_frame_num(total_frame_num), num_of_joints(num_of_joints) {
-        this->cur_dataset_num = cur_dataset_num;
-        this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length, mPoseDef::bones_length_index, mPoseDef::bones_indices,mPoseDef::bones_cal_rank);
-    }
-    ~mMoCapData(){}
+    mMoCapData(std::vector<std::vector<glm::vec3>> data, int total_frame_num, int num_of_joints, int cur_dataset_num, mPoseAdjuster * pose_adjuster) : data(data), cur_frame_num(0), total_frame_num(total_frame_num), num_of_joints(num_of_joints), cur_dataset_num(cur_dataset_num), pose_adjuster(pose_adjuster) {}
     // joints is the adjusted joints, the raw_joints is the raw_joints
     bool getOneFrame(std::vector<glm::vec3> &joints, std::vector<glm::vec3> &raw_joints, float pose_change_size=0.f, float jitter_range = 0.f, float angle_jitter_range = 0.f, int index=-1);
 //    bool getOneFrame(std::vector<glm::vec3> & joints, glm::mat4 cam_ex_mat, float pose_change_size=0.f, int index=-1);

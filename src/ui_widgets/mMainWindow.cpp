@@ -152,7 +152,6 @@ void mMainWindow::buildToolBoxTab1() {
     this->file_box_layout->addWidget(this->tool_file_list_save_btn, 7, 2, 1, 1);
     this->file_box_layout->addWidget(this->tool_file_list_num_label, 7, 0, 1, 1);
 
-
     //      Box for pose
     this->pose_box = new QGroupBox("Pose Control:", this->tool_box);
     this->pose_box_layout = new QGridLayout;
@@ -198,6 +197,9 @@ void mMainWindow::buildToolBoxTab1() {
     this->tool_camera_visualize_lbl = new QLabel("Visualize cameras:", this->render_box);
     this->tool_camera_visualize_btn = new QPushButton("Show", this->render_box);
 
+    this->tool_render_show_jitters_lbl = new QLabel("Show Jitters:", this->render_box);
+    this->tool_render_show_jitters_btn = new QPushButton("Show", this->render_box);
+
     this->render_box_layout->addWidget(this->tool_render_type_label, 0, 0, 1, 1);
     this->render_box_layout->addWidget(this->tool_render_type_btn, 0, 1, 1, 1);
     this->render_box_layout->addWidget(this->tool_render_floor_label, 1, 0, 1, 1);
@@ -207,12 +209,16 @@ void mMainWindow::buildToolBoxTab1() {
     this->render_box_layout->addWidget(this->tool_render_camera_type_lbl, 3, 0, 1, 1);
     this->render_box_layout->addWidget(this->tool_render_camera_type_btn, 3, 1, 1, 1);
 
+    this->render_box_layout->addWidget(this->tool_render_show_jitters_lbl, 4, 0, 1, 1);
+    this->render_box_layout->addWidget(this->tool_render_show_jitters_btn, 4, 1, 1, 1);
+
     this->tool_box_layout->addWidget(this->file_box, 0, 0, 2, 1);
     this->tool_box_layout->addWidget(this->pose_box, 2, 0, 1, 1);
     this->tool_box_layout->addWidget(this->render_box, 3, 0, 1, 1);
 
     // Disable some button
     this->tool_file_removeall_btn->setDisabled(true);
+    this->tool_render_camera_type_btn->setDisabled(true);
 }
 void mMainWindow::buildToolBoxTab2() {
     // Add tool_box 2
@@ -447,6 +453,8 @@ void mMainWindow::bindEvents() {
     connect(this->tool_pose_changer_save_btn, SIGNAL(clicked()), this, SLOT(poseChangerSaveSlot()));
     connect(this->tool_pose_changer_load_btn, SIGNAL(clicked()), this, SLOT(poseChangerLoadSlot()));
     connect(this->tool_pose_changer_listview_model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(poseChangerEditNameSlot(QModelIndex,QModelIndex,QVector<int>)));
+
+    connect(this->tool_render_show_jitters_btn, SIGNAL(clicked()), this, SLOT(showJittersToggleSlot()));
 }
 
 void mMainWindow::setFileListControlState(bool is_disabled) {
@@ -624,18 +632,18 @@ void mMainWindow::poseTemporaryStateSlot(bool is_pause) {
 }
 
 void mMainWindow::renderCameraTypeChange() {
-    QString cur_text = this->tool_render_camera_type_btn->text();
-    if (cur_text == "Perspective") {
-        this->tool_render_camera_type_btn->setText("Ortho");
-        this->gl_widget->setCurInMat(mRenderParams::m_cam_in_mat_ortho);
-        this->gl_widget->setCurCameraType(1);
-    }
-    else if (cur_text == "Ortho") {
-        this->tool_render_camera_type_btn->setText("Perspective");
-        this->gl_widget->setCurInMat(mRenderParams::m_cam_in_mat_perspective);
-        this->gl_widget->setCurCameraType(0);
-    }
-    this->cameraRemoveAllSlot();
+//    QString cur_text = this->tool_render_camera_type_btn->text();
+//    if (cur_text == "Perspective") {
+//        this->tool_render_camera_type_btn->setText("Ortho");
+//        this->gl_widget->setCurInMat(mRenderParams::m_cam_in_mat_ortho);
+//        this->gl_widget->setCurCameraType(1);
+//    }
+//    else if (cur_text == "Ortho") {
+//        this->tool_render_camera_type_btn->setText("Perspective");
+//        this->gl_widget->setCurInMat(mRenderParams::m_cam_in_mat_perspective);
+//        this->gl_widget->setCurCameraType(0);
+//    }
+//    this->cameraRemoveAllSlot();
 }
 
 // Slot for camera control
@@ -1405,5 +1413,17 @@ void mMainWindow::poseChangerEditNameSlot(QModelIndex cur_index, QModelIndex bot
         if (cur_index.data().toString() != this->pose_changer_pose_arr[cur_row].first) {
             this->pose_changer_pose_arr[cur_row].first = cur_index.data().toString();
         }
+    }
+}
+
+void mMainWindow::showJittersToggleSlot() {
+    QString show_jitter_text = this->tool_render_show_jitters_btn->text();
+    if (show_jitter_text == "Show") {
+        this->tool_render_show_jitters_btn->setText("Hide");
+        this->gl_widget->setIsShowingJitters(true);
+    }
+    else {
+        this->tool_render_show_jitters_btn->setText("Show");
+        this->gl_widget->setIsShowingJitters(false);
     }
 }

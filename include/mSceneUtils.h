@@ -16,7 +16,7 @@
 
 class mSceneUtils {
 public:
-    mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::mat4 cam_in_mat, glm::mat4 cam_ex_mat, int camera_type, bool & is_with_floor, bool & use_shading, bool is_ar=false, int pose_type=0);
+    mSceneUtils(QOpenGLVertexArrayObject * vao, QOpenGLFunctions_3_3_Core * core_func, int wnd_width, int wnd_height, glm::vec4 cam_in_vec, glm::mat4 cam_ex_mat, int camera_type, bool & is_with_floor, bool & use_shading, int pose_type=0);
     ~mSceneUtils();
 
     void render(std::vector<glm::vec3> points_3d_raw, std::vector<glm::vec3> points_3d = std::vector<glm::vec3>(0), const mCamera * camera=nullptr);
@@ -35,12 +35,13 @@ public:
     void setCurFollowVec(glm::vec3 cur_follow_vec);
     glm::vec3 getCurFollowVec();
 
-    void setCurInMat(glm::mat4 proj_mat);
+    void setCurInMat(glm::vec4 proj_vec);
 
     void getSplittedCameras(int camera_num, std::vector<glm::vec3> &splitted_cameras);
     void getSplittedCameras(int camera_num, std::vector<glm::mat4> &splitted_cameras);
 
     void getLabelsFromFrame(const std::vector<glm::vec3> & joints_raw, const std::vector<glm::vec3> & joints_adjusted, const mCamera * camera, std::vector<glm::vec2> &labels_2d, std::vector<glm::vec3> &labels_3d);
+    void getJointsInViewCoord_64f(const std::vector<glm::vec3> & joints_3d_raw, const mCamera * camera, std::vector<glm::f64vec2> & joints_2d_f64, std::vector<glm::f64vec3> & joints_3d_f64);
 
     void get2DJointsOnCurCamera(const std::vector<glm::vec3> & joints_3d, std::vector<glm::vec2> & joints_2d);
 
@@ -106,7 +107,6 @@ private:
     mCamera * cur_camera; // The inner camera
     mMeshReader * camera_mesh;
 
-    bool is_ar;
     /********************** State parameter need to share **********************/
     bool & is_with_floor;
     bool & use_shading;

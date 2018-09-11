@@ -4,12 +4,10 @@
 
 #include "mIKOpt.h"
 // The header is used for checking whether the render mode is ar mode
-#include "mRenderParameters.h"
 
 mPoseAdjuster::mPoseAdjuster(const std::vector<float> & bones_length, const std::vector<unsigned int> & bones_length_index, const std::vector<glm::u32vec2> & bones_indices, const std::vector<unsigned int> bones_cal_rank): pose_bones_length(bones_length), pose_bones_indices(bones_indices), pose_bones_cal_rank(bones_cal_rank), pose_bones_length_index(bones_length_index) {
     this->rand_gen = QRandomGenerator::system();
     this->pose_jitter_bones_length = this->pose_bones_length;
-    this->jitter_range = 0;
 }
 mPoseAdjuster::~mPoseAdjuster() {}
 
@@ -51,87 +49,35 @@ void mPoseAdjuster::adjustAccordingToBoneLength(std::vector<glm::vec3> &joints, 
         glm::i32vec2 cur_bone = this->pose_bones_indices[i];
         bones_vec_arr[i] = glm::normalize(joints[cur_bone.y] - joints[cur_bone.x]);
     }
-    if (!mRenderParams::m_is_ar) {
-        // use some jitter in the cur_bone_length
-        for (int i = 0; i < cur_bones_length.size(); ++i) {
-            cur_bones_length[i] = (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1)) * cur_bones_length[i];
-        }
-        // the first and fixed point is the root point
-        for (int i = 0; i < this->pose_bones_cal_rank.size(); ++i) {
-            int cur_bone_index = this->pose_bones_cal_rank[i];
-            glm::i32vec2 cur_bone = this->pose_bones_indices[cur_bone_index];
-            joints[cur_bone.y] = joints[cur_bone.x] + cur_bones_length[this->pose_bones_length_index[cur_bone_index]] * bones_vec_arr[cur_bone_index];
-        }
-        // Then jitter the euler angle
-        std::vector<double> joints_dbl(joints.size() * 3, 0);
-        std::vector<double> cur_bones_length_dbl(cur_bones_length.size(), 0);
-        glm::vec3 root_joint = joints[joints.size() - 1];
-        for (int i = 0; i < joints.size(); ++i) {
-            joints_dbl[3*i+0] = joints[i].x - root_joint.x;
-            joints_dbl[3*i+1] = joints[i].y - root_joint.y;
-            joints_dbl[3*i+2] = joints[i].z - root_joint.z;
-        }
-        std::copy(cur_bones_length.begin(), cur_bones_length.end(), cur_bones_length_dbl.begin());
-        std::vector<double> params = mIKOpt::optimizeIK(joints_dbl, cur_bones_length_dbl);
-        // put jitters to the euler angles
-        this->jitterParams(params, angle_jitter_range);
-        joints_dbl = mIKOpt::points_from_angles<double>(&params[0], cur_bones_length_dbl);
-        for (int i = 0; i < joints.size(); ++i) {
-            joints[i] = glm::vec3(joints_dbl[3*i+0] + root_joint.x, joints_dbl[3*i+1] + root_joint.y, joints_dbl[3*i+2] + root_joint.z);
-        }
-    }
-    else {
-        // if is ar mode, I will calculate the raw bone length first
-        std::vector<float> raw_bone_length(14, 0);
-        for (int i = 0; i < this->pose_bones_indices.size(); ++i) {
-            glm::i32vec2 cur_bone = this->pose_bones_indices[i];
-            raw_bone_length[i] = glm::length(joints[cur_bone.x] - joints[cur_bone.y]);
-        }
-        // Adjust the bone length
-        raw_bone_length[7] = raw_bone_length[7] * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1)); // spin
-        raw_bone_length[0] = (0.3829370249427575 * raw_bone_length[7]) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1)); // only change the head now
-        raw_bone_length[1] = raw_bone_length[4] = ((raw_bone_length[1] + raw_bone_length[4]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
-        raw_bone_length[2] = raw_bone_length[5] = ((raw_bone_length[2] + raw_bone_length[5]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
-        raw_bone_length[3] = raw_bone_length[6] = ((raw_bone_length[3] + raw_bone_length[6]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
-        raw_bone_length[8] = raw_bone_length[11] = ((raw_bone_length[8] + raw_bone_length[11]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
-        raw_bone_length[9] = raw_bone_length[12] = ((raw_bone_length[9] + raw_bone_length[12]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
-        raw_bone_length[10] = raw_bone_length[13] = ((raw_bone_length[10] + raw_bone_length[13]) / 2.0) * (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1));
 
-        for (int i = 0; i < this->pose_bones_cal_rank.size(); ++i) {
-            int cur_bone_index = this->pose_bones_cal_rank[i];
-            glm::i32vec2 cur_bone = this->pose_bones_indices[cur_bone_index];
-            joints[cur_bone.y] = joints[cur_bone.x] + raw_bone_length[cur_bone_index] * bones_vec_arr[cur_bone_index];
-        }
+    // use some jitter in the cur_bone_length
+    for (int i = 0; i < cur_bones_length.size(); ++i) {
+        cur_bones_length[i] = (1 + jitter_range * (this->rand_gen->bounded(2.00001) - 1)) * cur_bones_length[i];
+    }
+    // the first and fixed point is the root point
+    for (int i = 0; i < this->pose_bones_cal_rank.size(); ++i) {
+        int cur_bone_index = this->pose_bones_cal_rank[i];
+        glm::i32vec2 cur_bone = this->pose_bones_indices[cur_bone_index];
+        joints[cur_bone.y] = joints[cur_bone.x] + cur_bones_length[this->pose_bones_length_index[cur_bone_index]] * bones_vec_arr[cur_bone_index];
+    }
+    // Then jitter the euler angle
+    std::vector<double> joints_dbl(joints.size() * 3, 0);
+    std::vector<double> cur_bones_length_dbl(cur_bones_length.size(), 0);
+    glm::vec3 root_joint = joints[joints.size() - 1];
+    for (int i = 0; i < joints.size(); ++i) {
+        joints_dbl[3*i+0] = joints[i].x - root_joint.x;
+        joints_dbl[3*i+1] = joints[i].y - root_joint.y;
+        joints_dbl[3*i+2] = joints[i].z - root_joint.z;
+    }
+    std::copy(cur_bones_length.begin(), cur_bones_length.end(), cur_bones_length_dbl.begin());
+    std::vector<double> params = mIKOpt::optimizeIK(joints_dbl, cur_bones_length_dbl);
+    // put jitters to the euler angles
+    this->jitterParams(params, angle_jitter_range);
+    joints_dbl = mIKOpt::points_from_angles<double>(&params[0], cur_bones_length_dbl);
+    for (int i = 0; i < joints.size(); ++i) {
+        joints[i] = glm::vec3(joints_dbl[3*i+0] + root_joint.x, joints_dbl[3*i+1] + root_joint.y, joints_dbl[3*i+2] + root_joint.z);
     }
 
-    /************************** Test for the optimize method **************************/
-//    std::vector<double> opt_bone_length(cur_bones_length.size());
-//    std::vector<double> opt_joints(3*joints.size(), 0);
-//    glm::vec3 root_joint = joints[joints.size() - 1];
-//    glm::vec3 cur_joint;
-//    std::copy(cur_bones_length.begin(), cur_bones_length.end(), opt_bone_length.begin());
-
-//    for (int i = 0; i < joints.size(); ++i) {
-//        cur_joint = joints[i] - root_joint;
-//        opt_joints[3*i + 0] = cur_joint.x; opt_joints[3*i + 1] = cur_joint.y; opt_joints[3*i + 2] = cur_joint.z;
-//    }
-
-//    opt_joints = mOurOpt::optimize(opt_joints, opt_bone_length);
-
-//    for (int i = 0; i < joints.size(); ++i) {
-//        joints[i] = root_joint + glm::vec3(opt_joints[3*i + 0], opt_joints[3*i + 1], opt_joints[3*i + 2]);
-//    }
-    /**********************************************************************************/
-
-    /***************************** Show the raw scaled data ***************************/
-//    std::vector<float> bones_length;
-//    this->calBonesLength(joints, bones_length);
-//    glm::vec3 root_pos = joints[14];
-//    float scale = 4*9.2f / (bones_length[7] + (bones_length[9] + bones_length[12]) / 2.f);
-//    for (int i = 0; i < joints.size(); ++i) {
-//        joints[i] = (joints[i] - root_pos) * scale + root_pos;
-//    }
-    /**********************************************************************************/
 }
 
 void mPoseAdjuster::calBonesLength(const std::vector<glm::vec3> & joints, std::vector<float> & bones_length) {

@@ -9,7 +9,7 @@
 class mCamera {
 public:
     mCamera(const mCamera * camera);
-    mCamera(glm::mat4 proj_mat, glm::mat4 view_mat, int camera_type, int wnd_width=mRenderParams::mWindowWidth, int wnd_height=mRenderParams::mWindowHeight, bool is_ar = mRenderParams::m_is_ar);
+    mCamera(glm::vec4 proj_vec, glm::mat4 view_mat, int camera_type, int wnd_width=mRenderParams::mWindowWidth, int wnd_height=mRenderParams::mWindowHeight);
     ~mCamera();
 
     mCamera& operator=(const mCamera &a);
@@ -17,6 +17,7 @@ public:
     glm::mat4 getViewMat(glm::vec3 pose_center, glm::mat4 * view_r_mat = nullptr, glm::mat4 * view_t_mat = nullptr) const;
     glm::mat4 getProjMat() const;
     glm::vec3 getViewVec() const;
+    glm::vec4 getProjVec() const;
     glm::vec3 getCameraPos(glm::vec3 pose_center) const;
 
     // the matrix to translate and rotate the origin coordinat to the camera coordiante
@@ -28,7 +29,7 @@ public:
 
     void setViewMat(glm::mat4 view_mat);
     void setViewVec(glm::vec3 view_vec);
-    void setProjMat(glm::mat4 proj_mat);
+    void setProjMat(glm::vec4 proj_vec);
 
     void setFocus(bool is_focus);
     void setFollow(bool is_follow, glm::vec3 pose_center);
@@ -49,8 +50,8 @@ private:
     bool is_follow;
     bool is_focus;
 
-    bool is_ar;
     glm::mat4 proj_mat;
+    glm::vec4 proj_vec; // fov, width / height, near_plane, far_plane
 
     int wnd_width;
     int wnd_height;

@@ -25,7 +25,6 @@ private:
     std::vector<glm::u32vec2> pose_bones_indices;
     std::vector<unsigned int> pose_bones_cal_rank;
     QRandomGenerator * rand_gen;
-    float jitter_range;
 };
 
 #endif

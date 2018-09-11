@@ -99,7 +99,7 @@ void mMoCapData::clear() {
     this->data.clear();
 }
 
-bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
+bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * mocap_data) {
     QFileInfo file_info(file_path);
 
     if (!file_info.isFile()) {
@@ -227,6 +227,6 @@ bool mMoCapReader::parse(QString file_path, int dataset, mMoCapData * data) {
         return false;
     }
 
-    data->setData(frame_datas, total_frame_nums, num_of_joints, dataset);
+    mocap_data->setData(frame_datas, total_frame_nums, num_of_joints, dataset);
     return true;
 }

@@ -93,6 +93,8 @@ public slots:
     void poseChangerSaveSlot();
     void poseChangerLoadSlot();
     void poseChangerEditNameSlot(QModelIndex topleft, QModelIndex bottomright, QVector<int> roles);
+
+    void showJittersToggleSlot();
 private:
     /************** Functions for build the GUI *************/
     void buildGLView();
@@ -146,6 +148,7 @@ private:
     QString pose_data_file_header;
 
     bool is_setting_camera_focus_on_root;
+
     /******** Main widget ******/
     mProgressBarWidget * progress_bar;
     QWidget * grid_widget;
@@ -199,6 +202,8 @@ private:
     QPushButton * tool_render_floor_btn;
     QLabel * tool_render_camera_type_lbl;
     QPushButton * tool_render_camera_type_btn;
+    QLabel * tool_render_show_jitters_lbl;
+    QPushButton * tool_render_show_jitters_btn;
 
     QLabel * tool_pose_jitter_size_label;
     QLineEdit * tool_pose_jitter_size_input;

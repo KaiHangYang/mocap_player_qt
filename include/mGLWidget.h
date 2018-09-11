@@ -10,6 +10,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLFunctions_3_3_Core>
 #include <vector>
+#include <mPoseAdjuster.h>
 
 class mGLWidget : public QGLWidget {
     Q_OBJECT
@@ -28,7 +29,7 @@ public:
     const mCamera * getCurCamera();
     void setCurCamera(const mCamera * camera);
 
-    void setCurInMat(glm::mat4 proj_mat);
+    void setCurInMat(glm::vec4 proj_vec);
     glm::mat4 getCurExMat();
     void setCurExMat(glm::mat4 cur_ex_mat);
     glm::vec3 getCurFollowVec();
@@ -56,7 +57,7 @@ public:
     void resetChangingPose();
     std::vector<glm::vec3> getCurPoseJoints();
     void setCurPoseJoints(const std::vector<glm::vec3> & cur_pose);
-
+    void setIsShowingJitters(bool is_showing_jitters);
 public slots:
     void changePoseFile(QString & file_name, int cur_dataset_num);
     void togglePose();
@@ -89,12 +90,11 @@ private:
     void sendProgress(bool is_reset);
     /************************************************/
 
-    glm::mat4 cam_in_mat;
-    glm::mat4 cam_ex_mat;
-    bool is_ar;
     bool is_with_floor;
     bool use_shading;
     bool is_changing_pose;
+    bool is_showing_jitters;
+
     int cur_selected_joint_index;
 
     std::vector<double> cur_pose_angles;
@@ -122,6 +122,7 @@ private:
     float pose_change_step;
     float pose_jitter_range;
     float pose_angle_jitter_range;
+    mPoseAdjuster * pose_adjuster;
     /************************************************/
 
     /**************** Camera visualization **************/

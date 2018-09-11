@@ -16,13 +16,16 @@
 mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int wnd_height) : QGLWidget(gl_format, parent) {
     this->wnd_width = wnd_width;
     this->wnd_height = wnd_height;
-    // set cam_in_mat cam_ex_mat and is_ar here
+
     this->cur_capture_cameras = std::vector<const mCamera *>();
 
     this->cur_pose_joints = std::vector<glm::vec3>();
     this->pose_change_step = 200;
     this->pose_jitter_range = 0;
     this->pose_angle_jitter_range = 0;
+    // initialize the pose_adjuster
+    this->pose_adjuster = new mPoseAdjuster(mPoseDef::bones_length, mPoseDef::bones_length_index, mPoseDef::bones_indices, mPoseDef::bones_cal_rank);
+    this->mocap_data = new mMoCapData(this->pose_adjuster);
 
     /*********** State Parameters ***********/
     this->is_set_capture_frame = false;
@@ -36,19 +39,8 @@ mGLWidget::mGLWidget(QWidget * parent, QGLFormat gl_format, int wnd_width, int w
     this->is_changing_pose = false;
 
     this->is_has_pose = false;
-    this->is_ar = mRenderParams::m_is_ar;
+    this->is_showing_jitters = false;
     /****************************************/
-
-    if (mRenderParams::m_camera_type == 0) {
-        this->cam_in_mat = mRenderParams::m_cam_in_mat_perspective;
-    }
-    else {
-        this->cam_in_mat = mRenderParams::m_cam_in_mat_ortho;
-    }
-
-    this->cam_ex_mat = mRenderParams::m_cam_ex_mat;
-
-    this->mocap_data = new mMoCapData;
 
     this->setFocusPolicy(Qt::StrongFocus);
     this->timer_for_update = new QTimer(this);
@@ -66,7 +58,7 @@ void mGLWidget::initializeGL() {
     this->core_func->initializeOpenGLFunctions();
     this->VAO->create();
 
-    this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, this->cam_in_mat, this->cam_ex_mat, mRenderParams::m_camera_type, this->is_with_floor, this->use_shading, this->is_ar);
+    this->scene = new mSceneUtils(this->VAO, this->core_func, this->wnd_width, this->wnd_height, mRenderParams::m_initial_proj_vec, mRenderParams::m_initial_view_mat, mRenderParams::m_camera_type, this->is_with_floor, this->use_shading);
     glViewport(0, 0, this->wnd_width, this->wnd_height);
     glClearColor(0.4627450980392157f, 0.5882352941176471f, 0.8980392156862745f, 1.0f);
     glEnable(GL_DEPTH_TEST);
@@ -197,8 +189,8 @@ void mGLWidget::sendProgress(bool is_reset) {
         emit progressDisplaySignal(this->mocap_data->getCurFrame(), this->mocap_data->getTotalFrame(), is_reset);
     }
 }
-void mGLWidget::setCurInMat(glm::mat4 proj_mat) {
-    this->scene->setCurInMat(proj_mat);
+void mGLWidget::setCurInMat(glm::vec4 proj_vec) {
+    this->scene->setCurInMat(proj_vec);
 }
 void mGLWidget::setCurCamera(const mCamera *camera) {
     this->scene->setCurCamera(camera);
@@ -315,6 +307,10 @@ void mGLWidget::setIsChangingPose(bool is_changing, std::vector<glm::vec3> cur_p
     }
 }
 
+void mGLWidget::setIsShowingJitters(bool is_showing_jitters) {
+    this->is_showing_jitters = is_showing_jitters;
+}
+
 void mGLWidget::resetChangingPose() {
     this->cur_pose_angles = this->_cur_pose_angles;
     std::vector<double> tmp_joints = mIKOpt::points_from_angles<double>(&this->cur_pose_angles[0], this->cur_pose_bonelengths);
@@ -428,48 +424,40 @@ void mGLWidget::draw() {
     if (this->is_set_capture_frame) {
 
         for (int cam_num = 0; cam_num < this->cur_capture_cameras.size(); ++cam_num) {
-            std::vector<glm::vec2> labels_2d;
-            std::vector<glm::vec3> labels_3d;
-
-            std::vector<glm::vec2> labels_2d_raw;
-            std::vector<glm::vec3> labels_3d_raw;
+            std::vector<glm::vec2> labels_2d_forsave;
+            std::vector<glm::vec3> labels_3d_forsave;
+            std::vector<glm::f64vec2> labels_2d_forsyn;
+            std::vector<glm::f64vec3> labels_3d_forsyn;
 
             std::vector<glm::vec3> adjusted_pose_joints;
-            std::vector<glm::vec3> adjusted_pose_joints_raw;
-
-            // When the camera is ortho camera, I adjust the position of the joints to make the pose more like the one in the perspective mode.
-            adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints, this->cur_capture_cameras[cam_num]);
-            adjusted_pose_joints_raw = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints_raw, this->cur_capture_cameras[cam_num]);
-
-            this->scene->render(this->cur_pose_joints, adjusted_pose_joints, this->cur_capture_cameras[cam_num]);
-            this->scene->getLabelsFromFrame(this->cur_pose_joints, adjusted_pose_joints, this->cur_capture_cameras[cam_num], labels_2d, labels_3d);
-            if (this->is_ar) {
-                this->scene->getLabelsFromFrame(this->cur_pose_joints_raw, adjusted_pose_joints_raw, this->cur_capture_cameras[cam_num], labels_2d_raw, labels_3d_raw);
-            }
-
-            cv::Mat captured_img;
-            // After all the part are renderend
-
-            this->core_func->glFinish();
-            this->makeCurrent();
-            this->swapBuffers(); // Important to capture frames because the this->scene->captureFrame use the GL_FRONT as the frame img.
-            this->scene->captureFrame(captured_img);
-
+            cv::Mat synthesis_img;
             int cur_frame_num = this->mocap_data->getCurFrame();
-//            emit saveCapturedFrameSignal(captured_img, cur_frame_num, cam_num, "_gl");
-//            emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, cam_num, false);
-            if (this->is_ar) {
-                emit saveCapturedLabelSignal(labels_2d_raw, labels_3d_raw, cur_frame_num, cam_num, true);
-            }
+            bool is_syn_ok = false;
 
-            // Then Save the synthesised img
-            cv::Mat synthesis_img(cv::Size(mRenderParams::cropTargetSize, mRenderParams::cropTargetSize), CV_8UC3, cv::Scalar(mRenderParams::mBgColor.x * 255, mRenderParams::mBgColor.y * 255, mRenderParams::mBgColor.z * 255));
+            do {
+                std::vector<glm::vec3> c_joints = this->cur_pose_joints;
+                this->pose_adjuster->adjustAccordingToBoneLength(c_joints, this->pose_jitter_range, this->pose_angle_jitter_range);
 
-            // Currently the labels_3d is the joints in the real world camera coordinate, and to get information from the raw 1024x1024 rendered img, the labels_2d need to be the joints in 1024x1024.
-            mSynthesisPaint::drawSynthesisData(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, labels_3d, synthesis_img);
+                synthesis_img = cv::Mat (cv::Size(mRenderParams::cropTargetSize, mRenderParams::cropTargetSize), CV_8UC3, cv::Scalar(mRenderParams::mBgColor.x * 255, mRenderParams::mBgColor.y * 255, mRenderParams::mBgColor.z * 255));
+                // When the camera is ortho camera, I adjust the position of the joints to make the pose more like the one in the perspective mode.
+                adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(c_joints, this->cur_capture_cameras[cam_num]);
+                this->scene->render(c_joints, adjusted_pose_joints, this->cur_capture_cameras[cam_num]);
+                this->scene->getLabelsFromFrame(c_joints, adjusted_pose_joints, this->cur_capture_cameras[cam_num], labels_2d_forsave, labels_3d_forsave);
+                this->core_func->glFinish();
+                this->makeCurrent();
+                this->swapBuffers(); // Important to capture frames because the this->scene->captureFrame use the GL_FRONT as the frame img.
+
+                // Then Save the synthesised img
+                this->scene->getJointsInViewCoord_64f(c_joints, this->cur_capture_cameras[cam_num], labels_2d_forsyn, labels_3d_forsyn);
+
+                // Currently the labels_3d is the joints in the real world camera coordinate, and to get information from the raw 1024x1024 rendered img, the labels_2d need to be the joints in 1024x1024.
+                is_syn_ok = mSynthesisPaint::drawCroppedSynthesisData(labels_2d_forsyn, labels_3d_forsyn, this->cur_capture_cameras[cam_num]->getProjVec(), labels_2d_forsave, synthesis_img);
+
+            } while (!is_syn_ok);
+
             emit saveCapturedFrameSignal(synthesis_img, cur_frame_num, cam_num, "");
             // NOTICE: the labels_2d is changed in the mSynthesisPaint::drawSynthesisData.
-            emit saveCapturedLabelSignal(labels_2d, labels_3d, cur_frame_num, cam_num, false);
+            emit saveCapturedLabelSignal(labels_2d_forsave, labels_3d_forsave, cur_frame_num, cam_num, false);
         }
         // This frame captured finished, if capture_all then continue, or reset capture.
         // The capture all is stop beyond this file
@@ -485,26 +473,17 @@ void mGLWidget::draw() {
         cur_rotate_mat = mCamRotate::getRotateMat(this->wnd_width, this->wnd_height, cur_ex_r_mat, this->scene->m_rotate_dir);
         this->scene->rotateCamera(cur_rotate_mat);
         /***************************************************************************************************************/
+        std::vector<glm::vec3> c_joints;
         std::vector<glm::vec3> adjusted_pose_joints;
+        if (this->is_has_pose) {
+            c_joints = this->cur_pose_joints;
+            if (this->is_showing_jitters) {
+                this->pose_adjuster->adjustAccordingToBoneLength(c_joints, this->pose_jitter_range, this->pose_angle_jitter_range);
+            }
+            adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(c_joints);
+        }
 
-        adjusted_pose_joints = this->scene->adjustPoseAccordingToCamera(this->cur_pose_joints);
-        this->scene->render(this->cur_pose_joints, adjusted_pose_joints);
-
-//        if (this->cur_pose_joints.size() != 0) {
-//            cv::Mat captured_img;
-//            std::vector<glm::vec2> labels_2d;
-//            std::vector<glm::vec3> labels_3d;
-
-//            this->scene->captureFrame(captured_img);
-//            this->scene->getLabelsFromFrame(this->cur_pose_joints, adjusted_pose_joints, this->scene->getCurCamera(), labels_2d, labels_3d);
-
-//            cv::Mat synthesis_img(cv::Size(1024, 1024), CV_8UC3, cv::Scalar(51, 51, 51));
-
-//            mSynthesisPaint::drawSynthesisData(captured_img.ptr<unsigned char>(), glm::u32vec3(1024, 1024, 3), labels_2d, labels_3d, synthesis_img);
-//            cv::imshow("captured_img", synthesis_img);
-//            cv::waitKey(3);
-//        }
-
+        this->scene->render(c_joints, adjusted_pose_joints);
         /******************************************/
 
         // the render will clear the color and depth bit, so I need to render the camera below

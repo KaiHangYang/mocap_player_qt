@@ -2,12 +2,13 @@
 #include <climits>
 
 namespace mBBXCal {
-glm::vec3 crop_n_resize_joints(const std::vector<glm::vec2> & joints_2d, float pad_scale, int target_size) {
+template<typename T1, typename T2, typename T3>
+T2 crop_n_resize_joints(const std::vector<T1> & joints_2d, T3 pad_scale, int target_size) {
     /************** Get the tight bounding box first ****************/
-    float min_x = FLT_MAX;
-    float min_y = FLT_MAX;
-    float max_x = FLT_MIN;
-    float max_y = FLT_MIN;
+    T3 min_x = FLT_MAX;
+    T3 min_y = FLT_MAX;
+    T3 max_x = FLT_MIN;
+    T3 max_y = FLT_MIN;
     for (int i = 0; i < joints_2d.size(); ++i) {
         if (joints_2d[i].x < min_x) {
             min_x = joints_2d[i].x;
@@ -24,9 +25,9 @@ glm::vec3 crop_n_resize_joints(const std::vector<glm::vec2> & joints_2d, float p
     }
 
     /************* Then set pad to the bbx *************/
-    glm::vec2 bbx_center((min_x + max_x) / 2.0f, (min_y + max_y) / 2.f);
-    float bbx_size = std::max((max_x - min_x), (max_y - min_y)) * (1.f + pad_scale);
-    glm::vec3 result;
+    T1 bbx_center((min_x + max_x) / static_cast<T3>(2.0), (min_y + max_y) / static_cast<T3>(2));
+    T3 bbx_size = std::max((max_x - min_x), (max_y - min_y)) * (static_cast<T3>(1.) + pad_scale);
+    T2 result;
 
     result.x = bbx_center.x - bbx_size / 2.f;
     result.y = bbx_center.y - bbx_size / 2.f;
@@ -34,5 +35,8 @@ glm::vec3 crop_n_resize_joints(const std::vector<glm::vec2> & joints_2d, float p
 
     return result;
 }
+
+template glm::f64vec3 crop_n_resize_joints<glm::f64vec2, glm::f64vec3, double>(const std::vector<glm::f64vec2> & joints_2d, double pad_scale, int target_size);
+
 }
 

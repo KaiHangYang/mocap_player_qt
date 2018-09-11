@@ -26,23 +26,23 @@ namespace mPoseDef {
     static const bool joint_is_endpoint[15] = {true, false, false, false, true, false, false, true, false, false, true, false, false, true, false};
     static const bool bone_is_limb[14] = {true, false, false, true, false, false, true, false, false, false, true, false, false, true};
 
-    static const bool bones_adjacence_table[14][14] = {
-        // 0    1       2      3      4      5      6      7      8      9      10     11     12     13
-        {false, true,   false, false, true,  false, false, true,  false, false, false, false, false, false}, // 0
-        {true,  false,  true,  false, true,  false, false, true,  false, false, false, false, false, false}, // 1
-        {false, true,   false, true,  false, false, false, false, false, false, false, false, false, false}, // 2
-        {false, false,  true,  false, false, false, false, false, false, false, false, false, false, false}, // 3
-        {true,  true,   false, false, false, true,  false, true,  false, false, false, false, false, false}, // 4
-        {false, false,  false, false, true,  false, true,  false, false, false, false, false, false, false}, // 5
-        {false, false,  false, false, false, true,  false, false, false, false, false, false, false, false}, // 6
-        {true,  true,   false, false, true,  false, false, false, true,  false, false, true,  false, false}, // 7
-        {false, false,  false, false, false, false, false, true,  false, true,  false, true,  false, false}, // 8
-        {false, false,  false, false, false, false, false, false, true,  false, true,  false, false, false}, // 9
-        {false, false,  false, false, false, false, false, false, false, true,  false, false, false, false}, // 10
-        {false, false,  false, false, false, false, false, true,  true,  false, false, false, true,  false}, // 11
-        {false, false,  false, false, false, false, false, false, false, false, false, true,  false, true},  // 12
-        {false, false,  false, false, false, false, false, false, false, false, false, false, true,  false}  // 13
-    };
+    static const int bones_adjacence_table[14][14] = {
+            // 0       1       2      3      4      5      6      7      8      9      10     11     12     13
+            {   -1,    1,      -1,    -1,    1,     -1,    -1,    1,     -1,    -1,    -1,    -1,    -1,    -1}, // 0
+            {   1,     -1,     2,     -1,    1,     -1,    -1,    1,     -1,    -1,    -1,    -1,    -1,    -1}, // 1
+            {   -1,    2,      -1,    3,     -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1}, // 2
+            {   -1,    -1,     3,     -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1}, // 3
+            {   1,     1,      -1,    -1,    -1,    5,     -1,    1,     -1,    -1,    -1,    -1,    -1,    -1}, // 4
+            {   -1,    -1,     -1,    -1,    5,     -1,    6,     -1,    -1,    -1,    -1,    -1,    -1,    -1}, // 5
+            {   -1,    -1,     -1,    -1,    -1,    6,     -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1}, // 6
+            {   1,     1,      -1,    -1,    1,     -1,    -1,    -1,   14,     -1,    -1,   14,     -1,    -1}, // 7
+            {   -1,    -1,     -1,    -1,    -1,    -1,    -1,   14,     -1,    8,     -1,   14,     -1,    -1}, // 8
+            {   -1,    -1,     -1,    -1,    -1,    -1,    -1,    -1,    8,     -1,    9,     -1,    -1,    -1}, // 9
+            {   -1,    -1,     -1,    -1,    -1,    -1,    -1,    -1,    -1,    9,     -1,    -1,    -1,    -1}, // 10
+            {   -1,    -1,     -1,    -1,    -1,    -1,    -1,   14,    14,     -1,    -1,    -1,   11,     -1}, // 11
+            {   -1,    -1,     -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    11,     -1,   12},  // 12
+            {   -1,    -1,     -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,   12,     -1}  // 13
+        };
     static const int angle_index_from_joint[15] = {1, 8, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13 , 14, 0};
         
     static const std::vector<glm::u32vec2> bones_indices({
